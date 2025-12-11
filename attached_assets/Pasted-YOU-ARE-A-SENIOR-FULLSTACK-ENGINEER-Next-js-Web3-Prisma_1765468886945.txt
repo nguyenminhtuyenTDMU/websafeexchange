@@ -1,0 +1,394 @@
+YOU ARE A SENIOR FULLSTACK ENGINEER (Next.js, Web3, Prisma, Tailwind).
+
+I am building a graduation project called SAFEEXCHANGE – a website for transferring ownership of Gnosis Safe wallets in a safe way, using a Guard smart contract and an escrow-like flow.
+
+I want you to generate a full Next.js 14 (App Router) codebase (frontend + backend + database layer) that matches the following specification EXACTLY and integrates with my existing Solidity smart contract.
+
+====================================================
+GLOBAL TECH STACK
+====================================================
+- Next.js 14 (App Router, TypeScript)
+- React + Server Components
+- Tailwind CSS for styling (modern, simple, near black/white theme)
+- Wagmi + Viem for wallet connection (MetaMask)
+- Prisma ORM for DB (use SQLite or Postgres via DATABASE_URL; just define schema, I will set env)
+- API Routes under app/api/*
+- Smart contract interaction via viem (use my existing contract’s ABI and address)
+- Use Zod or simple runtime checks for request validation where needed
+
+I ALREADY HAVE:
+- Solidity smart contract(s) in the repo (e.g. SafeExchangeGuardEscrow.sol) with functions like:
+  - armTrade(safe, buyer, amount, deadline)
+  - deposit(tradeId)
+  - cancelTrade(tradeId)
+  - Guard logic with checkTransaction / checkAfterExecution
+- TypeScript/Web3 helper logic in /lib or similar.
+
+IMPORTANT:
+> You MUST scan my existing Solidity and TypeScript helper files in the repo.
+> DO NOT invent or change function signatures.
+> Import and use the real functions / ABIs from my existing code.
+> If there are multiple candidates, choose the Guard escrow contract with armTrade/deposit/cancelTrade that matches the flow I describe below.
+
+====================================================
+UI LAYOUT / GLOBAL DESIGN
+====================================================
+- Use a root layout with:
+  - Header
+  - Main content
+  - Footer
+
+- Background: near black/white style (for example: main background #f9fafb or very light gray, cards slightly darker; OR a very dark background with light cards). Keep it modern and simple, no crazy colors.
+
+- HEADER:
+  - Left: SAFEEXCHANGE logo text
+  - Center or right: simple nav links:
+      - Transfer
+      - Wallet Transparency
+      - Evidence
+      - Transparency Dashboard
+      - Learn
+      - Legal Notice
+  - Right: “Connect Wallet” button using wagmi (MetaMask).
+  - When connected: show shortened address (e.g. 0x1234…abcd).
+
+- FOOTER:
+  - Simple placeholder text, e.g. “SAFEEXCHANGE – demo for graduation project”
+  - Maybe small links or disclaimers.
+
+- The main Transfer page will contain the multi-step flow described below.
+
+====================================================
+CORE TRADE FLOW (ARM + DEPOSIT + CANCEL + COMPLETE)
+====================================================
+Design EVERYTHING (pages, components, API, DB schema) around this flow:
+
+1) User connects MetaMask.
+
+2) SELLER flow, OFF-CHAIN FIRST:
+   - Seller inputs:
+     - safeAddress
+     - price (in ETH)
+     - optional deadline input (or default)
+   - On submit:
+     - Verify safe ownership off-chain (using Safe SDK / my helper logic).
+     - Create a Listing OFF-CHAIN in the database (status = "LISTED", role = seller).
+   - At this point, the smart contract is NOT called yet.
+   - Show the listing details to the seller and a “Ready to arm trade” state.
+
+3) BUYER JOIN OFF-CHAIN:
+   - Buyer connects wallet and sees the listing (by safeAddress or tradeId).
+   - Buyer clicks “Join trade”:
+     - Only OFF-CHAIN:
+       - Save buyerAddress to the listing in DB.
+       - Still no smart contract call yet.
+   - Status becomes “JOINED” (off-chain).
+
+4) SELLER ARMS THE TRADE ON-CHAIN:
+   - Seller now sees a step: “Arm Trade”.
+   - Seller must:
+     - Ensure the Safe has this Guard contract set as the guard (if not, show an instruction or a button that creates the necessary transaction to set the guard = this contract; use my existing guard logic if available).
+     - Call armTrade(safe, buyer, amount, deadline) on-chain via the Guard contract.
+   - You must integrate with my existing armTrade() function:
+     - Build the transaction using viem / wagmi.
+     - On success, update DB Trade record to:
+       - status = "ARMED"
+       - onchainTradeId = value returned or derived (if contract emits an event, use that ID; otherwise we can store a mapping of (safe, buyer, deadline)).
+   - At this point, the Guard contract should lock the Safe:
+     - Only allow swapOwner → buyer (enforced inside the contract’s Guard logic).
+
+5) BUYER DEPOSIT ON-CHAIN:
+   - Buyer reviews Safe info one more time (Wallet Transparency page or section).
+   - When satisfied, Buyer calls deposit(tradeId) via the contract.
+   - Integrate with my existing deposit(tradeId) function; do not change signature.
+   - This should:
+     - Send ETH (value = price).
+     - Mark the trade as FUNDED inside the contract.
+   - Update DB:
+     - status = "FUNDED"
+
+6) SELLER TRANSFERS OWNERSHIP (SAFE OWNER SWAP) ON-CHAIN:
+   - Seller uses Safe (via Safe app or a button you can integrate using Safe SDK) to execute swapOwner → buyer.
+   - The Guard’s checkTransaction should:
+     - Only allow swapOwner if new owner == buyer.
+   - After transaction executes:
+     - checkAfterExecution in the Guard should:
+       - Verify tx success.
+       - Check that new owner is really buyer.
+       - Confirm that trade is FUNDED.
+       - Then:
+         - Pay the seller
+         - Mark trade COMPLETED on-chain.
+   - Sync DB:
+     - Once we detect completion (via polling or event listener), update DB status = "COMPLETED".
+
+7) GUARD REMOVAL:
+   - After completion, the new owner (buyer) is free to remove the guard from the Safe.
+   - UI: show a note that “You can now remove the SafeExchange guard from your Safe settings.”
+
+8) TIMEOUT / CANCEL CASE:
+   - From step 3 to before step 6, if seller abandons / does not swap in time:
+     - After deadline, ANYONE can call cancelTrade(tradeId).
+     - cancelTrade must:
+       - Mark trade CANCELLED.
+       - If buyer already deposited: refund buyer.
+   - In UI:
+     - Show remaining time before deadline.
+     - If deadline passed:
+       - Show a “Cancel Trade” button calling cancelTrade(tradeId).
+   - DB:
+     - Update status = "CANCELLED" on success.
+
+Important:
+- There is NO free refund function for buyer.
+- Only cancelTrade(tradeId) after deadline can refund.
+- On FE, enforce states so users cannot call functions in the wrong order.
+
+====================================================
+PAGE STRUCTURE / ROUTES
+====================================================
+Use Next.js app router with at least these routes:
+
+1) app/layout.tsx
+   - Global layout (Header, Footer, main background near black/white).
+
+2) app/page.tsx
+   - Home / Landing page:
+     - Brief explanation of SAFEEXCHANGE.
+     - Two big buttons:
+       - "I want to SELL a Safe"
+       - "I want to BUY a Safe"
+     - These redirect to /transfer/sell or /transfer/buy.
+
+3) app/transfer/page.tsx (optional redirect or generic info)
+
+4) app/transfer/sell/page.tsx
+   - Multi-step UI for Seller, following flow:
+     Step 1: Input Safe address + price + deadline
+     Step 2: Verify Safe ownership (off-chain call)
+     Step 3: Create listing (off-chain, DB)
+     Step 4: Arm trade (on-chain armTrade call + ensure Guard is set)
+     Step 5: Monitor status (ARMED → FUNDED → COMPLETED/CANCELLED)
+
+5) app/transfer/buy/page.tsx
+   - Multi-step UI for Buyer:
+     Step 1: Find trade (by safe address / code)
+     Step 2: Join trade (off-chain; store buyerAddress in DB)
+     Step 3: Review Safe info (from Wallet Transparency logic)
+     Step 4: Deposit (on-chain deposit(tradeId))
+     Step 5: Monitor status (FUNDED → COMPLETED or CANCELLED)
+
+6) app/wallet-transparency/page.tsx
+   - Input Safe address
+   - Show:
+     - Current owners
+     - Modules/guards active
+     - Basic transaction history or at least key info
+   - Use Safe Core SDK or my existing helper to read Safe state.
+
+7) app/evidence/page.tsx
+   - “Evidence Collector”:
+     - Allow user to input relevant trade or transaction data.
+     - Create a hash of evidence payload.
+     - Sign hash with ECDSA (using connected wallet).
+     - Optionally, interact with a simple Evidence smart contract (if present in repo) to store the hash on-chain.
+     - Allow export of:
+       - JSON evidence file
+       - And a simple PDF-like layout (you can stub this or show how to generate a PDF; no need to fully implement binary generation).
+     - Include a “Verify Evidence” section: given hash / signed message, verify signature and/or check on-chain.
+
+8) app/transparency-dashboard/page.tsx
+   - “Transparency Dashboard”:
+     - Show a table of recent trades (from DB):
+       - TradeId, seller, buyer, status, timestamps.
+     - Show system logs:
+       - At least DB-log entries (e.g. trade created, armed, funded, completed, cancelled).
+     - Show placeholders for:
+       - commitHash of current deployment (use env or stub value like process.env.NEXT_PUBLIC_COMMIT_HASH).
+     - This is just UI + data from DB.
+
+9) app/learn/page.tsx
+   - “Educational Mode / Learn”:
+     - Static or semi-interactive UI explaining:
+       - How the trade flow works step-by-step.
+       - Simulate signing a fake transaction (offline) just to educate users about “Approve” vs “Transfer”.
+       - Show warning banners about scams, fake sites, etc.
+     - No need to be fully functional, but provide a reusable component for “Simulated transaction stepper”.
+
+10) app/legal/page.tsx
+    - “Legal Notice / Disclaimer”:
+      - Text explaining:
+        - SAFEEXCHANGE is an open-source tool.
+        - It does NOT custody user funds.
+        - It is NOT a financial intermediary / exchange.
+      - Basic legal disclaimers as static content.
+
+====================================================
+DATABASE DESIGN (PRISMA)
+====================================================
+Define a Prisma schema (schema.prisma) with at least:
+
+Model User (optional):
+- id (string or int)
+- walletAddress (string, unique)
+- createdAt, updatedAt
+
+Model Trade:
+- id (string or int, primary key)
+- safeAddress (string)
+- sellerAddress (string)
+- buyerAddress (string | null)
+- priceEth (Decimal or string)
+- deadline (DateTime or bigint timestamp)
+- onchainTradeId (string | null)  // from contract if available
+- status (enum): DRAFT, LISTED, JOINED, ARMED, FUNDED, COMPLETED, CANCELLED
+- createdAt, updatedAt
+
+Model Evidence:
+- id
+- tradeId (relation to Trade, optional)
+- hash (string)
+- signerAddress (string)
+- onchainTxHash (string | null)
+- createdAt
+
+Model SystemLog:
+- id
+- type (string: "TRADE_EVENT" | "SECURITY" | "SYSTEM")
+- message (string)
+- relatedTradeId (string | null)
+- createdAt
+
+You can add more fields if needed, but do not overcomplicate.
+
+====================================================
+BACKEND API DESIGN
+====================================================
+Create API routes under app/api/… for:
+
+1) POST /api/trades
+   - Create a listing:
+     - Inputs: safeAddress, price, deadline (optionally)
+     - Verify via server-side helper that caller = sellerAddress (from wallet address attached in request, or pass from client)
+     - Save Trade with status LISTED.
+
+2) POST /api/trades/[id]/join
+   - Buyer joins:
+     - Inputs: buyerAddress
+     - Update Trade: set buyerAddress, status = JOINED.
+
+3) POST /api/trades/[id]/sync-onchain
+   - Sync trade status with on-chain data:
+     - Read contract state (by tradeId / safe+buyer).
+     - Update DB: ARMED, FUNDED, COMPLETED, CANCELLED accordingly.
+
+4) GET /api/trades
+   - List trades for Transparency Dashboard & for each user (optional query param: sellerAddress / buyerAddress).
+
+5) POST /api/evidence
+   - Save Evidence:
+     - Inputs: tradeId (optional), hash, signerAddress, optional onchainTxHash.
+     - Store in Evidence model.
+     - Optionally write to SystemLog.
+
+6) GET /api/evidence/[id]
+   - Fetch one Evidence for verification.
+
+7) GET /api/logs
+   - Fetch SystemLog entries for Transparency Dashboard.
+
+NOTE:
+- For smart contract writes (armTrade, deposit, cancelTrade), you can:
+  - Trigger them directly from frontend using wagmi / viem.
+  - Or, if my project already has server-side helpers, reuse those.
+- For reading state (trade status, owner, etc.), use readContract or existing helper.
+
+====================================================
+FRONTEND COMPONENTS
+====================================================
+Create reusable components:
+
+- components/layout/Header.tsx
+- components/layout/Footer.tsx
+- components/wallet/WalletConnectButton.tsx (wagmi)
+
+- components/transfer/SellerFlow.tsx
+- components/transfer/BuyerFlow.tsx
+- components/transfer/StepIndicator.tsx (stepper UI)
+- components/transfer/TradeStatusCard.tsx
+
+- components/transparency/SafeOverview.tsx
+- components/evidence/EvidenceForm.tsx
+- components/dashboard/TradeTable.tsx
+- components/dashboard/LogTable.tsx
+- components/learn/FlowDiagram.tsx or similar
+- components/legal/LegalText.tsx
+
+Styling:
+- Use Tailwind classes.
+- Modern, minimal, lots of white or very dark + light cards.
+- Responsive for desktop-first but still usable on mobile.
+
+====================================================
+SMART CONTRACT INTEGRATION (VERY IMPORTANT)
+====================================================
+You MUST:
+- Find the smart contract file in the repo that defines:
+  - armTrade(...)
+  - deposit(...)
+  - cancelTrade(...)
+  - guard logic with checkTransaction / checkAfterExecution.
+
+- Import its ABI from:
+  - either compiled artifact (e.g. /artifacts or /out)
+  - or a pre-generated TypeScript ABI file (e.g. /lib/abi/safeExchangeGuardEscrow.ts).
+
+- Create a config in a single place, e.g.:
+  - lib/contracts/safeExchangeGuardEscrow.ts
+  - containing:
+    - SAFE_EXCHANGE_GUARD_ESCROW_ADDRESS
+    - SAFE_EXCHANGE_GUARD_ESCROW_ABI
+    - helper functions:
+      - armTrade(...)
+      - deposit(...)
+      - cancelTrade(...)
+- Use environment variables for addresses & RPC URLs:
+  - process.env.NEXT_PUBLIC_RPC_URL
+  - process.env.NEXT_PUBLIC_CHAIN_ID
+  - process.env.NEXT_PUBLIC_GUARD_CONTRACT_ADDRESS
+  (You can define them as placeholders; I will fill in actual values.)
+
+DO NOT:
+- Change the Solidity contract.
+- Change function names/signatures.
+- Mock the contract with fake functions.
+
+====================================================
+ADDITIONAL REQUIREMENTS
+====================================================
+- Use TypeScript everywhere.
+- Handle loading & error states in UI.
+- Steps must be locked:
+  - e.g. Buyer cannot deposit before trade is ARMED & buyerAddress is set.
+- Provide some comments in code describing each major step.
+- The output should include:
+  1) Folder structure
+  2) Prisma schema
+  3) Key app routes (app/page.tsx, app/transfer/… etc.)
+  4) Important components
+  5) Example usage of wagmi for armTrade, deposit, cancelTrade.
+  6) Example .env variables (just name them in comments, not actual values).
+
+IMPORTANT META INSTRUCTIONS:
+- Act in STRICT MODE:
+  - Do NOT rename functions from my smart contracts.
+  - Do NOT change core flow requirements:
+    - Off-chain listing → join → armTrade → deposit → swap owner → complete or cancel after deadline.
+  - Only create new helper functions where necessary.
+- If you need to assume something about my smart contract data structures, make the minimal, most typical assumption consistent with a Guard-based escrow for Safe.
+
+Finally, generate all necessary code so I can paste it into my Next.js project and run:
+- npx prisma migrate dev
+- npm run dev
+
+Now generate the full code.
