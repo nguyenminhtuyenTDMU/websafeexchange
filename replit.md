@@ -4,6 +4,13 @@
 SAFEEXCHANGE là nền tảng Web3 để chuyển nhượng quyền sở hữu ví Gnosis Safe an toàn với cơ chế Guard smart contract và escrow tự động. Toàn bộ giao diện sử dụng tiếng Việt.
 
 ## Recent Changes
+- 11/12/2025: Phase 2 Complete - All next-phase features implemented:
+  - Safe Core SDK integration with txServiceUrl fix for setGuard/swapOwner operations
+  - Real-time WebSocket event system for trade status changes
+  - Notification system with indicator in header
+  - PDF export for Evidence and Trade records (jsPDF with ASCII for font compatibility)
+  - Advanced Dashboard with search, status filter, date sorting
+  - Hardhat test suite with 19 passing tests and gas reports
 - 11/12/2025: Initial build - Frontend Phase 1 complete with all pages and components
 - Database schema with Trade, Evidence, SystemLog models
 - Smart contract SafeExchangeEscrowSoftGuard.sol created
