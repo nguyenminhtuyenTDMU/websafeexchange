@@ -6,6 +6,7 @@ import { config } from "./lib/wagmi";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { ThemeProvider } from "@/components/theme-provider";
+import { WebSocketProvider } from "@/components/websocket-provider";
 import { Layout } from "@/components/layout";
 
 import Home from "@/pages/home";
@@ -44,8 +45,10 @@ function App() {
       <QueryClientProvider client={queryClient}>
         <ThemeProvider defaultTheme="light" storageKey="safeexchange-theme">
           <TooltipProvider>
-            <Toaster />
-            <Router />
+            <WebSocketProvider>
+              <Toaster />
+              <Router />
+            </WebSocketProvider>
           </TooltipProvider>
         </ThemeProvider>
       </QueryClientProvider>

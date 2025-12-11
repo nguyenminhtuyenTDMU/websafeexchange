@@ -1,6 +1,7 @@
 import { Link, useLocation } from "wouter";
 import { ConnectWallet } from "./connect-wallet";
 import { ThemeToggle } from "./theme-toggle";
+import { NotificationIndicator } from "./notification-indicator";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { Menu, Shield } from "lucide-react";
@@ -45,6 +46,7 @@ export function Header() {
         </nav>
 
         <div className="flex items-center gap-2">
+          <NotificationIndicator />
           <ThemeToggle />
           <ConnectWallet />
           

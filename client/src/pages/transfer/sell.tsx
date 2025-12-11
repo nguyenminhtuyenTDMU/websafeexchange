@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useAccount } from "wagmi";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -12,10 +12,12 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Stepper } from "@/components/stepper";
 import { TradeStatusBadge } from "@/components/trade-status-badge";
 import { ConnectWallet } from "@/components/connect-wallet";
-import { Loader2, AlertCircle, CheckCircle2, Copy, ExternalLink, Shield } from "lucide-react";
+import { Loader2, AlertCircle, CheckCircle2, Copy, Shield, Settings2 } from "lucide-react";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
+import { useSafeSdk } from "@/hooks/use-safe-sdk";
 import type { Trade } from "@shared/schema";
+import type { SafeInfo } from "@/lib/safe-sdk";
 
 const sellFormSchema = z.object({
   safeAddress: z.string().regex(/^0x[a-fA-F0-9]{40}$/, "Địa chỉ Safe không hợp lệ"),
@@ -58,10 +60,18 @@ function getStepFromStatus(status: string): number {
   }
 }
 
+const GUARD_CONTRACT_ADDRESS = import.meta.env.VITE_GUARD_CONTRACT_ADDRESS || "0x0000000000000000000000000000000000000000";
+
 export default function Sell() {
   const { address, isConnected } = useAccount();
   const { toast } = useToast();
   const [createdTradeId, setCreatedTradeId] = useState<string | null>(null);
+  const [safeInfo, setSafeInfo] = useState<SafeInfo | null>(null);
+  const [isCheckingSafe, setIsCheckingSafe] = useState(false);
+  const [isSettingGuard, setIsSettingGuard] = useState(false);
+  const [isSwappingOwner, setIsSwappingOwner] = useState(false);
+  
+  const { getSafeInfo, setGuard, swapOwner, isOwner, loading: safeSdkLoading } = useSafeSdk();
 
   const form = useForm<SellFormValues>({
     resolver: zodResolver(sellFormSchema),
@@ -132,6 +142,116 @@ export default function Sell() {
 
   const onSubmit = (values: SellFormValues) => {
     createTradeMutation.mutate(values);
+  };
+
+  const checkSafeInfo = async (safeAddress: string) => {
+    if (!safeAddress || !/^0x[a-fA-F0-9]{40}$/.test(safeAddress)) return;
+    
+    setIsCheckingSafe(true);
+    try {
+      const info = await getSafeInfo(safeAddress);
+      setSafeInfo(info);
+      
+      if (info && address) {
+        const ownerCheck = await isOwner(safeAddress, address);
+        if (!ownerCheck) {
+          toast({
+            variant: "destructive",
+            title: "Không phải chủ sở hữu",
+            description: "Địa chỉ ví của bạn không phải là owner của Safe này.",
+          });
+        }
+      }
+    } catch (error) {
+      console.error("Lỗi khi lấy thông tin Safe:", error);
+    } finally {
+      setIsCheckingSafe(false);
+    }
+  };
+
+  const handleSetGuard = async () => {
+    const safeAddress = form.getValues("safeAddress");
+    if (!safeAddress) return;
+    
+    setIsSettingGuard(true);
+    try {
+      const result = await setGuard(safeAddress, GUARD_CONTRACT_ADDRESS);
+      
+      if (result.success) {
+        toast({
+          title: "Thiết lập Guard thành công",
+          description: "Guard contract đã được thiết lập cho Safe của bạn.",
+        });
+        await checkSafeInfo(safeAddress);
+      } else {
+        toast({
+          variant: "destructive",
+          title: "Lỗi",
+          description: result.error || "Không thể thiết lập Guard",
+        });
+      }
+    } finally {
+      setIsSettingGuard(false);
+    }
+  };
+
+  const safeAddress = form.watch("safeAddress");
+  
+  useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      if (safeAddress && /^0x[a-fA-F0-9]{40}$/.test(safeAddress)) {
+        checkSafeInfo(safeAddress);
+      } else {
+        setSafeInfo(null);
+      }
+    }, 500);
+    
+    return () => clearTimeout(timeoutId);
+  }, [safeAddress]);
+
+  const isGuardSet = safeInfo?.guard && safeInfo.guard !== "0x0000000000000000000000000000000000000000";
+  const isCorrectGuard = isGuardSet && safeInfo?.guard?.toLowerCase() === GUARD_CONTRACT_ADDRESS.toLowerCase();
+
+  const handleSwapOwner = async () => {
+    if (!trade?.buyerAddress || !address) {
+      toast({
+        variant: "destructive",
+        title: "Lỗi",
+        description: "Thiếu thông tin người mua hoặc người bán",
+      });
+      return;
+    }
+    
+    setIsSwappingOwner(true);
+    try {
+      const result = await swapOwner(trade.safeAddress, address, trade.buyerAddress);
+      
+      if (result.success) {
+        toast({
+          title: "Chuyển quyền sở hữu thành công",
+          description: "Quyền sở hữu Safe đã được chuyển cho người mua.",
+        });
+        
+        await apiRequest("POST", `/api/trades/${trade.id}/complete`, {
+          txHash: result.txHash,
+        });
+        queryClient.invalidateQueries({ queryKey: ["/api/trades", createdTradeId] });
+      } else {
+        toast({
+          variant: "destructive",
+          title: "Lỗi",
+          description: result.error || "Không thể chuyển quyền sở hữu",
+        });
+      }
+    } catch (error: any) {
+      toast({
+        variant: "destructive",
+        title: "Lỗi",
+        description: error.message || "Không thể chuyển quyền sở hữu",
+      });
+    } finally {
+      setIsSwappingOwner(false);
+    }
   };
 
   const copyTradeId = () => {
@@ -254,12 +374,79 @@ export default function Sell() {
                     )}
                   />
 
+                  {safeInfo && (
+                    <Card className="bg-muted/50">
+                      <CardHeader className="pb-2">
+                        <CardTitle className="text-base flex items-center gap-2">
+                          <Shield className="h-4 w-4" />
+                          Thông tin Safe
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent className="space-y-3">
+                        <div className="grid grid-cols-2 gap-2 text-sm">
+                          <div>
+                            <p className="text-muted-foreground">Số owner</p>
+                            <p className="font-medium">{safeInfo.owners.length}</p>
+                          </div>
+                          <div>
+                            <p className="text-muted-foreground">Ngưỡng ký</p>
+                            <p className="font-medium">{safeInfo.threshold}/{safeInfo.owners.length}</p>
+                          </div>
+                        </div>
+                        
+                        <div className="text-sm">
+                          <p className="text-muted-foreground mb-1">Trạng thái Guard</p>
+                          {isCheckingSafe ? (
+                            <div className="flex items-center gap-2">
+                              <Loader2 className="h-4 w-4 animate-spin" />
+                              <span>Đang kiểm tra...</span>
+                            </div>
+                          ) : isCorrectGuard ? (
+                            <div className="flex items-center gap-2 text-success">
+                              <CheckCircle2 className="h-4 w-4" />
+                              <span>Guard đã được thiết lập đúng</span>
+                            </div>
+                          ) : isGuardSet ? (
+                            <div className="flex items-center gap-2 text-warning">
+                              <AlertCircle className="h-4 w-4" />
+                              <span>Guard khác đang được sử dụng</span>
+                            </div>
+                          ) : (
+                            <div className="flex items-center justify-between gap-2 flex-wrap">
+                              <span className="text-muted-foreground">Chưa có Guard</span>
+                              <Button
+                                type="button"
+                                variant="outline"
+                                size="sm"
+                                onClick={handleSetGuard}
+                                disabled={isSettingGuard}
+                                data-testid="button-set-guard"
+                              >
+                                {isSettingGuard ? (
+                                  <>
+                                    <Loader2 className="mr-2 h-3 w-3 animate-spin" />
+                                    Đang thiết lập...
+                                  </>
+                                ) : (
+                                  <>
+                                    <Settings2 className="mr-2 h-3 w-3" />
+                                    Thiết lập Guard
+                                  </>
+                                )}
+                              </Button>
+                            </div>
+                          )}
+                        </div>
+                      </CardContent>
+                    </Card>
+                  )}
+
                   <Alert>
                     <AlertCircle className="h-4 w-4" />
                     <AlertTitle>Lưu ý quan trọng</AlertTitle>
                     <AlertDescription>
                       Bạn cần phải là owner của Safe wallet này để có thể bán. 
-                      Guard contract cần được thiết lập trước khi arm trade.
+                      Guard contract sẽ được thiết lập tự động khi tạo đơn bán.
                     </AlertDescription>
                   </Alert>
 
@@ -394,13 +581,30 @@ export default function Sell() {
                     )}
 
                     {trade.status === "FUNDED" && (
-                      <Alert className="border-success">
-                        <CheckCircle2 className="h-4 w-4 text-success" />
-                        <AlertTitle>Người mua đã gửi ký quỹ</AlertTitle>
-                        <AlertDescription>
-                          Thực hiện chuyển quyền sở hữu trong Safe App để chuyển cho người mua và nhận ETH.
-                        </AlertDescription>
-                      </Alert>
+                      <div className="space-y-4">
+                        <Alert className="border-success">
+                          <CheckCircle2 className="h-4 w-4 text-success" />
+                          <AlertTitle>Người mua đã gửi ký quỹ</AlertTitle>
+                          <AlertDescription>
+                            Bấm nút bên dưới để tự động chuyển quyền sở hữu Safe cho người mua và nhận ETH.
+                          </AlertDescription>
+                        </Alert>
+                        <Button
+                          className="w-full"
+                          onClick={handleSwapOwner}
+                          disabled={isSwappingOwner}
+                          data-testid="button-swap-owner"
+                        >
+                          {isSwappingOwner ? (
+                            <>
+                              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                              Đang chuyển quyền sở hữu...
+                            </>
+                          ) : (
+                            "Chuyển quyền sở hữu cho người mua"
+                          )}
+                        </Button>
+                      </div>
                     )}
 
                     {trade.status === "COMPLETED" && (

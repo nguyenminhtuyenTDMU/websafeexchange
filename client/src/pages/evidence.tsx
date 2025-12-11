@@ -16,6 +16,7 @@ import { Loader2, FileCheck, Shield, Copy, Download, CheckCircle2, AlertCircle, 
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { keccak256, toBytes } from "viem";
+import { exportEvidencePDF } from "@/lib/export-pdf";
 
 const createEvidenceSchema = z.object({
   tradeId: z.string().optional(),
@@ -148,7 +149,7 @@ export default function Evidence() {
     toast({ title: `Đã sao chép ${label}` });
   };
 
-  const exportEvidence = () => {
+  const exportEvidenceJSON = () => {
     if (!evidenceResult) return;
     
     const data = JSON.stringify(evidenceResult, null, 2);
@@ -159,6 +160,20 @@ export default function Evidence() {
     a.download = `evidence-${Date.now()}.json`;
     a.click();
     URL.revokeObjectURL(url);
+  };
+
+  const exportToPDF = () => {
+    if (!evidenceResult) return;
+    exportEvidencePDF({
+      ...evidenceResult,
+      tradeId: createForm.getValues("tradeId"),
+      payload: JSON.stringify({
+        content: createForm.getValues("payload"),
+        tradeId: createForm.getValues("tradeId") || null,
+        timestamp: evidenceResult.timestamp,
+        creator: evidenceResult.signerAddress,
+      }),
+    });
   };
 
   if (!isConnected) {
@@ -326,15 +341,26 @@ export default function Evidence() {
                         </code>
                       </div>
 
-                      <Button
-                        variant="outline"
-                        className="w-full"
-                        onClick={exportEvidence}
-                        data-testid="button-export-evidence"
-                      >
-                        <Download className="mr-2 h-4 w-4" />
-                        Tải xuống JSON
-                      </Button>
+                      <div className="flex flex-col sm:flex-row gap-2">
+                        <Button
+                          variant="outline"
+                          className="flex-1"
+                          onClick={exportEvidenceJSON}
+                          data-testid="button-export-evidence-json"
+                        >
+                          <Download className="mr-2 h-4 w-4" />
+                          Tải JSON
+                        </Button>
+                        <Button
+                          variant="default"
+                          className="flex-1"
+                          onClick={exportToPDF}
+                          data-testid="button-export-evidence-pdf"
+                        >
+                          <Download className="mr-2 h-4 w-4" />
+                          Tải PDF
+                        </Button>
+                      </div>
                     </div>
                   </div>
                 )}
