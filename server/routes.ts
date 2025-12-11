@@ -4,11 +4,14 @@ import { storage } from "./storage";
 import { insertTradeSchema, insertEvidenceSchema, insertSystemLogSchema } from "@shared/schema";
 import { z } from "zod";
 import { recoverMessageAddress } from "viem";
+import { eventBroadcaster } from "./websocket";
 
 export async function registerRoutes(
   httpServer: Server,
   app: Express
 ): Promise<Server> {
+  
+  eventBroadcaster.initialize(httpServer);
   
   app.get("/api/trades", async (req, res) => {
     try {
@@ -71,6 +74,13 @@ export async function registerRoutes(
         relatedTradeId: trade.id,
       });
 
+      eventBroadcaster.broadcastNewTrade(trade);
+      eventBroadcaster.broadcastNotification(
+        "Giao dịch mới",
+        `Đơn bán Safe ${data.safeAddress.slice(0, 8)}... đã được tạo`,
+        "info"
+      );
+
       res.status(201).json(trade);
     } catch (error) {
       if (error instanceof z.ZodError) {
@@ -111,6 +121,13 @@ export async function registerRoutes(
         relatedTradeId: trade.id,
       });
 
+      eventBroadcaster.broadcastTradeUpdate(trade.id, "JOINED", { buyerAddress });
+      eventBroadcaster.broadcastNotification(
+        "Người mua tham gia",
+        `Có người mua đã tham gia giao dịch của bạn`,
+        "success"
+      );
+
       res.json(updated);
     } catch (error) {
       res.status(500).json({ error: "Lỗi khi tham gia trade" });
@@ -137,6 +154,13 @@ export async function registerRoutes(
         message: `Trade đã được arm - Safe ${trade.safeAddress.slice(0, 10)}... bị khóa`,
         relatedTradeId: trade.id,
       });
+
+      eventBroadcaster.broadcastTradeUpdate(trade.id, "ARMED", { safeAddress: trade.safeAddress });
+      eventBroadcaster.broadcastNotification(
+        "Giao dịch được kích hoạt",
+        `Safe ${trade.safeAddress.slice(0, 8)}... đã bị khóa. Chờ người mua gửi ký quỹ.`,
+        "success"
+      );
 
       res.json(updated);
     } catch (error) {
@@ -165,6 +189,13 @@ export async function registerRoutes(
         relatedTradeId: trade.id,
       });
 
+      eventBroadcaster.broadcastTradeUpdate(trade.id, "FUNDED", { priceEth: trade.priceEth });
+      eventBroadcaster.broadcastNotification(
+        "Đã nhận ký quỹ",
+        `Người mua đã gửi ${trade.priceEth} ETH vào ký quỹ. Chuyển quyền sở hữu Safe ngay.`,
+        "success"
+      );
+
       res.json(updated);
     } catch (error) {
       res.status(500).json({ error: "Lỗi khi deposit" });
@@ -192,6 +223,13 @@ export async function registerRoutes(
         relatedTradeId: trade.id,
       });
 
+      eventBroadcaster.broadcastTradeUpdate(trade.id, "COMPLETED", {});
+      eventBroadcaster.broadcastNotification(
+        "Giao dịch hoàn tất",
+        `Quyền sở hữu Safe đã được chuyển thành công. Thanh toán đã được thực hiện.`,
+        "success"
+      );
+
       res.json(updated);
     } catch (error) {
       res.status(500).json({ error: "Lỗi khi hoàn tất trade" });
@@ -215,6 +253,13 @@ export async function registerRoutes(
         message: `Trade đã bị hủy: ${reason || "Không rõ lý do"}`,
         relatedTradeId: trade.id,
       });
+
+      eventBroadcaster.broadcastTradeUpdate(trade.id, "CANCELLED", { reason });
+      eventBroadcaster.broadcastNotification(
+        "Giao dịch đã hủy",
+        `Giao dịch đã bị hủy: ${reason || "Không rõ lý do"}`,
+        "warning"
+      );
 
       res.json(updated);
     } catch (error) {

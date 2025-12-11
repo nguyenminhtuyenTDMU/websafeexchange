@@ -1,0 +1,79 @@
+{
+  "_format": "hh-sol-cache-2",
+  "files": {
+    "/home/runner/workspace/contracts/MockSafe.sol": {
+      "lastModificationDate": 1765471819510,
+      "contentHash": "f0712d5e87106bc4b1d85b01ebd2f3cc",
+      "sourceName": "contracts/MockSafe.sol",
+      "solcConfig": {
+        "version": "0.8.19",
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "runs": 200
+          },
+          "viaIR": true,
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [],
+      "versionPragmas": [
+        "^0.8.19"
+      ],
+      "artifacts": [
+        "MockSafe"
+      ]
+    },
+    "/home/runner/workspace/contracts/SafeExchangeEscrowSoftGuard.sol": {
+      "lastModificationDate": 1765469401111,
+      "contentHash": "6330de246e5d8e6ba4b28266dfadfe62",
+      "sourceName": "contracts/SafeExchangeEscrowSoftGuard.sol",
+      "solcConfig": {
+        "version": "0.8.19",
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "runs": 200
+          },
+          "viaIR": true,
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [],
+      "versionPragmas": [
+        "^0.8.19"
+      ],
+      "artifacts": [
+        "IGuard",
+        "ISafe",
+        "SafeExchangeEscrowSoftGuard"
+      ]
+    }
+  }
+}
