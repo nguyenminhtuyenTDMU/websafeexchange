@@ -60,8 +60,9 @@ function getStepFromStatus(status: string): number {
   }
 }
 
-const GUARD_CONTRACT_ADDRESS = import.meta.env.VITE_GUARD_CONTRACT_ADDRESS || "0x0000000000000000000000000000000000000000";
-
+const GUARD_CONTRACT_ADDRESS = "0xB5F8BC6FA44BE0A44C1f0328E5bEF48b4e0645d6";
+// import.meta.env.VITE_GUARD_CONTRACT_ADDRESS ||
+console.log("Guard Contract Address:", GUARD_CONTRACT_ADDRESS);
 export default function Sell() {
   const { address, isConnected } = useAccount();
   const { toast } = useToast();
@@ -170,19 +171,19 @@ export default function Sell() {
   };
 
   const handleSetGuard = async () => {
-    const safeAddress = form.getValues("safeAddress");
-    if (!safeAddress) return;
+    const safeAddressValue = form.getValues("safeAddress");
+    if (!safeAddressValue) return;
     
     setIsSettingGuard(true);
     try {
-      const result = await setGuard(safeAddress, GUARD_CONTRACT_ADDRESS);
+      const result = await setGuard(safeAddressValue, GUARD_CONTRACT_ADDRESS);
       
       if (result.success) {
         toast({
           title: "Thiết lập Guard thành công",
           description: "Guard contract đã được thiết lập cho Safe của bạn.",
         });
-        await checkSafeInfo(safeAddress);
+        await checkSafeInfo(safeAddressValue);
       } else {
         toast({
           variant: "destructive",

@@ -65,7 +65,7 @@ export function useSafeSdk(): UseSafeSdkReturn {
     }
   }, [getProviderAndSigner]);
 
-  const handleSetGuard = useCallback(async (
+    const handleSetGuard = useCallback(async (
     safeAddress: string, 
     guardAddress: string
   ): Promise<SafeTransactionResult> => {
@@ -74,23 +74,24 @@ export function useSafeSdk(): UseSafeSdkReturn {
     
     try {
       const result = await getProviderAndSigner();
-      if (!result) return { success: false, error: 'Không thể kết nối ví' };
-      
+      if (!result) return { success: false, error: 'Cannot connect wallet' };
+
       const txResult = await setGuardOnSafe(safeAddress, guardAddress, result.provider, result.signer);
       
       if (!txResult.success) {
-        setError(txResult.error || 'Lỗi khi thiết lập Guard');
+        setError(txResult.error || 'Failed to set Guard');
       }
       
       return txResult;
     } catch (err: any) {
-      const errorMsg = err.message || 'Không thể thiết lập Guard';
+      const errorMsg = err.message || 'Cannot set Guard';
       setError(errorMsg);
       return { success: false, error: errorMsg };
     } finally {
       setLoading(false);
     }
   }, [getProviderAndSigner]);
+
 
   const handleRemoveGuard = useCallback(async (safeAddress: string): Promise<SafeTransactionResult> => {
     setLoading(true);

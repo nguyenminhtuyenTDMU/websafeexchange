@@ -126,7 +126,7 @@ export default function Dashboard() {
     <div className="container px-4 md:px-8 py-8 md:py-12">
       <div className="max-w-6xl mx-auto">
         <div className="mb-8">
-          <h1 className="text-2xl md:text-3xl font-bold mb-2">Bảng điều khiển minh bạch</h1>
+          <h1 className="text-2xl md:text-3xl font-bold mb-2">Bảng điều khiển</h1>
           <p className="text-muted-foreground">
             Theo dõi tất cả giao dịch và hoạt động của hệ thống
           </p>

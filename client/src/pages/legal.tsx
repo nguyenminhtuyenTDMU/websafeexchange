@@ -31,7 +31,7 @@ export default function Legal() {
             </CardHeader>
             <CardContent className="prose prose-sm max-w-none dark:prose-invert">
               <p>
-                SAFEEXCHANGE là một nền tảng phần mềm mã nguồn mở được phát triển như đồ án tốt nghiệp, 
+                SAFEEXCHANGE là một nền tảng phần mềm mã nguồn mở, được phát triển
                 nhằm mục đích tạo điều kiện cho việc chuyển nhượng quyền sở hữu ví Gnosis Safe một cách 
                 an toàn thông qua cơ chế Guard hợp đồng thông minh và ký quỹ tự động.
               </p>

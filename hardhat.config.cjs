@@ -1,7 +1,13 @@
 require("@nomicfoundation/hardhat-toolbox");
-
+require("dotenv").config();
+require("hardhat-deploy");
 /** @type import('hardhat/config').HardhatUserConfig */
 module.exports = {
+  namedAccounts: {
+    deployer: {
+      default: 0
+    }
+  },
   solidity: {
     version: "0.8.19",
     settings: {
