@@ -9,7 +9,7 @@ import { useState } from "react";
 
 const navItems = [
   { href: "/transfer", label: "Chuyển nhượng" },
-  { href: "/wallet-transparency", label: "Minh bạch ví" },
+  { href: "/wallet-transparency", label: "Thông tin ví" },
   { href: "/evidence", label: "Bằng chứng" },
   { href: "/dashboard", label: "Bảng điều khiển" },
   { href: "/learn", label: "Hướng dẫn" },

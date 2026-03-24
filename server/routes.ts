@@ -59,7 +59,21 @@ export async function registerRoutes(
 
   app.post("/api/trades", async (req, res) => {
     try {
-      const data = insertTradeSchema.parse(req.body);
+      const deadlineInput = req.body?.deadline;
+      const deadlineValue = deadlineInput ? new Date(deadlineInput) : undefined;
+
+      if (deadlineValue && Number.isNaN(deadlineValue.getTime())) {
+        return res.status(400).json({
+          error: "Dữ liệu không hợp lệ",
+          details: [{ path: ["deadline"], message: "Deadline không hợp lệ" }],
+        });
+      }
+
+      const data = insertTradeSchema.parse({
+        ...req.body,
+        // allow incoming ISO string/number and normalize to Date for Zod/Drizzle
+        deadline: deadlineValue,
+      });
       
       const existingTrade = await storage.getTradeBySafeAddress(data.safeAddress);
       if (existingTrade) {

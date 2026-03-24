@@ -80,7 +80,7 @@ export default function WalletTransparency() {
     <div className="container px-4 md:px-8 py-8 md:py-12">
       <div className="max-w-4xl mx-auto">
         <div className="mb-8">
-          <h1 className="text-2xl md:text-3xl font-bold mb-2">Minh bạch ví Safe</h1>
+          <h1 className="text-2xl md:text-3xl font-bold mb-2">Thông tin ví Safe</h1>
           <p className="text-muted-foreground">
             Kiểm tra thông tin chi tiết của Safe wallet trước khi giao dịch
           </p>
