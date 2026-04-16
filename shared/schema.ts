@@ -34,6 +34,7 @@ export const trades = pgTable("trades", {
   priceEth: decimal("price_eth", { precision: 18, scale: 8 }).notNull(),
   deadline: timestamp("deadline").notNull(),
   onchainTradeId: text("onchain_trade_id"),
+  snapshotNonce: text("snapshot_nonce"),   // Safe.nonce() tại thời điểm armTrade
   status: tradeStatusEnum("status").default("DRAFT").notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),

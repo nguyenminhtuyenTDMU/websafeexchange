@@ -1,5 +1,6 @@
-import { useState } from "react";
-import { useAccount } from "wagmi";
+import { useState, useEffect } from "react";
+import { useAccount, useWriteContract, usePublicClient, useChainId } from "wagmi";
+import { parseEther } from "viem";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -12,9 +13,12 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Stepper } from "@/components/stepper";
 import { TradeStatusBadge } from "@/components/trade-status-badge";
 import { ConnectWallet } from "@/components/connect-wallet";
-import { Loader2, AlertCircle, CheckCircle2, Search, Shield, ExternalLink } from "lucide-react";
+import { Loader2, AlertCircle, CheckCircle2, Search, Shield, ExternalLink, AlertTriangle } from "lucide-react";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
+import { useWebSocket } from "@/hooks/use-websocket";
+import { escrowABI } from "@/lib/contracts/EscrowABI";
+import { getEscrowAddress } from "@/lib/contracts/addresses";
 import { Link } from "wouter";
 import type { Trade } from "@shared/schema";
 
@@ -25,42 +29,77 @@ const searchFormSchema = z.object({
 type SearchFormValues = z.infer<typeof searchFormSchema>;
 
 const buyerSteps = [
-  { id: 1, title: "Tìm giao dịch", description: "Tìm đơn bán" },
-  { id: 2, title: "Tham gia", description: "Xác nhận mua" },
-  { id: 3, title: "Chờ kích hoạt", description: "Người bán kích hoạt" },
-  { id: 4, title: "Gửi ký quỹ", description: "Gửi ETH" },
-  { id: 5, title: "Hoàn tất", description: "Nhận sở hữu" },
+  { id: 1, title: "Tìm giao dịch",   description: "Tìm đơn bán" },
+  { id: 2, title: "Tham gia",        description: "Xác nhận mua" },
+  { id: 3, title: "Chờ kích hoạt",   description: "Người bán kích hoạt" },
+  { id: 4, title: "Gửi ký quỹ",      description: "Gửi ETH on-chain" },
+  { id: 5, title: "Hoàn tất",        description: "Nhận sở hữu" },
 ];
 
 function getStepFromStatus(status: string): number {
   switch (status) {
-    case "LISTED":
-      return 2;
-    case "JOINED":
-      return 3;
-    case "ARMED":
-      return 4;
-    case "FUNDED":
-      return 5;
+    case "LISTED":    return 2;
+    case "JOINED":    return 3;
+    case "ARMED":     return 4;
+    case "FUNDED":    return 5;
     case "COMPLETED":
-    case "CANCELLED":
-      return 6;
-    default:
-      return 1;
+    case "CANCELLED": return 6;
+    default:          return 1;
   }
 }
 
 export default function Buy() {
   const { address, isConnected } = useAccount();
+  const chainId = useChainId();
+  const publicClient = usePublicClient();
+  const { writeContractAsync } = useWriteContract();
   const { toast } = useToast();
+  const { lastMessage } = useWebSocket();
+
   const [foundTrade, setFoundTrade] = useState<Trade | null>(null);
+  const [suspiciousDetected, setSuspiciousDetected] = useState(false);
+  const [ownershipTransferred, setOwnershipTransferred] = useState(false);
 
   const form = useForm<SearchFormValues>({
     resolver: zodResolver(searchFormSchema),
-    defaultValues: {
-      searchQuery: "",
-    },
+    defaultValues: { searchQuery: "" },
   });
+
+  const { data: trade, isLoading: isLoadingTrade } = useQuery<Trade>({
+    queryKey: ["/api/trades", foundTrade?.id],
+    enabled: !!foundTrade?.id,
+    refetchInterval: 5000,
+  });
+
+  // ── Listen to WebSocket events for FUNDED trades ───────────────────────────
+  useEffect(() => {
+    if (!lastMessage || lastMessage.type !== "trade_update") return;
+    const data = lastMessage.data;
+    if (!data || data.tradeId !== foundTrade?.id) return;
+
+    if (data.status === "SUSPICIOUS_ACTIVITY") {
+      setSuspiciousDetected(true);
+      toast({
+        variant: "destructive",
+        title: "Cảnh báo bất thường",
+        description: data.message || "Ví đã thực hiện giao dịch bất thường.",
+      });
+    }
+
+    if (data.status === "OWNERSHIP_TRANSFERRED") {
+      setOwnershipTransferred(true);
+      toast({
+        title: "Quyền sở hữu đã chuyển",
+        description: data.message || "Safe đã được chuyển về tên bạn.",
+      });
+    }
+  }, [lastMessage, foundTrade?.id, toast]);
+
+  // ── Reset WS flags when we switch trade ────────────────────────────────────
+  useEffect(() => {
+    setSuspiciousDetected(false);
+    setOwnershipTransferred(false);
+  }, [foundTrade?.id]);
 
   const searchMutation = useMutation({
     mutationFn: async (values: SearchFormValues) => {
@@ -68,23 +107,11 @@ export default function Buy() {
       if (!res.ok) throw new Error("Không tìm thấy trade");
       return res.json();
     },
-    onSuccess: (data) => {
-      setFoundTrade(data);
-    },
+    onSuccess: (data) => setFoundTrade(data),
     onError: (error: Error) => {
-      toast({
-        variant: "destructive",
-        title: "Không tìm thấy",
-        description: error.message,
-      });
+      toast({ variant: "destructive", title: "Không tìm thấy", description: error.message });
       setFoundTrade(null);
     },
-  });
-
-  const { data: trade, isLoading: isLoadingTrade } = useQuery<Trade>({
-    queryKey: ["/api/trades", foundTrade?.id],
-    enabled: !!foundTrade?.id,
-    refetchInterval: 5000,
   });
 
   const joinTradeMutation = useMutation({
@@ -95,47 +122,117 @@ export default function Buy() {
       return res.json();
     },
     onSuccess: () => {
-      toast({
-        title: "Tham gia thành công",
-        description: "Bạn đã tham gia trade. Chờ seller kích hoạt.",
-      });
+      toast({ title: "Tham gia thành công", description: "Chờ người bán kích hoạt giao dịch." });
       queryClient.invalidateQueries({ queryKey: ["/api/trades", foundTrade?.id] });
     },
     onError: (error: Error) => {
-      toast({
-        variant: "destructive",
-        title: "Lỗi",
-        description: error.message || "Không thể tham gia trade",
-      });
+      toast({ variant: "destructive", title: "Lỗi", description: error.message || "Không thể tham gia trade" });
     },
   });
 
+  // ── Step 4: Deposit ETH on-chain rồi sync backend ─────────────────────────
   const depositMutation = useMutation({
     mutationFn: async () => {
-      const res = await apiRequest("POST", `/api/trades/${foundTrade?.id}/deposit`, {
-        buyerAddress: address,
+      const currentTrade = trade || foundTrade;
+      if (!currentTrade?.onchainTradeId) throw new Error("Chưa có trade ID trên blockchain");
+      if (!currentTrade.priceEth) throw new Error("Chưa có giá giao dịch");
+
+      const contractAddress = getEscrowAddress(chainId);
+      const onchainTradeId = currentTrade.onchainTradeId as `0x${string}`;
+
+      // 1. Gọi deposit() trên SC kèm ETH
+      const txHash = await writeContractAsync({
+        address: contractAddress,
+        abi: escrowABI,
+        functionName: "deposit",
+        args: [onchainTradeId],
+        value: parseEther(currentTrade.priceEth),
       });
+
+      // 2. Chờ receipt
+      const receipt = await publicClient!.waitForTransactionReceipt({ hash: txHash });
+      if (receipt.status === "reverted") throw new Error("Transaction bị revert");
+
+      // 3. Sync backend
+      const res = await apiRequest("POST", `/api/trades/${currentTrade.id}/deposit`, {});
       return res.json();
     },
     onSuccess: () => {
       toast({
         title: "Gửi ký quỹ thành công",
-        description: "ETH đã được gửi vào ký quỹ. Chờ người bán chuyển quyền sở hữu.",
+        description: "ETH đã được gửi vào escrow. Chờ người bán chuyển quyền sở hữu.",
       });
       queryClient.invalidateQueries({ queryKey: ["/api/trades", foundTrade?.id] });
     },
     onError: (error: Error) => {
-      toast({
-        variant: "destructive",
-        title: "Lỗi",
-        description: error.message || "Không thể gửi ký quỹ",
-      });
+      toast({ variant: "destructive", title: "Lỗi gửi ký quỹ", description: error.message });
     },
   });
 
-  const onSearch = (values: SearchFormValues) => {
-    searchMutation.mutate(values);
-  };
+  // ── Release: SC verify isOwner(buyer) && !isOwner(seller) rồi giải ngân ───
+  const releaseFundsMutation = useMutation({
+    mutationFn: async () => {
+      const currentTrade = trade || foundTrade;
+      if (!currentTrade?.onchainTradeId) throw new Error("Chưa có trade ID trên blockchain");
+
+      const contractAddress = getEscrowAddress(chainId);
+      const onchainTradeId = currentTrade.onchainTradeId as `0x${string}`;
+
+      const txHash = await writeContractAsync({
+        address: contractAddress,
+        abi: escrowABI,
+        functionName: "releaseFunds",
+        args: [onchainTradeId],
+      });
+
+      const receipt = await publicClient!.waitForTransactionReceipt({ hash: txHash });
+      if (receipt.status === "reverted") throw new Error("Transaction bị revert — SC chưa xác nhận quyền sở hữu");
+
+      const res = await apiRequest("POST", `/api/trades/${currentTrade.id}/complete`, { txHash });
+      return res.json();
+    },
+    onSuccess: () => {
+      toast({ title: "Giải ngân thành công", description: "Giao dịch hoàn tất!" });
+      queryClient.invalidateQueries({ queryKey: ["/api/trades", foundTrade?.id] });
+    },
+    onError: (error: Error) => {
+      toast({ variant: "destructive", title: "Lỗi giải ngân", description: error.message });
+    },
+  });
+
+  // ── Cancel: SC verify nonce tăng && buyer không phải owner ────────────────
+  const buyerCancelMutation = useMutation({
+    mutationFn: async () => {
+      const currentTrade = trade || foundTrade;
+      if (!currentTrade?.onchainTradeId) throw new Error("Chưa có trade ID trên blockchain");
+
+      const contractAddress = getEscrowAddress(chainId);
+      const onchainTradeId = currentTrade.onchainTradeId as `0x${string}`;
+
+      const txHash = await writeContractAsync({
+        address: contractAddress,
+        abi: escrowABI,
+        functionName: "buyerRequestCancel",
+        args: [onchainTradeId],
+      });
+
+      const receipt = await publicClient!.waitForTransactionReceipt({ hash: txHash });
+      if (receipt.status === "reverted") throw new Error("SC từ chối hủy — chưa đủ điều kiện bất thường");
+
+      const res = await apiRequest("POST", `/api/trades/${currentTrade.id}/cancel`, {
+        reason: "Buyer yêu cầu hủy do phát hiện hoạt động bất thường",
+      });
+      return res.json();
+    },
+    onSuccess: () => {
+      toast({ title: "Đã hủy giao dịch", description: "ETH ký quỹ sẽ được hoàn trả." });
+      queryClient.invalidateQueries({ queryKey: ["/api/trades", foundTrade?.id] });
+      setSuspiciousDetected(false);
+    },
+    onError: (error: Error) => {
+      toast({ variant: "destructive", title: "Lỗi hủy giao dịch", description: error.message });
+    },
+  });
 
   if (!isConnected) {
     return (
@@ -179,7 +276,7 @@ export default function Buy() {
             </CardHeader>
             <CardContent>
               <Form {...form}>
-                <form onSubmit={form.handleSubmit(onSearch)} className="space-y-6">
+                <form onSubmit={form.handleSubmit((v) => searchMutation.mutate(v))} className="space-y-6">
                   <FormField
                     control={form.control}
                     name="searchQuery"
@@ -234,9 +331,7 @@ export default function Buy() {
                 <div className="flex items-center justify-between flex-wrap gap-4">
                   <div>
                     <CardTitle>Thông tin giao dịch</CardTitle>
-                    <CardDescription>
-                      Chi tiết về Safe wallet bạn muốn mua
-                    </CardDescription>
+                    <CardDescription>Chi tiết về Safe wallet bạn muốn mua</CardDescription>
                   </div>
                   {currentTrade && <TradeStatusBadge status={currentTrade.status} />}
                 </div>
@@ -282,6 +377,7 @@ export default function Buy() {
                       </Link>
                     </div>
 
+                    {/* ── LISTED: Buyer tham gia ───────────────────────────── */}
                     {currentTrade.status === "LISTED" && (
                       <div className="space-y-4 pt-4">
                         <Alert>
@@ -309,23 +405,25 @@ export default function Buy() {
                       </div>
                     )}
 
+                    {/* ── JOINED: Chờ seller arm ───────────────────────────── */}
                     {currentTrade.status === "JOINED" && (
                       <Alert>
                         <Loader2 className="h-4 w-4 animate-spin" />
                         <AlertTitle>Chờ người bán kích hoạt</AlertTitle>
                         <AlertDescription>
-                          Người bán cần thiết lập Guard và kích hoạt giao dịch trên blockchain.
+                          Người bán cần kích hoạt (arm) giao dịch trên blockchain. Khi hoàn tất, bạn có thể gửi ký quỹ ETH.
                         </AlertDescription>
                       </Alert>
                     )}
 
+                    {/* ── ARMED: Buyer deposit ETH on-chain ───────────────── */}
                     {currentTrade.status === "ARMED" && (
                       <div className="space-y-4 pt-4">
-                        <Alert className="border-warning">
-                          <CheckCircle2 className="h-4 w-4 text-warning" />
+                        <Alert>
+                          <CheckCircle2 className="h-4 w-4" />
                           <AlertTitle>Giao dịch đã được kích hoạt</AlertTitle>
                           <AlertDescription>
-                            Safe đã bị khóa. Bạn có thể gửi ký quỹ ETH để tiếp tục.
+                            Safe đã bị khóa trên blockchain. Gửi ký quỹ ETH để tiếp tục — SC sẽ giữ tiền an toàn.
                           </AlertDescription>
                         </Alert>
                         <Button
@@ -337,7 +435,7 @@ export default function Buy() {
                           {depositMutation.isPending ? (
                             <>
                               <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                              Đang xử lý...
+                              Đang gửi lên blockchain...
                             </>
                           ) : (
                             `Gửi ký quỹ ${currentTrade.priceEth} ETH`
@@ -346,33 +444,94 @@ export default function Buy() {
                       </div>
                     )}
 
+                    {/* ── FUNDED: Chờ chuyển owner + WS alerts ────────────── */}
                     {currentTrade.status === "FUNDED" && (
-                      <Alert>
-                        <Loader2 className="h-4 w-4 animate-spin" />
-                        <AlertTitle>Chờ chuyển quyền sở hữu</AlertTitle>
-                        <AlertDescription>
-                          ETH đã được gửi vào ký quỹ. Chờ người bán thực hiện chuyển quyền.
-                        </AlertDescription>
-                      </Alert>
+                      <div className="space-y-4 pt-4">
+                        {!suspiciousDetected && !ownershipTransferred && (
+                          <Alert>
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                            <AlertTitle>Chờ chuyển quyền sở hữu</AlertTitle>
+                            <AlertDescription>
+                              ETH đã được gửi vào ký quỹ. Chờ người bán thực hiện chuyển quyền sở hữu Safe.
+                            </AlertDescription>
+                          </Alert>
+                        )}
+
+                        {suspiciousDetected && !ownershipTransferred && (
+                          <div className="space-y-3">
+                            <Alert variant="destructive">
+                              <AlertTriangle className="h-4 w-4" />
+                              <AlertTitle>Phát hiện hoạt động bất thường</AlertTitle>
+                              <AlertDescription>
+                                Ví đã thực hiện giao dịch mà không chuyển quyền sở hữu cho bạn. Bạn có thể yêu cầu SC xác minh và hoàn tiền.
+                              </AlertDescription>
+                            </Alert>
+                            <Button
+                              variant="destructive"
+                              className="w-full"
+                              onClick={() => buyerCancelMutation.mutate()}
+                              disabled={buyerCancelMutation.isPending}
+                              data-testid="button-buyer-cancel"
+                            >
+                              {buyerCancelMutation.isPending ? (
+                                <>
+                                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                  Đang xác minh trên blockchain...
+                                </>
+                              ) : (
+                                "Yêu cầu hoàn tiền (SC xác minh)"
+                              )}
+                            </Button>
+                          </div>
+                        )}
+
+                        {ownershipTransferred && (
+                          <div className="space-y-3">
+                            <Alert className="border-green-500">
+                              <CheckCircle2 className="h-4 w-4 text-green-500" />
+                              <AlertTitle>Quyền sở hữu đã chuyển!</AlertTitle>
+                              <AlertDescription>
+                                Safe đã được chuyển tên bạn. Nhấn bên dưới để SC xác minh và giải ngân cho người bán.
+                              </AlertDescription>
+                            </Alert>
+                            <Button
+                              className="w-full"
+                              onClick={() => releaseFundsMutation.mutate()}
+                              disabled={releaseFundsMutation.isPending}
+                              data-testid="button-release-funds"
+                            >
+                              {releaseFundsMutation.isPending ? (
+                                <>
+                                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                  Đang xác minh trên blockchain...
+                                </>
+                              ) : (
+                                "Xác nhận & Giải ngân"
+                              )}
+                            </Button>
+                          </div>
+                        )}
+                      </div>
                     )}
 
+                    {/* ── COMPLETED ────────────────────────────────────────── */}
                     {currentTrade.status === "COMPLETED" && (
-                      <Alert className="border-success">
-                        <CheckCircle2 className="h-4 w-4 text-success" />
+                      <Alert className="border-green-500">
+                        <CheckCircle2 className="h-4 w-4 text-green-500" />
                         <AlertTitle>Giao dịch hoàn tất</AlertTitle>
                         <AlertDescription>
-                          Bạn đã trở thành owner của Safe wallet này. 
-                          Bạn có thể gỡ bỏ Guard contract nếu muốn.
+                          Bạn đã trở thành owner của Safe wallet này.
                         </AlertDescription>
                       </Alert>
                     )}
 
+                    {/* ── CANCELLED ────────────────────────────────────────── */}
                     {currentTrade.status === "CANCELLED" && (
                       <Alert variant="destructive">
                         <AlertCircle className="h-4 w-4" />
                         <AlertTitle>Giao dịch đã bị hủy</AlertTitle>
                         <AlertDescription>
-                          Giao dịch đã bị hủy. Nếu bạn đã gửi ký quỹ, ETH sẽ được hoàn trả.
+                          Giao dịch đã bị hủy. Nếu bạn đã gửi ký quỹ, hãy gọi SC để rút lại ETH.
                         </AlertDescription>
                       </Alert>
                     )}

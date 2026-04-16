@@ -159,13 +159,18 @@ export async function registerRoutes(
         return res.status(400).json({ error: "Trade chưa có buyer tham gia" });
       }
 
+      // onchainTradeId và snapshotNonce do frontend gửi lên sau khi gọi armTrade() trên SC
+      const { onchainTradeId, snapshotNonce } = req.body;
+
       const updated = await storage.updateTrade(req.params.id, {
         status: "ARMED",
+        ...(onchainTradeId && { onchainTradeId }),
+        ...(snapshotNonce != null && { snapshotNonce: String(snapshotNonce) }),
       });
 
       await storage.createLog({
         type: "TRADE_EVENT",
-        message: `Trade đã được arm - Safe ${trade.safeAddress.slice(0, 10)}... bị khóa`,
+        message: `Trade đã được arm - Safe ${trade.safeAddress.slice(0, 10)}... bị khóa (snapshotNonce: ${snapshotNonce ?? "chưa có"})`,
         relatedTradeId: trade.id,
       });
 
@@ -284,25 +289,34 @@ export async function registerRoutes(
   app.get("/api/safe-info", async (req, res) => {
     try {
       const address = req.query.address as string;
+      const chainId = parseInt((req.query.chainId as string) || process.env.CHAIN_ID || "11155111", 10);
+
       if (!address || !address.startsWith("0x")) {
         return res.status(400).json({ error: "Địa chỉ Safe không hợp lệ" });
       }
 
-      const mockSafeInfo = {
-        address: address,
-        owners: [
-          "0x1234567890abcdef1234567890abcdef12345678",
-          "0xabcdef1234567890abcdef1234567890abcdef12",
-        ],
-        threshold: 1,
-        nonce: 5,
-        modules: [],
-        guard: null,
-        version: "1.3.0",
-        chainId: 1,
+      const SAFE_API_BASE: Record<number, string> = {
+        1:        "https://safe-transaction-mainnet.safe.global",
+        11155111: "https://safe-transaction-sepolia.safe.global",
       };
 
-      res.json(mockSafeInfo);
+      const baseUrl = SAFE_API_BASE[chainId];
+      if (!baseUrl) {
+        return res.status(400).json({ error: `Chain ${chainId} không được hỗ trợ` });
+      }
+
+      const safeRes = await fetch(`${baseUrl}/api/v1/safes/${address}/`, {
+        headers: { Accept: "application/json" },
+        signal: AbortSignal.timeout(8000),
+      });
+
+      if (!safeRes.ok) {
+        const text = await safeRes.text().catch(() => "");
+        return res.status(safeRes.status).json({ error: "Không lấy được thông tin Safe", detail: text });
+      }
+
+      const data = await safeRes.json();
+      res.json(data);
     } catch (error) {
       res.status(500).json({ error: "Lỗi khi lấy thông tin Safe" });
     }

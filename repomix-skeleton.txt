@@ -1,0 +1,3023 @@
+This file is a merged representation of a subset of the codebase, containing specifically included files, combined into a single document by Repomix.
+
+<file_summary>
+This section contains a summary of this file.
+
+<purpose>
+This file contains a packed representation of a subset of the repository's contents that is considered the most important context.
+It is designed to be easily consumable by AI systems for analysis, code review,
+or other automated processes.
+</purpose>
+
+<file_format>
+The content is organized as follows:
+1. This summary section
+2. Repository information
+3. Directory structure
+4. Repository files (if enabled)
+5. Multiple file entries, each consisting of:
+  - File path as an attribute
+  - Full contents of the file
+</file_format>
+
+<usage_guidelines>
+- This file should be treated as read-only. Any changes should be made to the
+  original repository files, not this packed version.
+- When processing this file, use the file path to distinguish
+  between different files in the repository.
+- Be aware that this file may contain sensitive information. Handle it with
+  the same level of security as you would the original repository.
+</usage_guidelines>
+
+<notes>
+- Some files may have been excluded based on .gitignore rules and Repomix's configuration
+- Binary files are not included in this packed representation. Please refer to the Repository Structure section for a complete list of file paths, including binary files
+- Only files matching these patterns are included: ai_skeleton_code/**/*
+- Files matching patterns in .gitignore are excluded
+- Files matching default ignore patterns are excluded
+- Files are sorted by Git change count (files with more changes are at the bottom)
+</notes>
+
+</file_summary>
+
+<directory_structure>
+ai_skeleton_code/client/src/App.d.ts
+ai_skeleton_code/client/src/components/connect-wallet.d.ts
+ai_skeleton_code/client/src/components/footer.d.ts
+ai_skeleton_code/client/src/components/header.d.ts
+ai_skeleton_code/client/src/components/layout.d.ts
+ai_skeleton_code/client/src/components/notification-indicator.d.ts
+ai_skeleton_code/client/src/components/stepper.d.ts
+ai_skeleton_code/client/src/components/theme-provider.d.ts
+ai_skeleton_code/client/src/components/theme-toggle.d.ts
+ai_skeleton_code/client/src/components/trade-status-badge.d.ts
+ai_skeleton_code/client/src/components/ui/accordion.d.ts
+ai_skeleton_code/client/src/components/ui/alert-dialog.d.ts
+ai_skeleton_code/client/src/components/ui/alert.d.ts
+ai_skeleton_code/client/src/components/ui/aspect-ratio.d.ts
+ai_skeleton_code/client/src/components/ui/avatar.d.ts
+ai_skeleton_code/client/src/components/ui/badge.d.ts
+ai_skeleton_code/client/src/components/ui/breadcrumb.d.ts
+ai_skeleton_code/client/src/components/ui/button.d.ts
+ai_skeleton_code/client/src/components/ui/calendar.d.ts
+ai_skeleton_code/client/src/components/ui/card.d.ts
+ai_skeleton_code/client/src/components/ui/carousel.d.ts
+ai_skeleton_code/client/src/components/ui/chart.d.ts
+ai_skeleton_code/client/src/components/ui/checkbox.d.ts
+ai_skeleton_code/client/src/components/ui/collapsible.d.ts
+ai_skeleton_code/client/src/components/ui/command.d.ts
+ai_skeleton_code/client/src/components/ui/context-menu.d.ts
+ai_skeleton_code/client/src/components/ui/dialog.d.ts
+ai_skeleton_code/client/src/components/ui/drawer.d.ts
+ai_skeleton_code/client/src/components/ui/dropdown-menu.d.ts
+ai_skeleton_code/client/src/components/ui/form.d.ts
+ai_skeleton_code/client/src/components/ui/hover-card.d.ts
+ai_skeleton_code/client/src/components/ui/input-otp.d.ts
+ai_skeleton_code/client/src/components/ui/input.d.ts
+ai_skeleton_code/client/src/components/ui/label.d.ts
+ai_skeleton_code/client/src/components/ui/menubar.d.ts
+ai_skeleton_code/client/src/components/ui/navigation-menu.d.ts
+ai_skeleton_code/client/src/components/ui/pagination.d.ts
+ai_skeleton_code/client/src/components/ui/popover.d.ts
+ai_skeleton_code/client/src/components/ui/progress.d.ts
+ai_skeleton_code/client/src/components/ui/radio-group.d.ts
+ai_skeleton_code/client/src/components/ui/resizable.d.ts
+ai_skeleton_code/client/src/components/ui/scroll-area.d.ts
+ai_skeleton_code/client/src/components/ui/select.d.ts
+ai_skeleton_code/client/src/components/ui/separator.d.ts
+ai_skeleton_code/client/src/components/ui/sheet.d.ts
+ai_skeleton_code/client/src/components/ui/sidebar.d.ts
+ai_skeleton_code/client/src/components/ui/skeleton.d.ts
+ai_skeleton_code/client/src/components/ui/slider.d.ts
+ai_skeleton_code/client/src/components/ui/switch.d.ts
+ai_skeleton_code/client/src/components/ui/table.d.ts
+ai_skeleton_code/client/src/components/ui/tabs.d.ts
+ai_skeleton_code/client/src/components/ui/textarea.d.ts
+ai_skeleton_code/client/src/components/ui/toast.d.ts
+ai_skeleton_code/client/src/components/ui/toaster.d.ts
+ai_skeleton_code/client/src/components/ui/toggle-group.d.ts
+ai_skeleton_code/client/src/components/ui/toggle.d.ts
+ai_skeleton_code/client/src/components/ui/tooltip.d.ts
+ai_skeleton_code/client/src/components/websocket-provider.d.ts
+ai_skeleton_code/client/src/hooks/use-mobile.d.ts
+ai_skeleton_code/client/src/hooks/use-safe-sdk.d.ts
+ai_skeleton_code/client/src/hooks/use-toast.d.ts
+ai_skeleton_code/client/src/hooks/use-websocket.d.ts
+ai_skeleton_code/client/src/lib/contracts/addresses.d.ts
+ai_skeleton_code/client/src/lib/contracts/EscrowABI.d.ts
+ai_skeleton_code/client/src/lib/contracts/SafeExchangeABI.d.ts
+ai_skeleton_code/client/src/lib/export-pdf.d.ts
+ai_skeleton_code/client/src/lib/queryClient.d.ts
+ai_skeleton_code/client/src/lib/safe-sdk.d.ts
+ai_skeleton_code/client/src/lib/utils.d.ts
+ai_skeleton_code/client/src/lib/wagmi.d.ts
+ai_skeleton_code/client/src/main.d.ts
+ai_skeleton_code/client/src/pages/dashboard.d.ts
+ai_skeleton_code/client/src/pages/evidence.d.ts
+ai_skeleton_code/client/src/pages/home.d.ts
+ai_skeleton_code/client/src/pages/learn.d.ts
+ai_skeleton_code/client/src/pages/legal.d.ts
+ai_skeleton_code/client/src/pages/not-found.d.ts
+ai_skeleton_code/client/src/pages/transfer/buy.d.ts
+ai_skeleton_code/client/src/pages/transfer/index.d.ts
+ai_skeleton_code/client/src/pages/transfer/sell.d.ts
+ai_skeleton_code/client/src/pages/wallet-transparency.d.ts
+ai_skeleton_code/server/db.d.ts
+ai_skeleton_code/server/index.d.ts
+ai_skeleton_code/server/routes.d.ts
+ai_skeleton_code/server/safe-watcher.d.ts
+ai_skeleton_code/server/static.d.ts
+ai_skeleton_code/server/storage.d.ts
+ai_skeleton_code/server/vite.d.ts
+ai_skeleton_code/server/websocket.d.ts
+ai_skeleton_code/shared/schema.d.ts
+ai_skeleton_code/vite.config.d.ts
+</directory_structure>
+
+<files>
+This section contains the contents of the repository's files.
+
+<file path="ai_skeleton_code/client/src/App.d.ts">
+declare function App(): import("react").JSX.Element;
+export default App;
+</file>
+
+<file path="ai_skeleton_code/client/src/components/connect-wallet.d.ts">
+export declare function ConnectWallet(): import("react").JSX.Element;
+</file>
+
+<file path="ai_skeleton_code/client/src/components/footer.d.ts">
+export declare function Footer(): import("react").JSX.Element;
+</file>
+
+<file path="ai_skeleton_code/client/src/components/header.d.ts">
+export declare function Header(): import("react").JSX.Element;
+</file>
+
+<file path="ai_skeleton_code/client/src/components/layout.d.ts">
+interface LayoutProps {
+    children: React.ReactNode;
+}
+export declare function Layout({ children }: LayoutProps): import("react").JSX.Element;
+export {};
+</file>
+
+<file path="ai_skeleton_code/client/src/components/notification-indicator.d.ts">
+export declare function NotificationIndicator(): import("react").JSX.Element;
+</file>
+
+<file path="ai_skeleton_code/client/src/components/stepper.d.ts">
+interface Step {
+    id: number;
+    title: string;
+    description?: string;
+}
+interface StepperProps {
+    steps: Step[];
+    currentStep: number;
+    className?: string;
+}
+export declare function Stepper({ steps, currentStep, className }: StepperProps): import("react").JSX.Element;
+export {};
+</file>
+
+<file path="ai_skeleton_code/client/src/components/theme-provider.d.ts">
+type Theme = "dark" | "light" | "system";
+type ThemeProviderProps = {
+    children: React.ReactNode;
+    defaultTheme?: Theme;
+    storageKey?: string;
+};
+type ThemeProviderState = {
+    theme: Theme;
+    setTheme: (theme: Theme) => void;
+};
+export declare function ThemeProvider({ children, defaultTheme, storageKey, ...props }: ThemeProviderProps): import("react").JSX.Element;
+export declare const useTheme: () => ThemeProviderState;
+export {};
+</file>
+
+<file path="ai_skeleton_code/client/src/components/theme-toggle.d.ts">
+export declare function ThemeToggle(): import("react").JSX.Element;
+</file>
+
+<file path="ai_skeleton_code/client/src/components/trade-status-badge.d.ts">
+import type { TradeStatus } from "@shared/schema";
+interface TradeStatusBadgeProps {
+    status: TradeStatus;
+}
+export declare function TradeStatusBadge({ status }: TradeStatusBadgeProps): import("react").JSX.Element;
+export {};
+</file>
+
+<file path="ai_skeleton_code/client/src/components/ui/accordion.d.ts">
+import * as React from "react";
+import * as AccordionPrimitive from "@radix-ui/react-accordion";
+declare const Accordion: React.ForwardRefExoticComponent<(AccordionPrimitive.AccordionSingleProps | AccordionPrimitive.AccordionMultipleProps) & React.RefAttributes<HTMLDivElement>>;
+declare const AccordionItem: React.ForwardRefExoticComponent<Omit<AccordionPrimitive.AccordionItemProps & React.RefAttributes<HTMLDivElement>, "ref"> & React.RefAttributes<HTMLDivElement>>;
+declare const AccordionTrigger: React.ForwardRefExoticComponent<Omit<AccordionPrimitive.AccordionTriggerProps & React.RefAttributes<HTMLButtonElement>, "ref"> & React.RefAttributes<HTMLButtonElement>>;
+declare const AccordionContent: React.ForwardRefExoticComponent<Omit<AccordionPrimitive.AccordionContentProps & React.RefAttributes<HTMLDivElement>, "ref"> & React.RefAttributes<HTMLDivElement>>;
+export { Accordion, AccordionItem, AccordionTrigger, AccordionContent };
+</file>
+
+<file path="ai_skeleton_code/client/src/components/ui/alert-dialog.d.ts">
+import * as React from "react";
+import * as AlertDialogPrimitive from "@radix-ui/react-alert-dialog";
+declare const AlertDialog: React.FC<AlertDialogPrimitive.AlertDialogProps>;
+declare const AlertDialogTrigger: React.ForwardRefExoticComponent<AlertDialogPrimitive.AlertDialogTriggerProps & React.RefAttributes<HTMLButtonElement>>;
+declare const AlertDialogPortal: React.FC<AlertDialogPrimitive.AlertDialogPortalProps>;
+declare const AlertDialogOverlay: React.ForwardRefExoticComponent<Omit<AlertDialogPrimitive.AlertDialogOverlayProps & React.RefAttributes<HTMLDivElement>, "ref"> & React.RefAttributes<HTMLDivElement>>;
+declare const AlertDialogContent: React.ForwardRefExoticComponent<Omit<AlertDialogPrimitive.AlertDialogContentProps & React.RefAttributes<HTMLDivElement>, "ref"> & React.RefAttributes<HTMLDivElement>>;
+declare const AlertDialogHeader: {
+    ({ className, ...props }: React.HTMLAttributes<HTMLDivElement>): React.JSX.Element;
+    displayName: string;
+};
+declare const AlertDialogFooter: {
+    ({ className, ...props }: React.HTMLAttributes<HTMLDivElement>): React.JSX.Element;
+    displayName: string;
+};
+declare const AlertDialogTitle: React.ForwardRefExoticComponent<Omit<AlertDialogPrimitive.AlertDialogTitleProps & React.RefAttributes<HTMLHeadingElement>, "ref"> & React.RefAttributes<HTMLHeadingElement>>;
+declare const AlertDialogDescription: React.ForwardRefExoticComponent<Omit<AlertDialogPrimitive.AlertDialogDescriptionProps & React.RefAttributes<HTMLParagraphElement>, "ref"> & React.RefAttributes<HTMLParagraphElement>>;
+declare const AlertDialogAction: React.ForwardRefExoticComponent<Omit<AlertDialogPrimitive.AlertDialogActionProps & React.RefAttributes<HTMLButtonElement>, "ref"> & React.RefAttributes<HTMLButtonElement>>;
+declare const AlertDialogCancel: React.ForwardRefExoticComponent<Omit<AlertDialogPrimitive.AlertDialogCancelProps & React.RefAttributes<HTMLButtonElement>, "ref"> & React.RefAttributes<HTMLButtonElement>>;
+export { AlertDialog, AlertDialogPortal, AlertDialogOverlay, AlertDialogTrigger, AlertDialogContent, AlertDialogHeader, AlertDialogFooter, AlertDialogTitle, AlertDialogDescription, AlertDialogAction, AlertDialogCancel, };
+</file>
+
+<file path="ai_skeleton_code/client/src/components/ui/alert.d.ts">
+import * as React from "react";
+import { type VariantProps } from "class-variance-authority";
+declare const Alert: React.ForwardRefExoticComponent<React.HTMLAttributes<HTMLDivElement> & VariantProps<(props?: ({
+    variant?: "default" | "destructive" | null | undefined;
+} & import("class-variance-authority/types").ClassProp) | undefined) => string> & React.RefAttributes<HTMLDivElement>>;
+declare const AlertTitle: React.ForwardRefExoticComponent<React.HTMLAttributes<HTMLHeadingElement> & React.RefAttributes<HTMLParagraphElement>>;
+declare const AlertDescription: React.ForwardRefExoticComponent<React.HTMLAttributes<HTMLParagraphElement> & React.RefAttributes<HTMLParagraphElement>>;
+export { Alert, AlertTitle, AlertDescription };
+</file>
+
+<file path="ai_skeleton_code/client/src/components/ui/aspect-ratio.d.ts">
+import * as AspectRatioPrimitive from "@radix-ui/react-aspect-ratio";
+declare const AspectRatio: import("react").ForwardRefExoticComponent<AspectRatioPrimitive.AspectRatioProps & import("react").RefAttributes<HTMLDivElement>>;
+export { AspectRatio };
+</file>
+
+<file path="ai_skeleton_code/client/src/components/ui/avatar.d.ts">
+import * as React from "react";
+import * as AvatarPrimitive from "@radix-ui/react-avatar";
+declare const Avatar: React.ForwardRefExoticComponent<Omit<AvatarPrimitive.AvatarProps & React.RefAttributes<HTMLSpanElement>, "ref"> & React.RefAttributes<HTMLSpanElement>>;
+declare const AvatarImage: React.ForwardRefExoticComponent<Omit<AvatarPrimitive.AvatarImageProps & React.RefAttributes<HTMLImageElement>, "ref"> & React.RefAttributes<HTMLImageElement>>;
+declare const AvatarFallback: React.ForwardRefExoticComponent<Omit<AvatarPrimitive.AvatarFallbackProps & React.RefAttributes<HTMLSpanElement>, "ref"> & React.RefAttributes<HTMLSpanElement>>;
+export { Avatar, AvatarImage, AvatarFallback };
+</file>
+
+<file path="ai_skeleton_code/client/src/components/ui/badge.d.ts">
+import * as React from "react";
+import { type VariantProps } from "class-variance-authority";
+declare const badgeVariants: (props?: ({
+    variant?: "default" | "destructive" | "outline" | "secondary" | null | undefined;
+} & import("class-variance-authority/types").ClassProp) | undefined) => string;
+export interface BadgeProps extends React.HTMLAttributes<HTMLDivElement>, VariantProps<typeof badgeVariants> {
+}
+declare function Badge({ className, variant, ...props }: BadgeProps): React.JSX.Element;
+export { Badge, badgeVariants };
+</file>
+
+<file path="ai_skeleton_code/client/src/components/ui/breadcrumb.d.ts">
+import * as React from "react";
+declare const Breadcrumb: React.ForwardRefExoticComponent<Omit<React.DetailedHTMLProps<React.HTMLAttributes<HTMLElement>, HTMLElement>, "ref"> & {
+    separator?: React.ReactNode;
+} & React.RefAttributes<HTMLElement>>;
+declare const BreadcrumbList: React.ForwardRefExoticComponent<Omit<React.DetailedHTMLProps<React.OlHTMLAttributes<HTMLOListElement>, HTMLOListElement>, "ref"> & React.RefAttributes<HTMLOListElement>>;
+declare const BreadcrumbItem: React.ForwardRefExoticComponent<Omit<React.DetailedHTMLProps<React.LiHTMLAttributes<HTMLLIElement>, HTMLLIElement>, "ref"> & React.RefAttributes<HTMLLIElement>>;
+declare const BreadcrumbLink: React.ForwardRefExoticComponent<Omit<React.DetailedHTMLProps<React.AnchorHTMLAttributes<HTMLAnchorElement>, HTMLAnchorElement>, "ref"> & {
+    asChild?: boolean;
+} & React.RefAttributes<HTMLAnchorElement>>;
+declare const BreadcrumbPage: React.ForwardRefExoticComponent<Omit<React.DetailedHTMLProps<React.HTMLAttributes<HTMLSpanElement>, HTMLSpanElement>, "ref"> & React.RefAttributes<HTMLSpanElement>>;
+declare const BreadcrumbSeparator: {
+    ({ children, className, ...props }: React.ComponentProps<"li">): React.JSX.Element;
+    displayName: string;
+};
+declare const BreadcrumbEllipsis: {
+    ({ className, ...props }: React.ComponentProps<"span">): React.JSX.Element;
+    displayName: string;
+};
+export { Breadcrumb, BreadcrumbList, BreadcrumbItem, BreadcrumbLink, BreadcrumbPage, BreadcrumbSeparator, BreadcrumbEllipsis, };
+</file>
+
+<file path="ai_skeleton_code/client/src/components/ui/button.d.ts">
+import * as React from "react";
+import { type VariantProps } from "class-variance-authority";
+declare const buttonVariants: (props?: ({
+    variant?: "default" | "destructive" | "outline" | "secondary" | "ghost" | null | undefined;
+    size?: "default" | "icon" | "sm" | "lg" | null | undefined;
+} & import("class-variance-authority/types").ClassProp) | undefined) => string;
+export interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement>, VariantProps<typeof buttonVariants> {
+    asChild?: boolean;
+}
+declare const Button: React.ForwardRefExoticComponent<ButtonProps & React.RefAttributes<HTMLButtonElement>>;
+export { Button, buttonVariants };
+</file>
+
+<file path="ai_skeleton_code/client/src/components/ui/calendar.d.ts">
+import * as React from "react";
+import { DayPicker } from "react-day-picker";
+export type CalendarProps = React.ComponentProps<typeof DayPicker>;
+declare function Calendar({ className, classNames, showOutsideDays, ...props }: CalendarProps): React.JSX.Element;
+declare namespace Calendar {
+    var displayName: string;
+}
+export { Calendar };
+</file>
+
+<file path="ai_skeleton_code/client/src/components/ui/card.d.ts">
+import * as React from "react";
+declare const Card: React.ForwardRefExoticComponent<React.HTMLAttributes<HTMLDivElement> & React.RefAttributes<HTMLDivElement>>;
+declare const CardHeader: React.ForwardRefExoticComponent<React.HTMLAttributes<HTMLDivElement> & React.RefAttributes<HTMLDivElement>>;
+declare const CardTitle: React.ForwardRefExoticComponent<React.HTMLAttributes<HTMLDivElement> & React.RefAttributes<HTMLDivElement>>;
+declare const CardDescription: React.ForwardRefExoticComponent<React.HTMLAttributes<HTMLDivElement> & React.RefAttributes<HTMLDivElement>>;
+declare const CardContent: React.ForwardRefExoticComponent<React.HTMLAttributes<HTMLDivElement> & React.RefAttributes<HTMLDivElement>>;
+declare const CardFooter: React.ForwardRefExoticComponent<React.HTMLAttributes<HTMLDivElement> & React.RefAttributes<HTMLDivElement>>;
+export { Card, CardHeader, CardFooter, CardTitle, CardDescription, CardContent, };
+</file>
+
+<file path="ai_skeleton_code/client/src/components/ui/carousel.d.ts">
+import * as React from "react";
+import useEmblaCarousel, { type UseEmblaCarouselType } from "embla-carousel-react";
+type CarouselApi = UseEmblaCarouselType[1];
+type UseCarouselParameters = Parameters<typeof useEmblaCarousel>;
+type CarouselOptions = UseCarouselParameters[0];
+type CarouselPlugin = UseCarouselParameters[1];
+type CarouselProps = {
+    opts?: CarouselOptions;
+    plugins?: CarouselPlugin;
+    orientation?: "horizontal" | "vertical";
+    setApi?: (api: CarouselApi) => void;
+};
+declare const Carousel: React.ForwardRefExoticComponent<React.HTMLAttributes<HTMLDivElement> & CarouselProps & React.RefAttributes<HTMLDivElement>>;
+declare const CarouselContent: React.ForwardRefExoticComponent<React.HTMLAttributes<HTMLDivElement> & React.RefAttributes<HTMLDivElement>>;
+declare const CarouselItem: React.ForwardRefExoticComponent<React.HTMLAttributes<HTMLDivElement> & React.RefAttributes<HTMLDivElement>>;
+declare const CarouselPrevious: React.ForwardRefExoticComponent<Omit<import("@/components/ui/button").ButtonProps & React.RefAttributes<HTMLButtonElement>, "ref"> & React.RefAttributes<HTMLButtonElement>>;
+declare const CarouselNext: React.ForwardRefExoticComponent<Omit<import("@/components/ui/button").ButtonProps & React.RefAttributes<HTMLButtonElement>, "ref"> & React.RefAttributes<HTMLButtonElement>>;
+export { type CarouselApi, Carousel, CarouselContent, CarouselItem, CarouselPrevious, CarouselNext, };
+</file>
+
+<file path="ai_skeleton_code/client/src/components/ui/chart.d.ts">
+import * as React from "react";
+import * as RechartsPrimitive from "recharts";
+declare const THEMES: {
+    readonly light: "";
+    readonly dark: ".dark";
+};
+export type ChartConfig = {
+    [k in string]: {
+        label?: React.ReactNode;
+        icon?: React.ComponentType;
+    } & ({
+        color?: string;
+        theme?: never;
+    } | {
+        color?: never;
+        theme: Record<keyof typeof THEMES, string>;
+    });
+};
+declare const ChartContainer: React.ForwardRefExoticComponent<Omit<React.ClassAttributes<HTMLDivElement> & React.HTMLAttributes<HTMLDivElement> & {
+    config: ChartConfig;
+    children: React.ComponentProps<typeof RechartsPrimitive.ResponsiveContainer>["children"];
+}, "ref"> & React.RefAttributes<HTMLDivElement>>;
+declare const ChartStyle: ({ id, config }: {
+    id: string;
+    config: ChartConfig;
+}) => React.JSX.Element | null;
+declare const ChartTooltip: typeof RechartsPrimitive.Tooltip;
+declare const ChartTooltipContent: React.ForwardRefExoticComponent<Omit<RechartsPrimitive.DefaultTooltipContentProps<import("recharts/types/component/DefaultTooltipContent").ValueType, import("recharts/types/component/DefaultTooltipContent").NameType> & {
+    accessibilityLayer?: boolean;
+    active?: boolean | undefined;
+    includeHidden?: boolean | undefined;
+    allowEscapeViewBox?: import("recharts/types/util/types").AllowInDimension;
+    animationDuration?: import("recharts/types/util/types").AnimationDuration;
+    animationEasing?: import("recharts/types/util/types").AnimationTiming;
+    content?: import("recharts/types/component/Tooltip").ContentType<import("recharts/types/component/DefaultTooltipContent").ValueType, import("recharts/types/component/DefaultTooltipContent").NameType> | undefined;
+    coordinate?: Partial<import("recharts/types/util/types").Coordinate>;
+    cursor?: boolean | React.ReactElement | React.SVGProps<SVGElement>;
+    filterNull?: boolean;
+    defaultIndex?: number;
+    isAnimationActive?: boolean;
+    offset?: number;
+    payloadUniqBy?: import("recharts/types/util/payload/getUniqPayload").UniqueOption<import("recharts/types/component/DefaultTooltipContent").Payload<import("recharts/types/component/DefaultTooltipContent").ValueType, import("recharts/types/component/DefaultTooltipContent").NameType>> | undefined;
+    position?: Partial<import("recharts/types/util/types").Coordinate>;
+    reverseDirection?: import("recharts/types/util/types").AllowInDimension;
+    shared?: boolean;
+    trigger?: "hover" | "click";
+    useTranslate3d?: boolean;
+    viewBox?: import("recharts/types/util/types").CartesianViewBox;
+    wrapperStyle?: React.CSSProperties;
+} & React.ClassAttributes<HTMLDivElement> & React.HTMLAttributes<HTMLDivElement> & {
+    hideLabel?: boolean;
+    hideIndicator?: boolean;
+    indicator?: "line" | "dot" | "dashed";
+    nameKey?: string;
+    labelKey?: string;
+}, "ref"> & React.RefAttributes<HTMLDivElement>>;
+declare const ChartLegend: typeof RechartsPrimitive.Legend;
+declare const ChartLegendContent: React.ForwardRefExoticComponent<Omit<React.ClassAttributes<HTMLDivElement> & React.HTMLAttributes<HTMLDivElement> & Pick<RechartsPrimitive.LegendProps, "payload" | "verticalAlign"> & {
+    hideIcon?: boolean;
+    nameKey?: string;
+}, "ref"> & React.RefAttributes<HTMLDivElement>>;
+export { ChartContainer, ChartTooltip, ChartTooltipContent, ChartLegend, ChartLegendContent, ChartStyle, };
+</file>
+
+<file path="ai_skeleton_code/client/src/components/ui/checkbox.d.ts">
+import * as React from "react";
+import * as CheckboxPrimitive from "@radix-ui/react-checkbox";
+declare const Checkbox: React.ForwardRefExoticComponent<Omit<CheckboxPrimitive.CheckboxProps & React.RefAttributes<HTMLButtonElement>, "ref"> & React.RefAttributes<HTMLButtonElement>>;
+export { Checkbox };
+</file>
+
+<file path="ai_skeleton_code/client/src/components/ui/collapsible.d.ts">
+import * as CollapsiblePrimitive from "@radix-ui/react-collapsible";
+declare const Collapsible: import("react").ForwardRefExoticComponent<CollapsiblePrimitive.CollapsibleProps & import("react").RefAttributes<HTMLDivElement>>;
+declare const CollapsibleTrigger: import("react").ForwardRefExoticComponent<CollapsiblePrimitive.CollapsibleTriggerProps & import("react").RefAttributes<HTMLButtonElement>>;
+declare const CollapsibleContent: import("react").ForwardRefExoticComponent<CollapsiblePrimitive.CollapsibleContentProps & import("react").RefAttributes<HTMLDivElement>>;
+export { Collapsible, CollapsibleTrigger, CollapsibleContent };
+</file>
+
+<file path="ai_skeleton_code/client/src/components/ui/command.d.ts">
+import * as React from "react";
+import { type DialogProps } from "@radix-ui/react-dialog";
+declare const Command: React.ForwardRefExoticComponent<Omit<{
+    children?: React.ReactNode;
+} & Pick<Pick<React.DetailedHTMLProps<React.HTMLAttributes<HTMLDivElement>, HTMLDivElement>, "key" | keyof React.HTMLAttributes<HTMLDivElement>> & {
+    ref?: React.Ref<HTMLDivElement>;
+} & {
+    asChild?: boolean;
+}, "key" | "asChild" | keyof React.HTMLAttributes<HTMLDivElement>> & {
+    label?: string;
+    shouldFilter?: boolean;
+    filter?: (value: string, search: string, keywords?: string[]) => number;
+    defaultValue?: string;
+    value?: string;
+    onValueChange?: (value: string) => void;
+    loop?: boolean;
+    disablePointerSelection?: boolean;
+    vimBindings?: boolean;
+} & React.RefAttributes<HTMLDivElement>, "ref"> & React.RefAttributes<HTMLDivElement>>;
+declare const CommandDialog: ({ children, ...props }: DialogProps) => React.JSX.Element;
+declare const CommandInput: React.ForwardRefExoticComponent<Omit<Omit<Pick<Pick<React.DetailedHTMLProps<React.InputHTMLAttributes<HTMLInputElement>, HTMLInputElement>, "key" | keyof React.InputHTMLAttributes<HTMLInputElement>> & {
+    ref?: React.Ref<HTMLInputElement>;
+} & {
+    asChild?: boolean;
+}, "key" | "asChild" | keyof React.InputHTMLAttributes<HTMLInputElement>>, "type" | "value" | "onChange"> & {
+    value?: string;
+    onValueChange?: (search: string) => void;
+} & React.RefAttributes<HTMLInputElement>, "ref"> & React.RefAttributes<HTMLInputElement>>;
+declare const CommandList: React.ForwardRefExoticComponent<Omit<{
+    children?: React.ReactNode;
+} & Pick<Pick<React.DetailedHTMLProps<React.HTMLAttributes<HTMLDivElement>, HTMLDivElement>, "key" | keyof React.HTMLAttributes<HTMLDivElement>> & {
+    ref?: React.Ref<HTMLDivElement>;
+} & {
+    asChild?: boolean;
+}, "key" | "asChild" | keyof React.HTMLAttributes<HTMLDivElement>> & {
+    label?: string;
+} & React.RefAttributes<HTMLDivElement>, "ref"> & React.RefAttributes<HTMLDivElement>>;
+declare const CommandEmpty: React.ForwardRefExoticComponent<Omit<{
+    children?: React.ReactNode;
+} & Pick<Pick<React.DetailedHTMLProps<React.HTMLAttributes<HTMLDivElement>, HTMLDivElement>, "key" | keyof React.HTMLAttributes<HTMLDivElement>> & {
+    ref?: React.Ref<HTMLDivElement>;
+} & {
+    asChild?: boolean;
+}, "key" | "asChild" | keyof React.HTMLAttributes<HTMLDivElement>> & React.RefAttributes<HTMLDivElement>, "ref"> & React.RefAttributes<HTMLDivElement>>;
+declare const CommandGroup: React.ForwardRefExoticComponent<Omit<{
+    children?: React.ReactNode;
+} & Omit<Pick<Pick<React.DetailedHTMLProps<React.HTMLAttributes<HTMLDivElement>, HTMLDivElement>, "key" | keyof React.HTMLAttributes<HTMLDivElement>> & {
+    ref?: React.Ref<HTMLDivElement>;
+} & {
+    asChild?: boolean;
+}, "key" | "asChild" | keyof React.HTMLAttributes<HTMLDivElement>>, "value" | "heading"> & {
+    heading?: React.ReactNode;
+    value?: string;
+    forceMount?: boolean;
+} & React.RefAttributes<HTMLDivElement>, "ref"> & React.RefAttributes<HTMLDivElement>>;
+declare const CommandSeparator: React.ForwardRefExoticComponent<Omit<Pick<Pick<React.DetailedHTMLProps<React.HTMLAttributes<HTMLDivElement>, HTMLDivElement>, "key" | keyof React.HTMLAttributes<HTMLDivElement>> & {
+    ref?: React.Ref<HTMLDivElement>;
+} & {
+    asChild?: boolean;
+}, "key" | "asChild" | keyof React.HTMLAttributes<HTMLDivElement>> & {
+    alwaysRender?: boolean;
+} & React.RefAttributes<HTMLDivElement>, "ref"> & React.RefAttributes<HTMLDivElement>>;
+declare const CommandItem: React.ForwardRefExoticComponent<Omit<{
+    children?: React.ReactNode;
+} & Omit<Pick<Pick<React.DetailedHTMLProps<React.HTMLAttributes<HTMLDivElement>, HTMLDivElement>, "key" | keyof React.HTMLAttributes<HTMLDivElement>> & {
+    ref?: React.Ref<HTMLDivElement>;
+} & {
+    asChild?: boolean;
+}, "key" | "asChild" | keyof React.HTMLAttributes<HTMLDivElement>>, "value" | "disabled" | "onSelect"> & {
+    disabled?: boolean;
+    onSelect?: (value: string) => void;
+    value?: string;
+    keywords?: string[];
+    forceMount?: boolean;
+} & React.RefAttributes<HTMLDivElement>, "ref"> & React.RefAttributes<HTMLDivElement>>;
+declare const CommandShortcut: {
+    ({ className, ...props }: React.HTMLAttributes<HTMLSpanElement>): React.JSX.Element;
+    displayName: string;
+};
+export { Command, CommandDialog, CommandInput, CommandList, CommandEmpty, CommandGroup, CommandItem, CommandShortcut, CommandSeparator, };
+</file>
+
+<file path="ai_skeleton_code/client/src/components/ui/context-menu.d.ts">
+import * as React from "react";
+import * as ContextMenuPrimitive from "@radix-ui/react-context-menu";
+declare const ContextMenu: React.FC<ContextMenuPrimitive.ContextMenuProps>;
+declare const ContextMenuTrigger: React.ForwardRefExoticComponent<ContextMenuPrimitive.ContextMenuTriggerProps & React.RefAttributes<HTMLSpanElement>>;
+declare const ContextMenuGroup: React.ForwardRefExoticComponent<ContextMenuPrimitive.ContextMenuGroupProps & React.RefAttributes<HTMLDivElement>>;
+declare const ContextMenuPortal: React.FC<ContextMenuPrimitive.ContextMenuPortalProps>;
+declare const ContextMenuSub: React.FC<ContextMenuPrimitive.ContextMenuSubProps>;
+declare const ContextMenuRadioGroup: React.ForwardRefExoticComponent<ContextMenuPrimitive.ContextMenuRadioGroupProps & React.RefAttributes<HTMLDivElement>>;
+declare const ContextMenuSubTrigger: React.ForwardRefExoticComponent<Omit<ContextMenuPrimitive.ContextMenuSubTriggerProps & React.RefAttributes<HTMLDivElement>, "ref"> & {
+    inset?: boolean;
+} & React.RefAttributes<HTMLDivElement>>;
+declare const ContextMenuSubContent: React.ForwardRefExoticComponent<Omit<ContextMenuPrimitive.ContextMenuSubContentProps & React.RefAttributes<HTMLDivElement>, "ref"> & React.RefAttributes<HTMLDivElement>>;
+declare const ContextMenuContent: React.ForwardRefExoticComponent<Omit<ContextMenuPrimitive.ContextMenuContentProps & React.RefAttributes<HTMLDivElement>, "ref"> & React.RefAttributes<HTMLDivElement>>;
+declare const ContextMenuItem: React.ForwardRefExoticComponent<Omit<ContextMenuPrimitive.ContextMenuItemProps & React.RefAttributes<HTMLDivElement>, "ref"> & {
+    inset?: boolean;
+} & React.RefAttributes<HTMLDivElement>>;
+declare const ContextMenuCheckboxItem: React.ForwardRefExoticComponent<Omit<ContextMenuPrimitive.ContextMenuCheckboxItemProps & React.RefAttributes<HTMLDivElement>, "ref"> & React.RefAttributes<HTMLDivElement>>;
+declare const ContextMenuRadioItem: React.ForwardRefExoticComponent<Omit<ContextMenuPrimitive.ContextMenuRadioItemProps & React.RefAttributes<HTMLDivElement>, "ref"> & React.RefAttributes<HTMLDivElement>>;
+declare const ContextMenuLabel: React.ForwardRefExoticComponent<Omit<ContextMenuPrimitive.ContextMenuLabelProps & React.RefAttributes<HTMLDivElement>, "ref"> & {
+    inset?: boolean;
+} & React.RefAttributes<HTMLDivElement>>;
+declare const ContextMenuSeparator: React.ForwardRefExoticComponent<Omit<ContextMenuPrimitive.ContextMenuSeparatorProps & React.RefAttributes<HTMLDivElement>, "ref"> & React.RefAttributes<HTMLDivElement>>;
+declare const ContextMenuShortcut: {
+    ({ className, ...props }: React.HTMLAttributes<HTMLSpanElement>): React.JSX.Element;
+    displayName: string;
+};
+export { ContextMenu, ContextMenuTrigger, ContextMenuContent, ContextMenuItem, ContextMenuCheckboxItem, ContextMenuRadioItem, ContextMenuLabel, ContextMenuSeparator, ContextMenuShortcut, ContextMenuGroup, ContextMenuPortal, ContextMenuSub, ContextMenuSubContent, ContextMenuSubTrigger, ContextMenuRadioGroup, };
+</file>
+
+<file path="ai_skeleton_code/client/src/components/ui/dialog.d.ts">
+import * as React from "react";
+import * as DialogPrimitive from "@radix-ui/react-dialog";
+declare const Dialog: React.FC<DialogPrimitive.DialogProps>;
+declare const DialogTrigger: React.ForwardRefExoticComponent<DialogPrimitive.DialogTriggerProps & React.RefAttributes<HTMLButtonElement>>;
+declare const DialogPortal: React.FC<DialogPrimitive.DialogPortalProps>;
+declare const DialogClose: React.ForwardRefExoticComponent<DialogPrimitive.DialogCloseProps & React.RefAttributes<HTMLButtonElement>>;
+declare const DialogOverlay: React.ForwardRefExoticComponent<Omit<DialogPrimitive.DialogOverlayProps & React.RefAttributes<HTMLDivElement>, "ref"> & React.RefAttributes<HTMLDivElement>>;
+declare const DialogContent: React.ForwardRefExoticComponent<Omit<DialogPrimitive.DialogContentProps & React.RefAttributes<HTMLDivElement>, "ref"> & React.RefAttributes<HTMLDivElement>>;
+declare const DialogHeader: {
+    ({ className, ...props }: React.HTMLAttributes<HTMLDivElement>): React.JSX.Element;
+    displayName: string;
+};
+declare const DialogFooter: {
+    ({ className, ...props }: React.HTMLAttributes<HTMLDivElement>): React.JSX.Element;
+    displayName: string;
+};
+declare const DialogTitle: React.ForwardRefExoticComponent<Omit<DialogPrimitive.DialogTitleProps & React.RefAttributes<HTMLHeadingElement>, "ref"> & React.RefAttributes<HTMLHeadingElement>>;
+declare const DialogDescription: React.ForwardRefExoticComponent<Omit<DialogPrimitive.DialogDescriptionProps & React.RefAttributes<HTMLParagraphElement>, "ref"> & React.RefAttributes<HTMLParagraphElement>>;
+export { Dialog, DialogPortal, DialogOverlay, DialogClose, DialogTrigger, DialogContent, DialogHeader, DialogFooter, DialogTitle, DialogDescription, };
+</file>
+
+<file path="ai_skeleton_code/client/src/components/ui/drawer.d.ts">
+import * as React from "react";
+import { Drawer as DrawerPrimitive } from "vaul";
+declare const Drawer: {
+    ({ shouldScaleBackground, ...props }: React.ComponentProps<typeof DrawerPrimitive.Root>): React.JSX.Element;
+    displayName: string;
+};
+declare const DrawerTrigger: React.ForwardRefExoticComponent<import("@radix-ui/react-dialog").DialogTriggerProps & React.RefAttributes<HTMLButtonElement>>;
+declare const DrawerPortal: typeof import("vaul").Portal;
+declare const DrawerClose: React.ForwardRefExoticComponent<import("@radix-ui/react-dialog").DialogCloseProps & React.RefAttributes<HTMLButtonElement>>;
+declare const DrawerOverlay: React.ForwardRefExoticComponent<Omit<Omit<import("@radix-ui/react-dialog").DialogOverlayProps & React.RefAttributes<HTMLDivElement>, "ref"> & React.RefAttributes<HTMLDivElement>, "ref"> & React.RefAttributes<HTMLDivElement>>;
+declare const DrawerContent: React.ForwardRefExoticComponent<Omit<Omit<import("@radix-ui/react-dialog").DialogContentProps & React.RefAttributes<HTMLDivElement>, "ref"> & React.RefAttributes<HTMLDivElement>, "ref"> & React.RefAttributes<HTMLDivElement>>;
+declare const DrawerHeader: {
+    ({ className, ...props }: React.HTMLAttributes<HTMLDivElement>): React.JSX.Element;
+    displayName: string;
+};
+declare const DrawerFooter: {
+    ({ className, ...props }: React.HTMLAttributes<HTMLDivElement>): React.JSX.Element;
+    displayName: string;
+};
+declare const DrawerTitle: React.ForwardRefExoticComponent<Omit<import("@radix-ui/react-dialog").DialogTitleProps & React.RefAttributes<HTMLHeadingElement>, "ref"> & React.RefAttributes<HTMLHeadingElement>>;
+declare const DrawerDescription: React.ForwardRefExoticComponent<Omit<import("@radix-ui/react-dialog").DialogDescriptionProps & React.RefAttributes<HTMLParagraphElement>, "ref"> & React.RefAttributes<HTMLParagraphElement>>;
+export { Drawer, DrawerPortal, DrawerOverlay, DrawerTrigger, DrawerClose, DrawerContent, DrawerHeader, DrawerFooter, DrawerTitle, DrawerDescription, };
+</file>
+
+<file path="ai_skeleton_code/client/src/components/ui/dropdown-menu.d.ts">
+import * as React from "react";
+import * as DropdownMenuPrimitive from "@radix-ui/react-dropdown-menu";
+declare const DropdownMenu: React.FC<DropdownMenuPrimitive.DropdownMenuProps>;
+declare const DropdownMenuTrigger: React.ForwardRefExoticComponent<DropdownMenuPrimitive.DropdownMenuTriggerProps & React.RefAttributes<HTMLButtonElement>>;
+declare const DropdownMenuGroup: React.ForwardRefExoticComponent<DropdownMenuPrimitive.DropdownMenuGroupProps & React.RefAttributes<HTMLDivElement>>;
+declare const DropdownMenuPortal: React.FC<DropdownMenuPrimitive.DropdownMenuPortalProps>;
+declare const DropdownMenuSub: React.FC<DropdownMenuPrimitive.DropdownMenuSubProps>;
+declare const DropdownMenuRadioGroup: React.ForwardRefExoticComponent<DropdownMenuPrimitive.DropdownMenuRadioGroupProps & React.RefAttributes<HTMLDivElement>>;
+declare const DropdownMenuSubTrigger: React.ForwardRefExoticComponent<Omit<DropdownMenuPrimitive.DropdownMenuSubTriggerProps & React.RefAttributes<HTMLDivElement>, "ref"> & {
+    inset?: boolean;
+} & React.RefAttributes<HTMLDivElement>>;
+declare const DropdownMenuSubContent: React.ForwardRefExoticComponent<Omit<DropdownMenuPrimitive.DropdownMenuSubContentProps & React.RefAttributes<HTMLDivElement>, "ref"> & React.RefAttributes<HTMLDivElement>>;
+declare const DropdownMenuContent: React.ForwardRefExoticComponent<Omit<DropdownMenuPrimitive.DropdownMenuContentProps & React.RefAttributes<HTMLDivElement>, "ref"> & React.RefAttributes<HTMLDivElement>>;
+declare const DropdownMenuItem: React.ForwardRefExoticComponent<Omit<DropdownMenuPrimitive.DropdownMenuItemProps & React.RefAttributes<HTMLDivElement>, "ref"> & {
+    inset?: boolean;
+} & React.RefAttributes<HTMLDivElement>>;
+declare const DropdownMenuCheckboxItem: React.ForwardRefExoticComponent<Omit<DropdownMenuPrimitive.DropdownMenuCheckboxItemProps & React.RefAttributes<HTMLDivElement>, "ref"> & React.RefAttributes<HTMLDivElement>>;
+declare const DropdownMenuRadioItem: React.ForwardRefExoticComponent<Omit<DropdownMenuPrimitive.DropdownMenuRadioItemProps & React.RefAttributes<HTMLDivElement>, "ref"> & React.RefAttributes<HTMLDivElement>>;
+declare const DropdownMenuLabel: React.ForwardRefExoticComponent<Omit<DropdownMenuPrimitive.DropdownMenuLabelProps & React.RefAttributes<HTMLDivElement>, "ref"> & {
+    inset?: boolean;
+} & React.RefAttributes<HTMLDivElement>>;
+declare const DropdownMenuSeparator: React.ForwardRefExoticComponent<Omit<DropdownMenuPrimitive.DropdownMenuSeparatorProps & React.RefAttributes<HTMLDivElement>, "ref"> & React.RefAttributes<HTMLDivElement>>;
+declare const DropdownMenuShortcut: {
+    ({ className, ...props }: React.HTMLAttributes<HTMLSpanElement>): React.JSX.Element;
+    displayName: string;
+};
+export { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem, DropdownMenuCheckboxItem, DropdownMenuRadioItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuShortcut, DropdownMenuGroup, DropdownMenuPortal, DropdownMenuSub, DropdownMenuSubContent, DropdownMenuSubTrigger, DropdownMenuRadioGroup, };
+</file>
+
+<file path="ai_skeleton_code/client/src/components/ui/form.d.ts">
+import * as React from "react";
+import * as LabelPrimitive from "@radix-ui/react-label";
+import { type ControllerProps, type FieldPath, type FieldValues } from "react-hook-form";
+declare const Form: <TFieldValues extends FieldValues, TContext = any, TTransformedValues = TFieldValues>(props: import("react-hook-form").FormProviderProps<TFieldValues, TContext, TTransformedValues>) => React.JSX.Element;
+declare const FormField: <TFieldValues extends FieldValues = FieldValues, TName extends FieldPath<TFieldValues> = FieldPath<TFieldValues>>({ ...props }: ControllerProps<TFieldValues, TName>) => React.JSX.Element;
+declare const useFormField: () => {
+    invalid: boolean;
+    isDirty: boolean;
+    isTouched: boolean;
+    isValidating: boolean;
+    error?: import("react-hook-form").FieldError;
+    id: string;
+    name: string;
+    formItemId: string;
+    formDescriptionId: string;
+    formMessageId: string;
+};
+declare const FormItem: React.ForwardRefExoticComponent<React.HTMLAttributes<HTMLDivElement> & React.RefAttributes<HTMLDivElement>>;
+declare const FormLabel: React.ForwardRefExoticComponent<Omit<LabelPrimitive.LabelProps & React.RefAttributes<HTMLLabelElement>, "ref"> & React.RefAttributes<HTMLLabelElement>>;
+declare const FormControl: React.ForwardRefExoticComponent<Omit<import("@radix-ui/react-slot").SlotProps & React.RefAttributes<HTMLElement>, "ref"> & React.RefAttributes<HTMLElement>>;
+declare const FormDescription: React.ForwardRefExoticComponent<React.HTMLAttributes<HTMLParagraphElement> & React.RefAttributes<HTMLParagraphElement>>;
+declare const FormMessage: React.ForwardRefExoticComponent<React.HTMLAttributes<HTMLParagraphElement> & React.RefAttributes<HTMLParagraphElement>>;
+export { useFormField, Form, FormItem, FormLabel, FormControl, FormDescription, FormMessage, FormField, };
+</file>
+
+<file path="ai_skeleton_code/client/src/components/ui/hover-card.d.ts">
+import * as React from "react";
+import * as HoverCardPrimitive from "@radix-ui/react-hover-card";
+declare const HoverCard: React.FC<HoverCardPrimitive.HoverCardProps>;
+declare const HoverCardTrigger: React.ForwardRefExoticComponent<HoverCardPrimitive.HoverCardTriggerProps & React.RefAttributes<HTMLAnchorElement>>;
+declare const HoverCardContent: React.ForwardRefExoticComponent<Omit<HoverCardPrimitive.HoverCardContentProps & React.RefAttributes<HTMLDivElement>, "ref"> & React.RefAttributes<HTMLDivElement>>;
+export { HoverCard, HoverCardTrigger, HoverCardContent };
+</file>
+
+<file path="ai_skeleton_code/client/src/components/ui/input-otp.d.ts">
+import * as React from "react";
+declare const InputOTP: React.ForwardRefExoticComponent<(Omit<Omit<React.InputHTMLAttributes<HTMLInputElement>, "value" | "onChange" | "maxLength" | "textAlign" | "onComplete" | "pushPasswordManagerStrategy" | "pasteTransformer" | "containerClassName" | "noScriptCSSFallback"> & {
+    value?: string;
+    onChange?: (newValue: string) => unknown;
+    maxLength: number;
+    textAlign?: "left" | "center" | "right";
+    onComplete?: (...args: any[]) => unknown;
+    pushPasswordManagerStrategy?: "increase-width" | "none";
+    pasteTransformer?: (pasted: string) => string;
+    containerClassName?: string;
+    noScriptCSSFallback?: string | null;
+} & {
+    render: (props: import("input-otp").RenderProps) => React.ReactNode;
+    children?: never;
+} & React.RefAttributes<HTMLInputElement>, "ref"> | Omit<Omit<React.InputHTMLAttributes<HTMLInputElement>, "value" | "onChange" | "maxLength" | "textAlign" | "onComplete" | "pushPasswordManagerStrategy" | "pasteTransformer" | "containerClassName" | "noScriptCSSFallback"> & {
+    value?: string;
+    onChange?: (newValue: string) => unknown;
+    maxLength: number;
+    textAlign?: "left" | "center" | "right";
+    onComplete?: (...args: any[]) => unknown;
+    pushPasswordManagerStrategy?: "increase-width" | "none";
+    pasteTransformer?: (pasted: string) => string;
+    containerClassName?: string;
+    noScriptCSSFallback?: string | null;
+} & {
+    render?: never;
+    children: React.ReactNode;
+} & React.RefAttributes<HTMLInputElement>, "ref">) & React.RefAttributes<HTMLInputElement>>;
+declare const InputOTPGroup: React.ForwardRefExoticComponent<Omit<React.DetailedHTMLProps<React.HTMLAttributes<HTMLDivElement>, HTMLDivElement>, "ref"> & React.RefAttributes<HTMLDivElement>>;
+declare const InputOTPSlot: React.ForwardRefExoticComponent<Omit<React.DetailedHTMLProps<React.HTMLAttributes<HTMLDivElement>, HTMLDivElement>, "ref"> & {
+    index: number;
+} & React.RefAttributes<HTMLDivElement>>;
+declare const InputOTPSeparator: React.ForwardRefExoticComponent<Omit<React.DetailedHTMLProps<React.HTMLAttributes<HTMLDivElement>, HTMLDivElement>, "ref"> & React.RefAttributes<HTMLDivElement>>;
+export { InputOTP, InputOTPGroup, InputOTPSlot, InputOTPSeparator };
+</file>
+
+<file path="ai_skeleton_code/client/src/components/ui/input.d.ts">
+import * as React from "react";
+declare const Input: React.ForwardRefExoticComponent<Omit<React.DetailedHTMLProps<React.InputHTMLAttributes<HTMLInputElement>, HTMLInputElement>, "ref"> & React.RefAttributes<HTMLInputElement>>;
+export { Input };
+</file>
+
+<file path="ai_skeleton_code/client/src/components/ui/label.d.ts">
+import * as React from "react";
+import * as LabelPrimitive from "@radix-ui/react-label";
+import { type VariantProps } from "class-variance-authority";
+declare const Label: React.ForwardRefExoticComponent<Omit<LabelPrimitive.LabelProps & React.RefAttributes<HTMLLabelElement>, "ref"> & VariantProps<(props?: import("class-variance-authority/types").ClassProp | undefined) => string> & React.RefAttributes<HTMLLabelElement>>;
+export { Label };
+</file>
+
+<file path="ai_skeleton_code/client/src/components/ui/menubar.d.ts">
+import * as React from "react";
+import * as MenubarPrimitive from "@radix-ui/react-menubar";
+declare function MenubarMenu({ ...props }: React.ComponentProps<typeof MenubarPrimitive.Menu>): React.JSX.Element;
+declare function MenubarGroup({ ...props }: React.ComponentProps<typeof MenubarPrimitive.Group>): React.JSX.Element;
+declare function MenubarPortal({ ...props }: React.ComponentProps<typeof MenubarPrimitive.Portal>): React.JSX.Element;
+declare function MenubarRadioGroup({ ...props }: React.ComponentProps<typeof MenubarPrimitive.RadioGroup>): React.JSX.Element;
+declare function MenubarSub({ ...props }: React.ComponentProps<typeof MenubarPrimitive.Sub>): React.JSX.Element;
+declare const Menubar: React.ForwardRefExoticComponent<Omit<MenubarPrimitive.MenubarProps & React.RefAttributes<HTMLDivElement>, "ref"> & React.RefAttributes<HTMLDivElement>>;
+declare const MenubarTrigger: React.ForwardRefExoticComponent<Omit<MenubarPrimitive.MenubarTriggerProps & React.RefAttributes<HTMLButtonElement>, "ref"> & React.RefAttributes<HTMLButtonElement>>;
+declare const MenubarSubTrigger: React.ForwardRefExoticComponent<Omit<MenubarPrimitive.MenubarSubTriggerProps & React.RefAttributes<HTMLDivElement>, "ref"> & {
+    inset?: boolean;
+} & React.RefAttributes<HTMLDivElement>>;
+declare const MenubarSubContent: React.ForwardRefExoticComponent<Omit<MenubarPrimitive.MenubarSubContentProps & React.RefAttributes<HTMLDivElement>, "ref"> & React.RefAttributes<HTMLDivElement>>;
+declare const MenubarContent: React.ForwardRefExoticComponent<Omit<MenubarPrimitive.MenubarContentProps & React.RefAttributes<HTMLDivElement>, "ref"> & React.RefAttributes<HTMLDivElement>>;
+declare const MenubarItem: React.ForwardRefExoticComponent<Omit<MenubarPrimitive.MenubarItemProps & React.RefAttributes<HTMLDivElement>, "ref"> & {
+    inset?: boolean;
+} & React.RefAttributes<HTMLDivElement>>;
+declare const MenubarCheckboxItem: React.ForwardRefExoticComponent<Omit<MenubarPrimitive.MenubarCheckboxItemProps & React.RefAttributes<HTMLDivElement>, "ref"> & React.RefAttributes<HTMLDivElement>>;
+declare const MenubarRadioItem: React.ForwardRefExoticComponent<Omit<MenubarPrimitive.MenubarRadioItemProps & React.RefAttributes<HTMLDivElement>, "ref"> & React.RefAttributes<HTMLDivElement>>;
+declare const MenubarLabel: React.ForwardRefExoticComponent<Omit<MenubarPrimitive.MenubarLabelProps & React.RefAttributes<HTMLDivElement>, "ref"> & {
+    inset?: boolean;
+} & React.RefAttributes<HTMLDivElement>>;
+declare const MenubarSeparator: React.ForwardRefExoticComponent<Omit<MenubarPrimitive.MenubarSeparatorProps & React.RefAttributes<HTMLDivElement>, "ref"> & React.RefAttributes<HTMLDivElement>>;
+declare const MenubarShortcut: {
+    ({ className, ...props }: React.HTMLAttributes<HTMLSpanElement>): React.JSX.Element;
+    displayname: string;
+};
+export { Menubar, MenubarMenu, MenubarTrigger, MenubarContent, MenubarItem, MenubarSeparator, MenubarLabel, MenubarCheckboxItem, MenubarRadioGroup, MenubarRadioItem, MenubarPortal, MenubarSubContent, MenubarSubTrigger, MenubarGroup, MenubarSub, MenubarShortcut, };
+</file>
+
+<file path="ai_skeleton_code/client/src/components/ui/navigation-menu.d.ts">
+import * as React from "react";
+import * as NavigationMenuPrimitive from "@radix-ui/react-navigation-menu";
+declare const NavigationMenu: React.ForwardRefExoticComponent<Omit<NavigationMenuPrimitive.NavigationMenuProps & React.RefAttributes<HTMLElement>, "ref"> & React.RefAttributes<HTMLElement>>;
+declare const NavigationMenuList: React.ForwardRefExoticComponent<Omit<NavigationMenuPrimitive.NavigationMenuListProps & React.RefAttributes<HTMLUListElement>, "ref"> & React.RefAttributes<HTMLUListElement>>;
+declare const NavigationMenuItem: React.ForwardRefExoticComponent<NavigationMenuPrimitive.NavigationMenuItemProps & React.RefAttributes<HTMLLIElement>>;
+declare const navigationMenuTriggerStyle: (props?: import("class-variance-authority/types").ClassProp | undefined) => string;
+declare const NavigationMenuTrigger: React.ForwardRefExoticComponent<Omit<NavigationMenuPrimitive.NavigationMenuTriggerProps & React.RefAttributes<HTMLButtonElement>, "ref"> & React.RefAttributes<HTMLButtonElement>>;
+declare const NavigationMenuContent: React.ForwardRefExoticComponent<Omit<NavigationMenuPrimitive.NavigationMenuContentProps & React.RefAttributes<HTMLDivElement>, "ref"> & React.RefAttributes<HTMLDivElement>>;
+declare const NavigationMenuLink: React.ForwardRefExoticComponent<NavigationMenuPrimitive.NavigationMenuLinkProps & React.RefAttributes<HTMLAnchorElement>>;
+declare const NavigationMenuViewport: React.ForwardRefExoticComponent<Omit<NavigationMenuPrimitive.NavigationMenuViewportProps & React.RefAttributes<HTMLDivElement>, "ref"> & React.RefAttributes<HTMLDivElement>>;
+declare const NavigationMenuIndicator: React.ForwardRefExoticComponent<Omit<NavigationMenuPrimitive.NavigationMenuIndicatorProps & React.RefAttributes<HTMLDivElement>, "ref"> & React.RefAttributes<HTMLDivElement>>;
+export { navigationMenuTriggerStyle, NavigationMenu, NavigationMenuList, NavigationMenuItem, NavigationMenuContent, NavigationMenuTrigger, NavigationMenuLink, NavigationMenuIndicator, NavigationMenuViewport, };
+</file>
+
+<file path="ai_skeleton_code/client/src/components/ui/pagination.d.ts">
+import * as React from "react";
+import { ButtonProps } from "@/components/ui/button";
+declare const Pagination: {
+    ({ className, ...props }: React.ComponentProps<"nav">): React.JSX.Element;
+    displayName: string;
+};
+declare const PaginationContent: React.ForwardRefExoticComponent<Omit<React.DetailedHTMLProps<React.HTMLAttributes<HTMLUListElement>, HTMLUListElement>, "ref"> & React.RefAttributes<HTMLUListElement>>;
+declare const PaginationItem: React.ForwardRefExoticComponent<Omit<React.DetailedHTMLProps<React.LiHTMLAttributes<HTMLLIElement>, HTMLLIElement>, "ref"> & React.RefAttributes<HTMLLIElement>>;
+type PaginationLinkProps = {
+    isActive?: boolean;
+} & Pick<ButtonProps, "size"> & React.ComponentProps<"a">;
+declare const PaginationLink: {
+    ({ className, isActive, size, ...props }: PaginationLinkProps): React.JSX.Element;
+    displayName: string;
+};
+declare const PaginationPrevious: {
+    ({ className, ...props }: React.ComponentProps<typeof PaginationLink>): React.JSX.Element;
+    displayName: string;
+};
+declare const PaginationNext: {
+    ({ className, ...props }: React.ComponentProps<typeof PaginationLink>): React.JSX.Element;
+    displayName: string;
+};
+declare const PaginationEllipsis: {
+    ({ className, ...props }: React.ComponentProps<"span">): React.JSX.Element;
+    displayName: string;
+};
+export { Pagination, PaginationContent, PaginationEllipsis, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious, };
+</file>
+
+<file path="ai_skeleton_code/client/src/components/ui/popover.d.ts">
+import * as React from "react";
+import * as PopoverPrimitive from "@radix-ui/react-popover";
+declare const Popover: React.FC<PopoverPrimitive.PopoverProps>;
+declare const PopoverTrigger: React.ForwardRefExoticComponent<PopoverPrimitive.PopoverTriggerProps & React.RefAttributes<HTMLButtonElement>>;
+declare const PopoverContent: React.ForwardRefExoticComponent<Omit<PopoverPrimitive.PopoverContentProps & React.RefAttributes<HTMLDivElement>, "ref"> & React.RefAttributes<HTMLDivElement>>;
+export { Popover, PopoverTrigger, PopoverContent };
+</file>
+
+<file path="ai_skeleton_code/client/src/components/ui/progress.d.ts">
+import * as React from "react";
+import * as ProgressPrimitive from "@radix-ui/react-progress";
+declare const Progress: React.ForwardRefExoticComponent<Omit<ProgressPrimitive.ProgressProps & React.RefAttributes<HTMLDivElement>, "ref"> & React.RefAttributes<HTMLDivElement>>;
+export { Progress };
+</file>
+
+<file path="ai_skeleton_code/client/src/components/ui/radio-group.d.ts">
+import * as React from "react";
+import * as RadioGroupPrimitive from "@radix-ui/react-radio-group";
+declare const RadioGroup: React.ForwardRefExoticComponent<Omit<RadioGroupPrimitive.RadioGroupProps & React.RefAttributes<HTMLDivElement>, "ref"> & React.RefAttributes<HTMLDivElement>>;
+declare const RadioGroupItem: React.ForwardRefExoticComponent<Omit<RadioGroupPrimitive.RadioGroupItemProps & React.RefAttributes<HTMLButtonElement>, "ref"> & React.RefAttributes<HTMLButtonElement>>;
+export { RadioGroup, RadioGroupItem };
+</file>
+
+<file path="ai_skeleton_code/client/src/components/ui/resizable.d.ts">
+import * as ResizablePrimitive from "react-resizable-panels";
+declare const ResizablePanelGroup: ({ className, ...props }: React.ComponentProps<typeof ResizablePrimitive.PanelGroup>) => import("react").JSX.Element;
+declare const ResizablePanel: import("react").ForwardRefExoticComponent<Omit<import("react").HTMLAttributes<HTMLButtonElement | HTMLElement | HTMLDivElement | HTMLObjectElement | HTMLLinkElement | HTMLInputElement | HTMLAnchorElement | HTMLAreaElement | HTMLAudioElement | HTMLBaseElement | HTMLQuoteElement | HTMLBodyElement | HTMLBRElement | HTMLCanvasElement | HTMLTableColElement | HTMLDataElement | HTMLDataListElement | HTMLModElement | HTMLDetailsElement | HTMLDialogElement | HTMLDListElement | HTMLEmbedElement | HTMLFieldSetElement | HTMLFormElement | HTMLHeadingElement | HTMLHeadElement | HTMLHRElement | HTMLHtmlElement | HTMLIFrameElement | HTMLImageElement | HTMLLabelElement | HTMLLegendElement | HTMLLIElement | HTMLMapElement | HTMLMetaElement | HTMLMeterElement | HTMLOListElement | HTMLOptGroupElement | HTMLOptionElement | HTMLOutputElement | HTMLParagraphElement | HTMLPreElement | HTMLProgressElement | HTMLSlotElement | HTMLScriptElement | HTMLSelectElement | HTMLSourceElement | HTMLSpanElement | HTMLStyleElement | HTMLTableElement | HTMLTemplateElement | HTMLTableSectionElement | HTMLTableCellElement | HTMLTextAreaElement | HTMLTimeElement | HTMLTitleElement | HTMLTableRowElement | HTMLTrackElement | HTMLUListElement | HTMLVideoElement | HTMLTableCaptionElement | HTMLMenuElement | HTMLPictureElement>, "id" | "onResize"> & {
+    className?: string | undefined;
+    collapsedSize?: number | undefined;
+    collapsible?: boolean | undefined;
+    defaultSize?: number | undefined;
+    id?: string | undefined;
+    maxSize?: number | undefined;
+    minSize?: number | undefined;
+    onCollapse?: ResizablePrimitive.PanelOnCollapse | undefined;
+    onExpand?: ResizablePrimitive.PanelOnExpand | undefined;
+    onResize?: ResizablePrimitive.PanelOnResize | undefined;
+    order?: number | undefined;
+    style?: object | undefined;
+    tagName?: keyof HTMLElementTagNameMap | undefined;
+} & {
+    children?: import("react").ReactNode;
+} & import("react").RefAttributes<ResizablePrimitive.ImperativePanelHandle>>;
+declare const ResizableHandle: ({ withHandle, className, ...props }: React.ComponentProps<typeof ResizablePrimitive.PanelResizeHandle> & {
+    withHandle?: boolean;
+}) => import("react").JSX.Element;
+export { ResizablePanelGroup, ResizablePanel, ResizableHandle };
+</file>
+
+<file path="ai_skeleton_code/client/src/components/ui/scroll-area.d.ts">
+import * as React from "react";
+import * as ScrollAreaPrimitive from "@radix-ui/react-scroll-area";
+declare const ScrollArea: React.ForwardRefExoticComponent<Omit<ScrollAreaPrimitive.ScrollAreaProps & React.RefAttributes<HTMLDivElement>, "ref"> & React.RefAttributes<HTMLDivElement>>;
+declare const ScrollBar: React.ForwardRefExoticComponent<Omit<ScrollAreaPrimitive.ScrollAreaScrollbarProps & React.RefAttributes<HTMLDivElement>, "ref"> & React.RefAttributes<HTMLDivElement>>;
+export { ScrollArea, ScrollBar };
+</file>
+
+<file path="ai_skeleton_code/client/src/components/ui/select.d.ts">
+import * as React from "react";
+import * as SelectPrimitive from "@radix-ui/react-select";
+declare const Select: React.FC<SelectPrimitive.SelectProps>;
+declare const SelectGroup: React.ForwardRefExoticComponent<SelectPrimitive.SelectGroupProps & React.RefAttributes<HTMLDivElement>>;
+declare const SelectValue: React.ForwardRefExoticComponent<SelectPrimitive.SelectValueProps & React.RefAttributes<HTMLSpanElement>>;
+declare const SelectTrigger: React.ForwardRefExoticComponent<Omit<SelectPrimitive.SelectTriggerProps & React.RefAttributes<HTMLButtonElement>, "ref"> & React.RefAttributes<HTMLButtonElement>>;
+declare const SelectScrollUpButton: React.ForwardRefExoticComponent<Omit<SelectPrimitive.SelectScrollUpButtonProps & React.RefAttributes<HTMLDivElement>, "ref"> & React.RefAttributes<HTMLDivElement>>;
+declare const SelectScrollDownButton: React.ForwardRefExoticComponent<Omit<SelectPrimitive.SelectScrollDownButtonProps & React.RefAttributes<HTMLDivElement>, "ref"> & React.RefAttributes<HTMLDivElement>>;
+declare const SelectContent: React.ForwardRefExoticComponent<Omit<SelectPrimitive.SelectContentProps & React.RefAttributes<HTMLDivElement>, "ref"> & React.RefAttributes<HTMLDivElement>>;
+declare const SelectLabel: React.ForwardRefExoticComponent<Omit<SelectPrimitive.SelectLabelProps & React.RefAttributes<HTMLDivElement>, "ref"> & React.RefAttributes<HTMLDivElement>>;
+declare const SelectItem: React.ForwardRefExoticComponent<Omit<SelectPrimitive.SelectItemProps & React.RefAttributes<HTMLDivElement>, "ref"> & React.RefAttributes<HTMLDivElement>>;
+declare const SelectSeparator: React.ForwardRefExoticComponent<Omit<SelectPrimitive.SelectSeparatorProps & React.RefAttributes<HTMLDivElement>, "ref"> & React.RefAttributes<HTMLDivElement>>;
+export { Select, SelectGroup, SelectValue, SelectTrigger, SelectContent, SelectLabel, SelectItem, SelectSeparator, SelectScrollUpButton, SelectScrollDownButton, };
+</file>
+
+<file path="ai_skeleton_code/client/src/components/ui/separator.d.ts">
+import * as React from "react";
+import * as SeparatorPrimitive from "@radix-ui/react-separator";
+declare const Separator: React.ForwardRefExoticComponent<Omit<SeparatorPrimitive.SeparatorProps & React.RefAttributes<HTMLDivElement>, "ref"> & React.RefAttributes<HTMLDivElement>>;
+export { Separator };
+</file>
+
+<file path="ai_skeleton_code/client/src/components/ui/sheet.d.ts">
+import * as React from "react";
+import * as SheetPrimitive from "@radix-ui/react-dialog";
+import { type VariantProps } from "class-variance-authority";
+declare const Sheet: React.FC<SheetPrimitive.DialogProps>;
+declare const SheetTrigger: React.ForwardRefExoticComponent<SheetPrimitive.DialogTriggerProps & React.RefAttributes<HTMLButtonElement>>;
+declare const SheetClose: React.ForwardRefExoticComponent<SheetPrimitive.DialogCloseProps & React.RefAttributes<HTMLButtonElement>>;
+declare const SheetPortal: React.FC<SheetPrimitive.DialogPortalProps>;
+declare const SheetOverlay: React.ForwardRefExoticComponent<Omit<SheetPrimitive.DialogOverlayProps & React.RefAttributes<HTMLDivElement>, "ref"> & React.RefAttributes<HTMLDivElement>>;
+declare const sheetVariants: (props?: ({
+    side?: "top" | "bottom" | "left" | "right" | null | undefined;
+} & import("class-variance-authority/types").ClassProp) | undefined) => string;
+interface SheetContentProps extends React.ComponentPropsWithoutRef<typeof SheetPrimitive.Content>, VariantProps<typeof sheetVariants> {
+}
+declare const SheetContent: React.ForwardRefExoticComponent<SheetContentProps & React.RefAttributes<HTMLDivElement>>;
+declare const SheetHeader: {
+    ({ className, ...props }: React.HTMLAttributes<HTMLDivElement>): React.JSX.Element;
+    displayName: string;
+};
+declare const SheetFooter: {
+    ({ className, ...props }: React.HTMLAttributes<HTMLDivElement>): React.JSX.Element;
+    displayName: string;
+};
+declare const SheetTitle: React.ForwardRefExoticComponent<Omit<SheetPrimitive.DialogTitleProps & React.RefAttributes<HTMLHeadingElement>, "ref"> & React.RefAttributes<HTMLHeadingElement>>;
+declare const SheetDescription: React.ForwardRefExoticComponent<Omit<SheetPrimitive.DialogDescriptionProps & React.RefAttributes<HTMLParagraphElement>, "ref"> & React.RefAttributes<HTMLParagraphElement>>;
+export { Sheet, SheetPortal, SheetOverlay, SheetTrigger, SheetClose, SheetContent, SheetHeader, SheetFooter, SheetTitle, SheetDescription, };
+</file>
+
+<file path="ai_skeleton_code/client/src/components/ui/sidebar.d.ts">
+import * as React from "react";
+import { VariantProps } from "class-variance-authority";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Separator } from "@/components/ui/separator";
+import { TooltipContent } from "@/components/ui/tooltip";
+type SidebarContextProps = {
+    state: "expanded" | "collapsed";
+    open: boolean;
+    setOpen: (open: boolean) => void;
+    openMobile: boolean;
+    setOpenMobile: (open: boolean) => void;
+    isMobile: boolean;
+    toggleSidebar: () => void;
+};
+declare function useSidebar(): SidebarContextProps;
+declare function SidebarProvider({ defaultOpen, open: openProp, onOpenChange: setOpenProp, className, style, children, ...props }: React.ComponentProps<"div"> & {
+    defaultOpen?: boolean;
+    open?: boolean;
+    onOpenChange?: (open: boolean) => void;
+}): React.JSX.Element;
+declare function Sidebar({ side, variant, collapsible, className, children, ...props }: React.ComponentProps<"div"> & {
+    side?: "left" | "right";
+    variant?: "sidebar" | "floating" | "inset";
+    collapsible?: "offcanvas" | "icon" | "none";
+}): React.JSX.Element;
+declare function SidebarTrigger({ className, onClick, ...props }: React.ComponentProps<typeof Button>): React.JSX.Element;
+declare function SidebarRail({ className, ...props }: React.ComponentProps<"button">): React.JSX.Element;
+declare function SidebarInset({ className, ...props }: React.ComponentProps<"main">): React.JSX.Element;
+declare function SidebarInput({ className, ...props }: React.ComponentProps<typeof Input>): React.JSX.Element;
+declare function SidebarHeader({ className, ...props }: React.ComponentProps<"div">): React.JSX.Element;
+declare function SidebarFooter({ className, ...props }: React.ComponentProps<"div">): React.JSX.Element;
+declare function SidebarSeparator({ className, ...props }: React.ComponentProps<typeof Separator>): React.JSX.Element;
+declare function SidebarContent({ className, ...props }: React.ComponentProps<"div">): React.JSX.Element;
+declare function SidebarGroup({ className, ...props }: React.ComponentProps<"div">): React.JSX.Element;
+declare function SidebarGroupLabel({ className, asChild, ...props }: React.ComponentProps<"div"> & {
+    asChild?: boolean;
+}): React.JSX.Element;
+declare function SidebarGroupAction({ className, asChild, ...props }: React.ComponentProps<"button"> & {
+    asChild?: boolean;
+}): React.JSX.Element;
+declare function SidebarGroupContent({ className, ...props }: React.ComponentProps<"div">): React.JSX.Element;
+declare function SidebarMenu({ className, ...props }: React.ComponentProps<"ul">): React.JSX.Element;
+declare function SidebarMenuItem({ className, ...props }: React.ComponentProps<"li">): React.JSX.Element;
+declare const sidebarMenuButtonVariants: (props?: ({
+    variant?: "default" | "outline" | null | undefined;
+    size?: "default" | "sm" | "lg" | null | undefined;
+} & import("class-variance-authority/types").ClassProp) | undefined) => string;
+declare function SidebarMenuButton({ asChild, isActive, variant, size, tooltip, className, ...props }: React.ComponentProps<"button"> & {
+    asChild?: boolean;
+    isActive?: boolean;
+    tooltip?: string | React.ComponentProps<typeof TooltipContent>;
+} & VariantProps<typeof sidebarMenuButtonVariants>): React.JSX.Element;
+declare function SidebarMenuAction({ className, asChild, showOnHover, ...props }: React.ComponentProps<"button"> & {
+    asChild?: boolean;
+    showOnHover?: boolean;
+}): React.JSX.Element;
+declare function SidebarMenuBadge({ className, ...props }: React.ComponentProps<"div">): React.JSX.Element;
+declare function SidebarMenuSkeleton({ className, showIcon, ...props }: React.ComponentProps<"div"> & {
+    showIcon?: boolean;
+}): React.JSX.Element;
+declare function SidebarMenuSub({ className, ...props }: React.ComponentProps<"ul">): React.JSX.Element;
+declare function SidebarMenuSubItem({ className, ...props }: React.ComponentProps<"li">): React.JSX.Element;
+declare function SidebarMenuSubButton({ asChild, size, isActive, className, ...props }: React.ComponentProps<"a"> & {
+    asChild?: boolean;
+    size?: "sm" | "md";
+    isActive?: boolean;
+}): React.JSX.Element;
+export { Sidebar, SidebarContent, SidebarFooter, SidebarGroup, SidebarGroupAction, SidebarGroupContent, SidebarGroupLabel, SidebarHeader, SidebarInput, SidebarInset, SidebarMenu, SidebarMenuAction, SidebarMenuBadge, SidebarMenuButton, SidebarMenuItem, SidebarMenuSkeleton, SidebarMenuSub, SidebarMenuSubButton, SidebarMenuSubItem, SidebarProvider, SidebarRail, SidebarSeparator, SidebarTrigger, useSidebar, };
+</file>
+
+<file path="ai_skeleton_code/client/src/components/ui/skeleton.d.ts">
+declare function Skeleton({ className, ...props }: React.HTMLAttributes<HTMLDivElement>): import("react").JSX.Element;
+export { Skeleton };
+</file>
+
+<file path="ai_skeleton_code/client/src/components/ui/slider.d.ts">
+import * as React from "react";
+import * as SliderPrimitive from "@radix-ui/react-slider";
+declare const Slider: React.ForwardRefExoticComponent<Omit<SliderPrimitive.SliderProps & React.RefAttributes<HTMLSpanElement>, "ref"> & React.RefAttributes<HTMLSpanElement>>;
+export { Slider };
+</file>
+
+<file path="ai_skeleton_code/client/src/components/ui/switch.d.ts">
+import * as React from "react";
+import * as SwitchPrimitives from "@radix-ui/react-switch";
+declare const Switch: React.ForwardRefExoticComponent<Omit<SwitchPrimitives.SwitchProps & React.RefAttributes<HTMLButtonElement>, "ref"> & React.RefAttributes<HTMLButtonElement>>;
+export { Switch };
+</file>
+
+<file path="ai_skeleton_code/client/src/components/ui/table.d.ts">
+import * as React from "react";
+declare const Table: React.ForwardRefExoticComponent<React.HTMLAttributes<HTMLTableElement> & React.RefAttributes<HTMLTableElement>>;
+declare const TableHeader: React.ForwardRefExoticComponent<React.HTMLAttributes<HTMLTableSectionElement> & React.RefAttributes<HTMLTableSectionElement>>;
+declare const TableBody: React.ForwardRefExoticComponent<React.HTMLAttributes<HTMLTableSectionElement> & React.RefAttributes<HTMLTableSectionElement>>;
+declare const TableFooter: React.ForwardRefExoticComponent<React.HTMLAttributes<HTMLTableSectionElement> & React.RefAttributes<HTMLTableSectionElement>>;
+declare const TableRow: React.ForwardRefExoticComponent<React.HTMLAttributes<HTMLTableRowElement> & React.RefAttributes<HTMLTableRowElement>>;
+declare const TableHead: React.ForwardRefExoticComponent<React.ThHTMLAttributes<HTMLTableCellElement> & React.RefAttributes<HTMLTableCellElement>>;
+declare const TableCell: React.ForwardRefExoticComponent<React.TdHTMLAttributes<HTMLTableCellElement> & React.RefAttributes<HTMLTableCellElement>>;
+declare const TableCaption: React.ForwardRefExoticComponent<React.HTMLAttributes<HTMLTableCaptionElement> & React.RefAttributes<HTMLTableCaptionElement>>;
+export { Table, TableHeader, TableBody, TableFooter, TableHead, TableRow, TableCell, TableCaption, };
+</file>
+
+<file path="ai_skeleton_code/client/src/components/ui/tabs.d.ts">
+import * as React from "react";
+import * as TabsPrimitive from "@radix-ui/react-tabs";
+declare const Tabs: React.ForwardRefExoticComponent<TabsPrimitive.TabsProps & React.RefAttributes<HTMLDivElement>>;
+declare const TabsList: React.ForwardRefExoticComponent<Omit<TabsPrimitive.TabsListProps & React.RefAttributes<HTMLDivElement>, "ref"> & React.RefAttributes<HTMLDivElement>>;
+declare const TabsTrigger: React.ForwardRefExoticComponent<Omit<TabsPrimitive.TabsTriggerProps & React.RefAttributes<HTMLButtonElement>, "ref"> & React.RefAttributes<HTMLButtonElement>>;
+declare const TabsContent: React.ForwardRefExoticComponent<Omit<TabsPrimitive.TabsContentProps & React.RefAttributes<HTMLDivElement>, "ref"> & React.RefAttributes<HTMLDivElement>>;
+export { Tabs, TabsList, TabsTrigger, TabsContent };
+</file>
+
+<file path="ai_skeleton_code/client/src/components/ui/textarea.d.ts">
+import * as React from "react";
+declare const Textarea: React.ForwardRefExoticComponent<Omit<React.DetailedHTMLProps<React.TextareaHTMLAttributes<HTMLTextAreaElement>, HTMLTextAreaElement>, "ref"> & React.RefAttributes<HTMLTextAreaElement>>;
+export { Textarea };
+</file>
+
+<file path="ai_skeleton_code/client/src/components/ui/toast.d.ts">
+import * as React from "react";
+import * as ToastPrimitives from "@radix-ui/react-toast";
+import { type VariantProps } from "class-variance-authority";
+declare const ToastProvider: React.FC<ToastPrimitives.ToastProviderProps>;
+declare const ToastViewport: React.ForwardRefExoticComponent<Omit<ToastPrimitives.ToastViewportProps & React.RefAttributes<HTMLOListElement>, "ref"> & React.RefAttributes<HTMLOListElement>>;
+declare const Toast: React.ForwardRefExoticComponent<Omit<ToastPrimitives.ToastProps & React.RefAttributes<HTMLLIElement>, "ref"> & VariantProps<(props?: ({
+    variant?: "default" | "destructive" | null | undefined;
+} & import("class-variance-authority/types").ClassProp) | undefined) => string> & React.RefAttributes<HTMLLIElement>>;
+declare const ToastAction: React.ForwardRefExoticComponent<Omit<ToastPrimitives.ToastActionProps & React.RefAttributes<HTMLButtonElement>, "ref"> & React.RefAttributes<HTMLButtonElement>>;
+declare const ToastClose: React.ForwardRefExoticComponent<Omit<ToastPrimitives.ToastCloseProps & React.RefAttributes<HTMLButtonElement>, "ref"> & React.RefAttributes<HTMLButtonElement>>;
+declare const ToastTitle: React.ForwardRefExoticComponent<Omit<ToastPrimitives.ToastTitleProps & React.RefAttributes<HTMLDivElement>, "ref"> & React.RefAttributes<HTMLDivElement>>;
+declare const ToastDescription: React.ForwardRefExoticComponent<Omit<ToastPrimitives.ToastDescriptionProps & React.RefAttributes<HTMLDivElement>, "ref"> & React.RefAttributes<HTMLDivElement>>;
+type ToastProps = React.ComponentPropsWithoutRef<typeof Toast>;
+type ToastActionElement = React.ReactElement<typeof ToastAction>;
+export { type ToastProps, type ToastActionElement, ToastProvider, ToastViewport, Toast, ToastTitle, ToastDescription, ToastClose, ToastAction, };
+</file>
+
+<file path="ai_skeleton_code/client/src/components/ui/toaster.d.ts">
+export declare function Toaster(): import("react").JSX.Element;
+</file>
+
+<file path="ai_skeleton_code/client/src/components/ui/toggle-group.d.ts">
+import * as React from "react";
+import * as ToggleGroupPrimitive from "@radix-ui/react-toggle-group";
+import { type VariantProps } from "class-variance-authority";
+declare const ToggleGroup: React.ForwardRefExoticComponent<((Omit<ToggleGroupPrimitive.ToggleGroupSingleProps & React.RefAttributes<HTMLDivElement>, "ref"> | Omit<ToggleGroupPrimitive.ToggleGroupMultipleProps & React.RefAttributes<HTMLDivElement>, "ref">) & VariantProps<(props?: ({
+    variant?: "default" | "outline" | null | undefined;
+    size?: "default" | "sm" | "lg" | null | undefined;
+} & import("class-variance-authority/types").ClassProp) | undefined) => string>) & React.RefAttributes<HTMLDivElement>>;
+declare const ToggleGroupItem: React.ForwardRefExoticComponent<Omit<ToggleGroupPrimitive.ToggleGroupItemProps & React.RefAttributes<HTMLButtonElement>, "ref"> & VariantProps<(props?: ({
+    variant?: "default" | "outline" | null | undefined;
+    size?: "default" | "sm" | "lg" | null | undefined;
+} & import("class-variance-authority/types").ClassProp) | undefined) => string> & React.RefAttributes<HTMLButtonElement>>;
+export { ToggleGroup, ToggleGroupItem };
+</file>
+
+<file path="ai_skeleton_code/client/src/components/ui/toggle.d.ts">
+import * as React from "react";
+import * as TogglePrimitive from "@radix-ui/react-toggle";
+import { type VariantProps } from "class-variance-authority";
+declare const toggleVariants: (props?: ({
+    variant?: "default" | "outline" | null | undefined;
+    size?: "default" | "sm" | "lg" | null | undefined;
+} & import("class-variance-authority/types").ClassProp) | undefined) => string;
+declare const Toggle: React.ForwardRefExoticComponent<Omit<TogglePrimitive.ToggleProps & React.RefAttributes<HTMLButtonElement>, "ref"> & VariantProps<(props?: ({
+    variant?: "default" | "outline" | null | undefined;
+    size?: "default" | "sm" | "lg" | null | undefined;
+} & import("class-variance-authority/types").ClassProp) | undefined) => string> & React.RefAttributes<HTMLButtonElement>>;
+export { Toggle, toggleVariants };
+</file>
+
+<file path="ai_skeleton_code/client/src/components/ui/tooltip.d.ts">
+import * as React from "react";
+import * as TooltipPrimitive from "@radix-ui/react-tooltip";
+declare const TooltipProvider: React.FC<TooltipPrimitive.TooltipProviderProps>;
+declare const Tooltip: React.FC<TooltipPrimitive.TooltipProps>;
+declare const TooltipTrigger: React.ForwardRefExoticComponent<TooltipPrimitive.TooltipTriggerProps & React.RefAttributes<HTMLButtonElement>>;
+declare const TooltipContent: React.ForwardRefExoticComponent<Omit<TooltipPrimitive.TooltipContentProps & React.RefAttributes<HTMLDivElement>, "ref"> & React.RefAttributes<HTMLDivElement>>;
+export { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider };
+</file>
+
+<file path="ai_skeleton_code/client/src/components/websocket-provider.d.ts">
+import { type UseWebSocketReturn } from '@/hooks/use-websocket';
+export declare function useWSContext(): UseWebSocketReturn | null;
+interface WebSocketProviderProps {
+    children: React.ReactNode;
+}
+export declare function WebSocketProvider({ children }: WebSocketProviderProps): import("react").JSX.Element;
+export {};
+</file>
+
+<file path="ai_skeleton_code/client/src/hooks/use-mobile.d.ts">
+export declare function useIsMobile(): boolean;
+</file>
+
+<file path="ai_skeleton_code/client/src/hooks/use-safe-sdk.d.ts">
+import { type SafeInfo, type SafeTransactionResult } from '@/lib/safe-sdk';
+export interface UseSafeSdkReturn {
+    loading: boolean;
+    error: string | null;
+    getSafeInfo: (safeAddress: string) => Promise<SafeInfo | null>;
+    setGuard: (safeAddress: string, guardAddress: string) => Promise<SafeTransactionResult>;
+    removeGuard: (safeAddress: string) => Promise<SafeTransactionResult>;
+    swapOwner: (safeAddress: string, oldOwner: string, newOwner: string) => Promise<SafeTransactionResult>;
+    addOwner: (safeAddress: string, newOwner: string, threshold?: number) => Promise<SafeTransactionResult>;
+    removeOwner: (safeAddress: string, ownerToRemove: string, threshold?: number) => Promise<SafeTransactionResult>;
+    isOwner: (safeAddress: string, address: string) => Promise<boolean>;
+    executeTransaction: (safeAddress: string, to: string, value: string, data: string) => Promise<SafeTransactionResult>;
+}
+export declare function useSafeSdk(): UseSafeSdkReturn;
+</file>
+
+<file path="ai_skeleton_code/client/src/hooks/use-toast.d.ts">
+import * as React from "react";
+import type { ToastActionElement, ToastProps } from "@/components/ui/toast";
+type ToasterToast = ToastProps & {
+    id: string;
+    title?: React.ReactNode;
+    description?: React.ReactNode;
+    action?: ToastActionElement;
+};
+declare const actionTypes: {
+    readonly ADD_TOAST: "ADD_TOAST";
+    readonly UPDATE_TOAST: "UPDATE_TOAST";
+    readonly DISMISS_TOAST: "DISMISS_TOAST";
+    readonly REMOVE_TOAST: "REMOVE_TOAST";
+};
+type ActionType = typeof actionTypes;
+type Action = {
+    type: ActionType["ADD_TOAST"];
+    toast: ToasterToast;
+} | {
+    type: ActionType["UPDATE_TOAST"];
+    toast: Partial<ToasterToast>;
+} | {
+    type: ActionType["DISMISS_TOAST"];
+    toastId?: ToasterToast["id"];
+} | {
+    type: ActionType["REMOVE_TOAST"];
+    toastId?: ToasterToast["id"];
+};
+interface State {
+    toasts: ToasterToast[];
+}
+export declare const reducer: (state: State, action: Action) => State;
+type Toast = Omit<ToasterToast, "id">;
+declare function toast({ ...props }: Toast): {
+    id: string;
+    dismiss: () => void;
+    update: (props: ToasterToast) => void;
+};
+declare function useToast(): {
+    toast: typeof toast;
+    dismiss: (toastId?: string) => void;
+    toasts: ToasterToast[];
+};
+export { useToast, toast };
+</file>
+
+<file path="ai_skeleton_code/client/src/hooks/use-websocket.d.ts">
+export interface WSMessage {
+    type: string;
+    data?: any;
+    timestamp?: string;
+    message?: string;
+}
+export interface UseWebSocketReturn {
+    isConnected: boolean;
+    lastMessage: WSMessage | null;
+    subscribe: (channel: string) => void;
+    unsubscribe: (channel: string) => void;
+}
+export declare function useWebSocket(): UseWebSocketReturn;
+</file>
+
+<file path="ai_skeleton_code/client/src/lib/contracts/addresses.d.ts">
+/**
+ * Contract addresses theo chainId.
+ * Sau khi deploy SC, điền address vào VITE_ESCROW_CONTRACT_ADDRESS trong .env
+ */
+export declare const ESCROW_CONTRACT_ADDRESSES: Record<number, `0x${string}`>;
+export declare function getEscrowAddress(chainId: number): `0x${string}`;
+</file>
+
+<file path="ai_skeleton_code/client/src/lib/contracts/EscrowABI.d.ts">
+/**
+ * ABI cho SafeExchangeEscrow
+ * Sync với contracts/SafeExchangeEscrowSoftGuard.sol
+ */
+export declare const escrowABI: readonly [{
+    readonly inputs: readonly [{
+        readonly internalType: "address";
+        readonly name: "safe";
+        readonly type: "address";
+    }, {
+        readonly internalType: "address";
+        readonly name: "buyer";
+        readonly type: "address";
+    }, {
+        readonly internalType: "uint256";
+        readonly name: "amount";
+        readonly type: "uint256";
+    }, {
+        readonly internalType: "uint64";
+        readonly name: "deadline";
+        readonly type: "uint64";
+    }];
+    readonly name: "armTrade";
+    readonly outputs: readonly [];
+    readonly stateMutability: "nonpayable";
+    readonly type: "function";
+}, {
+    readonly inputs: readonly [{
+        readonly internalType: "bytes32";
+        readonly name: "id";
+        readonly type: "bytes32";
+    }];
+    readonly name: "deposit";
+    readonly outputs: readonly [];
+    readonly stateMutability: "payable";
+    readonly type: "function";
+}, {
+    readonly inputs: readonly [{
+        readonly internalType: "bytes32";
+        readonly name: "id";
+        readonly type: "bytes32";
+    }];
+    readonly name: "releaseFunds";
+    readonly outputs: readonly [];
+    readonly stateMutability: "nonpayable";
+    readonly type: "function";
+}, {
+    readonly inputs: readonly [{
+        readonly internalType: "bytes32";
+        readonly name: "id";
+        readonly type: "bytes32";
+    }];
+    readonly name: "buyerRequestCancel";
+    readonly outputs: readonly [];
+    readonly stateMutability: "nonpayable";
+    readonly type: "function";
+}, {
+    readonly inputs: readonly [{
+        readonly internalType: "bytes32";
+        readonly name: "id";
+        readonly type: "bytes32";
+    }];
+    readonly name: "cancelTimeout";
+    readonly outputs: readonly [];
+    readonly stateMutability: "nonpayable";
+    readonly type: "function";
+}, {
+    readonly inputs: readonly [{
+        readonly internalType: "bytes32";
+        readonly name: "id";
+        readonly type: "bytes32";
+    }];
+    readonly name: "withdrawRefund";
+    readonly outputs: readonly [];
+    readonly stateMutability: "nonpayable";
+    readonly type: "function";
+}, {
+    readonly inputs: readonly [{
+        readonly internalType: "address";
+        readonly name: "buyer";
+        readonly type: "address";
+    }, {
+        readonly internalType: "address";
+        readonly name: "seller";
+        readonly type: "address";
+    }, {
+        readonly internalType: "address";
+        readonly name: "safe";
+        readonly type: "address";
+    }];
+    readonly name: "getTradeId";
+    readonly outputs: readonly [{
+        readonly internalType: "bytes32";
+        readonly name: "";
+        readonly type: "bytes32";
+    }];
+    readonly stateMutability: "pure";
+    readonly type: "function";
+}, {
+    readonly inputs: readonly [{
+        readonly internalType: "bytes32";
+        readonly name: "";
+        readonly type: "bytes32";
+    }];
+    readonly name: "trades";
+    readonly outputs: readonly [{
+        readonly internalType: "address";
+        readonly name: "buyer";
+        readonly type: "address";
+    }, {
+        readonly internalType: "address";
+        readonly name: "seller";
+        readonly type: "address";
+    }, {
+        readonly internalType: "address";
+        readonly name: "safeAddress";
+        readonly type: "address";
+    }, {
+        readonly internalType: "uint256";
+        readonly name: "amount";
+        readonly type: "uint256";
+    }, {
+        readonly internalType: "uint64";
+        readonly name: "deadline";
+        readonly type: "uint64";
+    }, {
+        readonly internalType: "uint256";
+        readonly name: "snapshotNonce";
+        readonly type: "uint256";
+    }, {
+        readonly internalType: "uint8";
+        readonly name: "status";
+        readonly type: "uint8";
+    }, {
+        readonly internalType: "bool";
+        readonly name: "fundsHeld";
+        readonly type: "bool";
+    }];
+    readonly stateMutability: "view";
+    readonly type: "function";
+}, {
+    readonly inputs: readonly [{
+        readonly internalType: "address";
+        readonly name: "";
+        readonly type: "address";
+    }];
+    readonly name: "activeTradeBySafe";
+    readonly outputs: readonly [{
+        readonly internalType: "bytes32";
+        readonly name: "";
+        readonly type: "bytes32";
+    }];
+    readonly stateMutability: "view";
+    readonly type: "function";
+}, {
+    readonly anonymous: false;
+    readonly inputs: readonly [{
+        readonly indexed: true;
+        readonly internalType: "bytes32";
+        readonly name: "tradeId";
+        readonly type: "bytes32";
+    }, {
+        readonly indexed: true;
+        readonly internalType: "address";
+        readonly name: "buyer";
+        readonly type: "address";
+    }, {
+        readonly indexed: true;
+        readonly internalType: "address";
+        readonly name: "seller";
+        readonly type: "address";
+    }, {
+        readonly indexed: false;
+        readonly internalType: "address";
+        readonly name: "safe";
+        readonly type: "address";
+    }, {
+        readonly indexed: false;
+        readonly internalType: "uint256";
+        readonly name: "amount";
+        readonly type: "uint256";
+    }, {
+        readonly indexed: false;
+        readonly internalType: "uint256";
+        readonly name: "deadline";
+        readonly type: "uint256";
+    }, {
+        readonly indexed: false;
+        readonly internalType: "uint256";
+        readonly name: "snapshotNonce";
+        readonly type: "uint256";
+    }];
+    readonly name: "TradeArmed";
+    readonly type: "event";
+}, {
+    readonly anonymous: false;
+    readonly inputs: readonly [{
+        readonly indexed: true;
+        readonly internalType: "bytes32";
+        readonly name: "tradeId";
+        readonly type: "bytes32";
+    }, {
+        readonly indexed: true;
+        readonly internalType: "address";
+        readonly name: "buyer";
+        readonly type: "address";
+    }, {
+        readonly indexed: false;
+        readonly internalType: "uint256";
+        readonly name: "amount";
+        readonly type: "uint256";
+    }];
+    readonly name: "TradeFunded";
+    readonly type: "event";
+}, {
+    readonly anonymous: false;
+    readonly inputs: readonly [{
+        readonly indexed: true;
+        readonly internalType: "bytes32";
+        readonly name: "tradeId";
+        readonly type: "bytes32";
+    }, {
+        readonly indexed: false;
+        readonly internalType: "address";
+        readonly name: "buyer";
+        readonly type: "address";
+    }, {
+        readonly indexed: false;
+        readonly internalType: "address";
+        readonly name: "seller";
+        readonly type: "address";
+    }, {
+        readonly indexed: false;
+        readonly internalType: "string";
+        readonly name: "reason";
+        readonly type: "string";
+    }];
+    readonly name: "TradeCancelled";
+    readonly type: "event";
+}, {
+    readonly anonymous: false;
+    readonly inputs: readonly [{
+        readonly indexed: true;
+        readonly internalType: "bytes32";
+        readonly name: "tradeId";
+        readonly type: "bytes32";
+    }, {
+        readonly indexed: true;
+        readonly internalType: "address";
+        readonly name: "buyer";
+        readonly type: "address";
+    }, {
+        readonly indexed: true;
+        readonly internalType: "address";
+        readonly name: "seller";
+        readonly type: "address";
+    }, {
+        readonly indexed: false;
+        readonly internalType: "uint256";
+        readonly name: "amount";
+        readonly type: "uint256";
+    }];
+    readonly name: "TradeCompleted";
+    readonly type: "event";
+}, {
+    readonly inputs: readonly [];
+    readonly name: "Invalid";
+    readonly type: "error";
+}, {
+    readonly inputs: readonly [];
+    readonly name: "NotSeller";
+    readonly type: "error";
+}, {
+    readonly inputs: readonly [];
+    readonly name: "NotBuyer";
+    readonly type: "error";
+}, {
+    readonly inputs: readonly [];
+    readonly name: "NotAuthorized";
+    readonly type: "error";
+}, {
+    readonly inputs: readonly [];
+    readonly name: "TransferFailed";
+    readonly type: "error";
+}, {
+    readonly inputs: readonly [];
+    readonly name: "InvalidState";
+    readonly type: "error";
+}, {
+    readonly inputs: readonly [];
+    readonly name: "DeadlinePassed";
+    readonly type: "error";
+}, {
+    readonly inputs: readonly [];
+    readonly name: "TradeAlreadyCompleted";
+    readonly type: "error";
+}, {
+    readonly inputs: readonly [];
+    readonly name: "NoSuspiciousActivity";
+    readonly type: "error";
+}, {
+    readonly stateMutability: "payable";
+    readonly type: "receive";
+}];
+</file>
+
+<file path="ai_skeleton_code/client/src/lib/contracts/SafeExchangeABI.d.ts">
+export declare const SAFE_EXCHANGE_ABI: readonly [{
+    readonly inputs: readonly [];
+    readonly name: "DeadlinePassed";
+    readonly type: "error";
+}, {
+    readonly inputs: readonly [];
+    readonly name: "GuardNotAttached";
+    readonly type: "error";
+}, {
+    readonly inputs: readonly [];
+    readonly name: "Invalid";
+    readonly type: "error";
+}, {
+    readonly inputs: readonly [];
+    readonly name: "InvalidState";
+    readonly type: "error";
+}, {
+    readonly inputs: readonly [];
+    readonly name: "NotBuyer";
+    readonly type: "error";
+}, {
+    readonly inputs: readonly [];
+    readonly name: "NotFound";
+    readonly type: "error";
+}, {
+    readonly inputs: readonly [];
+    readonly name: "NotSeller";
+    readonly type: "error";
+}, {
+    readonly inputs: readonly [];
+    readonly name: "TransferFailed";
+    readonly type: "error";
+}, {
+    readonly anonymous: false;
+    readonly inputs: readonly [{
+        readonly indexed: false;
+        readonly internalType: "address";
+        readonly name: "safe";
+        readonly type: "address";
+    }, {
+        readonly indexed: false;
+        readonly internalType: "bytes32";
+        readonly name: "tradeId";
+        readonly type: "bytes32";
+    }, {
+        readonly indexed: false;
+        readonly internalType: "address";
+        readonly name: "sender";
+        readonly type: "address";
+    }, {
+        readonly indexed: false;
+        readonly internalType: "address";
+        readonly name: "to";
+        readonly type: "address";
+    }, {
+        readonly indexed: false;
+        readonly internalType: "bytes4";
+        readonly name: "selector";
+        readonly type: "bytes4";
+    }, {
+        readonly indexed: false;
+        readonly internalType: "string";
+        readonly name: "reason";
+        readonly type: "string";
+    }];
+    readonly name: "GuardObservedCheat";
+    readonly type: "event";
+}, {
+    readonly anonymous: false;
+    readonly inputs: readonly [{
+        readonly indexed: false;
+        readonly internalType: "address";
+        readonly name: "safe";
+        readonly type: "address";
+    }, {
+        readonly indexed: false;
+        readonly internalType: "bytes32";
+        readonly name: "tradeId";
+        readonly type: "bytes32";
+    }, {
+        readonly indexed: false;
+        readonly internalType: "address";
+        readonly name: "newOwner";
+        readonly type: "address";
+    }];
+    readonly name: "GuardObservedSwap";
+    readonly type: "event";
+}, {
+    readonly anonymous: false;
+    readonly inputs: readonly [{
+        readonly indexed: false;
+        readonly internalType: "bytes32";
+        readonly name: "tradeId";
+        readonly type: "bytes32";
+    }, {
+        readonly indexed: false;
+        readonly internalType: "address";
+        readonly name: "buyer";
+        readonly type: "address";
+    }, {
+        readonly indexed: false;
+        readonly internalType: "address";
+        readonly name: "seller";
+        readonly type: "address";
+    }, {
+        readonly indexed: false;
+        readonly internalType: "address";
+        readonly name: "safe";
+        readonly type: "address";
+    }, {
+        readonly indexed: false;
+        readonly internalType: "uint256";
+        readonly name: "amount";
+        readonly type: "uint256";
+    }, {
+        readonly indexed: false;
+        readonly internalType: "uint256";
+        readonly name: "deadline";
+        readonly type: "uint256";
+    }];
+    readonly name: "TradeArmed";
+    readonly type: "event";
+}, {
+    readonly anonymous: false;
+    readonly inputs: readonly [{
+        readonly indexed: false;
+        readonly internalType: "bytes32";
+        readonly name: "tradeId";
+        readonly type: "bytes32";
+    }, {
+        readonly indexed: false;
+        readonly internalType: "address";
+        readonly name: "buyer";
+        readonly type: "address";
+    }, {
+        readonly indexed: false;
+        readonly internalType: "address";
+        readonly name: "seller";
+        readonly type: "address";
+    }, {
+        readonly indexed: false;
+        readonly internalType: "string";
+        readonly name: "reason";
+        readonly type: "string";
+    }];
+    readonly name: "TradeCancelled";
+    readonly type: "event";
+}, {
+    readonly anonymous: false;
+    readonly inputs: readonly [{
+        readonly indexed: false;
+        readonly internalType: "bytes32";
+        readonly name: "tradeId";
+        readonly type: "bytes32";
+    }, {
+        readonly indexed: false;
+        readonly internalType: "address";
+        readonly name: "buyer";
+        readonly type: "address";
+    }, {
+        readonly indexed: false;
+        readonly internalType: "address";
+        readonly name: "seller";
+        readonly type: "address";
+    }, {
+        readonly indexed: false;
+        readonly internalType: "uint256";
+        readonly name: "amount";
+        readonly type: "uint256";
+    }];
+    readonly name: "TradeCompleted";
+    readonly type: "event";
+}, {
+    readonly anonymous: false;
+    readonly inputs: readonly [{
+        readonly indexed: false;
+        readonly internalType: "bytes32";
+        readonly name: "tradeId";
+        readonly type: "bytes32";
+    }, {
+        readonly indexed: false;
+        readonly internalType: "address";
+        readonly name: "buyer";
+        readonly type: "address";
+    }, {
+        readonly indexed: false;
+        readonly internalType: "uint256";
+        readonly name: "amount";
+        readonly type: "uint256";
+    }];
+    readonly name: "TradeFunded";
+    readonly type: "event";
+}, {
+    readonly inputs: readonly [{
+        readonly internalType: "address";
+        readonly name: "";
+        readonly type: "address";
+    }];
+    readonly name: "activeTradeBySafe";
+    readonly outputs: readonly [{
+        readonly internalType: "bytes32";
+        readonly name: "";
+        readonly type: "bytes32";
+    }];
+    readonly stateMutability: "view";
+    readonly type: "function";
+}, {
+    readonly inputs: readonly [{
+        readonly internalType: "address";
+        readonly name: "safe";
+        readonly type: "address";
+    }, {
+        readonly internalType: "address";
+        readonly name: "buyer";
+        readonly type: "address";
+    }, {
+        readonly internalType: "uint256";
+        readonly name: "amount";
+        readonly type: "uint256";
+    }, {
+        readonly internalType: "uint64";
+        readonly name: "deadline";
+        readonly type: "uint64";
+    }];
+    readonly name: "armTrade";
+    readonly outputs: readonly [];
+    readonly stateMutability: "nonpayable";
+    readonly type: "function";
+}, {
+    readonly inputs: readonly [{
+        readonly internalType: "address";
+        readonly name: "";
+        readonly type: "address";
+    }, {
+        readonly internalType: "uint256";
+        readonly name: "";
+        readonly type: "uint256";
+    }];
+    readonly name: "buyerTrades";
+    readonly outputs: readonly [{
+        readonly internalType: "bytes32";
+        readonly name: "";
+        readonly type: "bytes32";
+    }];
+    readonly stateMutability: "view";
+    readonly type: "function";
+}, {
+    readonly inputs: readonly [{
+        readonly internalType: "bytes32";
+        readonly name: "id";
+        readonly type: "bytes32";
+    }];
+    readonly name: "cancelTimeout";
+    readonly outputs: readonly [];
+    readonly stateMutability: "nonpayable";
+    readonly type: "function";
+}, {
+    readonly inputs: readonly [{
+        readonly internalType: "bytes32";
+        readonly name: "";
+        readonly type: "bytes32";
+    }, {
+        readonly internalType: "bool";
+        readonly name: "success";
+        readonly type: "bool";
+    }];
+    readonly name: "checkAfterExecution";
+    readonly outputs: readonly [];
+    readonly stateMutability: "nonpayable";
+    readonly type: "function";
+}, {
+    readonly inputs: readonly [{
+        readonly internalType: "address";
+        readonly name: "to";
+        readonly type: "address";
+    }, {
+        readonly internalType: "uint256";
+        readonly name: "";
+        readonly type: "uint256";
+    }, {
+        readonly internalType: "bytes";
+        readonly name: "data";
+        readonly type: "bytes";
+    }, {
+        readonly internalType: "enum ISafe.Operation";
+        readonly name: "op";
+        readonly type: "uint8";
+    }, {
+        readonly internalType: "uint256";
+        readonly name: "";
+        readonly type: "uint256";
+    }, {
+        readonly internalType: "uint256";
+        readonly name: "";
+        readonly type: "uint256";
+    }, {
+        readonly internalType: "uint256";
+        readonly name: "";
+        readonly type: "uint256";
+    }, {
+        readonly internalType: "address";
+        readonly name: "";
+        readonly type: "address";
+    }, {
+        readonly internalType: "address payable";
+        readonly name: "";
+        readonly type: "address";
+    }, {
+        readonly internalType: "bytes";
+        readonly name: "";
+        readonly type: "bytes";
+    }, {
+        readonly internalType: "address";
+        readonly name: "msgSender";
+        readonly type: "address";
+    }];
+    readonly name: "checkTransaction";
+    readonly outputs: readonly [];
+    readonly stateMutability: "nonpayable";
+    readonly type: "function";
+}, {
+    readonly inputs: readonly [{
+        readonly internalType: "bytes32";
+        readonly name: "id";
+        readonly type: "bytes32";
+    }];
+    readonly name: "deposit";
+    readonly outputs: readonly [];
+    readonly stateMutability: "payable";
+    readonly type: "function";
+}, {
+    readonly inputs: readonly [{
+        readonly internalType: "address";
+        readonly name: "buyer";
+        readonly type: "address";
+    }, {
+        readonly internalType: "address";
+        readonly name: "seller";
+        readonly type: "address";
+    }, {
+        readonly internalType: "address";
+        readonly name: "safe";
+        readonly type: "address";
+    }];
+    readonly name: "getTradeId";
+    readonly outputs: readonly [{
+        readonly internalType: "bytes32";
+        readonly name: "";
+        readonly type: "bytes32";
+    }];
+    readonly stateMutability: "pure";
+    readonly type: "function";
+}, {
+    readonly inputs: readonly [{
+        readonly internalType: "address";
+        readonly name: "";
+        readonly type: "address";
+    }, {
+        readonly internalType: "uint256";
+        readonly name: "";
+        readonly type: "uint256";
+    }];
+    readonly name: "sellerTrades";
+    readonly outputs: readonly [{
+        readonly internalType: "bytes32";
+        readonly name: "";
+        readonly type: "bytes32";
+    }];
+    readonly stateMutability: "view";
+    readonly type: "function";
+}, {
+    readonly inputs: readonly [{
+        readonly internalType: "bytes32";
+        readonly name: "";
+        readonly type: "bytes32";
+    }];
+    readonly name: "trades";
+    readonly outputs: readonly [{
+        readonly internalType: "address";
+        readonly name: "buyer";
+        readonly type: "address";
+    }, {
+        readonly internalType: "address";
+        readonly name: "seller";
+        readonly type: "address";
+    }, {
+        readonly internalType: "address";
+        readonly name: "safeAddress";
+        readonly type: "address";
+    }, {
+        readonly internalType: "uint256";
+        readonly name: "amount";
+        readonly type: "uint256";
+    }, {
+        readonly internalType: "uint64";
+        readonly name: "deadline";
+        readonly type: "uint64";
+    }, {
+        readonly internalType: "enum SafeExchangeEscrowSoftGuard.TradeStatus";
+        readonly name: "status";
+        readonly type: "uint8";
+    }, {
+        readonly internalType: "bool";
+        readonly name: "fundsHeld";
+        readonly type: "bool";
+    }];
+    readonly stateMutability: "view";
+    readonly type: "function";
+}, {
+    readonly inputs: readonly [{
+        readonly internalType: "bytes32";
+        readonly name: "id";
+        readonly type: "bytes32";
+    }];
+    readonly name: "withdrawRefund";
+    readonly outputs: readonly [];
+    readonly stateMutability: "nonpayable";
+    readonly type: "function";
+}, {
+    readonly stateMutability: "payable";
+    readonly type: "receive";
+}];
+export declare const GUARD_CONTRACT_ADDRESS = "0x82d13B105491611DD2b024aF43b3a8fC513ad8F3";
+</file>
+
+<file path="ai_skeleton_code/client/src/lib/export-pdf.d.ts">
+interface EvidenceData {
+    hash: string;
+    signature: string;
+    signerAddress: string;
+    timestamp: string;
+    tradeId?: string;
+    payload?: string;
+}
+export declare function exportEvidencePDF(evidence: EvidenceData): void;
+export declare function exportTradeEvidencePDF(trade: {
+    id: string;
+    safeAddress: string;
+    sellerAddress: string;
+    buyerAddress?: string | null;
+    priceEth: string;
+    status: string;
+    createdAt: string;
+    deadline: string;
+}): void;
+export {};
+</file>
+
+<file path="ai_skeleton_code/client/src/lib/queryClient.d.ts">
+import { QueryClient, QueryFunction } from "@tanstack/react-query";
+export declare function apiRequest(method: string, url: string, data?: unknown | undefined): Promise<Response>;
+type UnauthorizedBehavior = "returnNull" | "throw";
+export declare const getQueryFn: <T>(options: {
+    on401: UnauthorizedBehavior;
+}) => QueryFunction<T>;
+export declare const queryClient: QueryClient;
+export {};
+</file>
+
+<file path="ai_skeleton_code/client/src/lib/safe-sdk.d.ts">
+import SafeApiKit from "@safe-global/api-kit";
+import { ethers } from "ethers";
+export interface SafeInfo {
+    address: string;
+    owners: string[];
+    threshold: number;
+    nonce: number;
+    modules: string[];
+    guard: string | null;
+    fallbackHandler: string | null;
+}
+export interface SafeTransactionResult {
+    success: boolean;
+    txHash?: string;
+    error?: string;
+}
+export declare function getSafeApiKit(chainId: number): Promise<SafeApiKit | null>;
+export declare function getSafeInfo(safeAddress: string, provider: ethers.BrowserProvider): Promise<SafeInfo>;
+export declare function setGuardOnSafe(safeAddress: string, guardAddress: string, provider: ethers.BrowserProvider, signer: ethers.Signer): Promise<SafeTransactionResult>;
+export declare function removeGuardFromSafe(safeAddress: string, provider: ethers.BrowserProvider, signer: ethers.Signer): Promise<SafeTransactionResult>;
+export declare function swapOwner(safeAddress: string, oldOwner: string, newOwner: string, provider: ethers.BrowserProvider, signer: ethers.Signer): Promise<SafeTransactionResult>;
+export declare function addOwner(safeAddress: string, newOwner: string, threshold?: number, provider?: ethers.BrowserProvider, signer?: ethers.Signer): Promise<SafeTransactionResult>;
+export declare function removeOwner(safeAddress: string, ownerToRemove: string, threshold?: number, provider?: ethers.BrowserProvider, signer?: ethers.Signer): Promise<SafeTransactionResult>;
+export declare function isOwner(safeAddress: string, address: string, provider: ethers.BrowserProvider): Promise<boolean>;
+export declare function createSafeTransaction(safeAddress: string, to: string, value: string, data: string, provider: ethers.BrowserProvider, signer: ethers.Signer): Promise<SafeTransactionResult>;
+export declare function formatSafeAddress(address: string): string;
+export declare function isValidAddress(address: string): boolean;
+</file>
+
+<file path="ai_skeleton_code/client/src/lib/utils.d.ts">
+import { type ClassValue } from "clsx";
+export declare function cn(...inputs: ClassValue[]): string;
+</file>
+
+<file path="ai_skeleton_code/client/src/lib/wagmi.d.ts">
+export declare const config: import("wagmi").Config<readonly [{
+    blockExplorers: {
+        readonly default: {
+            readonly name: "Etherscan";
+            readonly url: "https://etherscan.io";
+            readonly apiUrl: "https://api.etherscan.io/api";
+        };
+    };
+    blockTime: 12000;
+    contracts: {
+        readonly ensUniversalResolver: {
+            readonly address: "0xeeeeeeee14d718c2b47d9923deab1335e144eeee";
+            readonly blockCreated: 23085558;
+        };
+        readonly multicall3: {
+            readonly address: "0xca11bde05977b3631167028862be2a173976ca11";
+            readonly blockCreated: 14353601;
+        };
+    };
+    ensTlds?: readonly string[] | undefined;
+    id: 1;
+    name: "Ethereum";
+    nativeCurrency: {
+        readonly name: "Ether";
+        readonly symbol: "ETH";
+        readonly decimals: 18;
+    };
+    experimental_preconfirmationTime?: number | undefined | undefined;
+    rpcUrls: {
+        readonly default: {
+            readonly http: readonly ["https://eth.merkle.io"];
+        };
+    };
+    sourceId?: number | undefined | undefined;
+    testnet?: boolean | undefined | undefined;
+    custom?: Record<string, unknown> | undefined;
+    fees?: import("viem").ChainFees<undefined> | undefined;
+    formatters?: undefined;
+    prepareTransactionRequest?: ((args: import("viem").PrepareTransactionRequestParameters, options: {
+        phase: "beforeFillTransaction" | "beforeFillParameters" | "afterFillParameters";
+    }) => Promise<import("viem").PrepareTransactionRequestParameters>) | [fn: ((args: import("viem").PrepareTransactionRequestParameters, options: {
+        phase: "beforeFillTransaction" | "beforeFillParameters" | "afterFillParameters";
+    }) => Promise<import("viem").PrepareTransactionRequestParameters>) | undefined, options: {
+        runAt: readonly ("beforeFillTransaction" | "beforeFillParameters" | "afterFillParameters")[];
+    }] | undefined;
+    serializers?: import("viem").ChainSerializers<undefined, import("viem").TransactionSerializable> | undefined;
+}, {
+    blockExplorers: {
+        readonly default: {
+            readonly name: "Etherscan";
+            readonly url: "https://sepolia.etherscan.io";
+            readonly apiUrl: "https://api-sepolia.etherscan.io/api";
+        };
+    };
+    blockTime?: number | undefined | undefined;
+    contracts: {
+        readonly multicall3: {
+            readonly address: "0xca11bde05977b3631167028862be2a173976ca11";
+            readonly blockCreated: 751532;
+        };
+        readonly ensUniversalResolver: {
+            readonly address: "0xeeeeeeee14d718c2b47d9923deab1335e144eeee";
+            readonly blockCreated: 8928790;
+        };
+    };
+    ensTlds?: readonly string[] | undefined;
+    id: 11155111;
+    name: "Sepolia";
+    nativeCurrency: {
+        readonly name: "Sepolia Ether";
+        readonly symbol: "ETH";
+        readonly decimals: 18;
+    };
+    experimental_preconfirmationTime?: number | undefined | undefined;
+    rpcUrls: {
+        readonly default: {
+            readonly http: readonly ["https://11155111.rpc.thirdweb.com"];
+        };
+    };
+    sourceId?: number | undefined | undefined;
+    testnet: true;
+    custom?: Record<string, unknown> | undefined;
+    fees?: import("viem").ChainFees<undefined> | undefined;
+    formatters?: undefined;
+    prepareTransactionRequest?: ((args: import("viem").PrepareTransactionRequestParameters, options: {
+        phase: "beforeFillTransaction" | "beforeFillParameters" | "afterFillParameters";
+    }) => Promise<import("viem").PrepareTransactionRequestParameters>) | [fn: ((args: import("viem").PrepareTransactionRequestParameters, options: {
+        phase: "beforeFillTransaction" | "beforeFillParameters" | "afterFillParameters";
+    }) => Promise<import("viem").PrepareTransactionRequestParameters>) | undefined, options: {
+        runAt: readonly ("beforeFillTransaction" | "beforeFillParameters" | "afterFillParameters")[];
+    }] | undefined;
+    serializers?: import("viem").ChainSerializers<undefined, import("viem").TransactionSerializable> | undefined;
+}, {
+    blockExplorers?: {
+        [key: string]: {
+            name: string;
+            url: string;
+            apiUrl?: string | undefined;
+        };
+        default: {
+            name: string;
+            url: string;
+            apiUrl?: string | undefined;
+        };
+    } | undefined | undefined;
+    blockTime?: number | undefined | undefined;
+    contracts?: {
+        [x: string]: import("viem").ChainContract | {
+            [sourceId: number]: import("viem").ChainContract | undefined;
+        } | undefined;
+        ensRegistry?: import("viem").ChainContract | undefined;
+        ensUniversalResolver?: import("viem").ChainContract | undefined;
+        multicall3?: import("viem").ChainContract | undefined;
+        erc6492Verifier?: import("viem").ChainContract | undefined;
+    } | undefined;
+    ensTlds?: readonly string[] | undefined;
+    id: 31337;
+    name: "Hardhat";
+    nativeCurrency: {
+        readonly decimals: 18;
+        readonly name: "Ether";
+        readonly symbol: "ETH";
+    };
+    experimental_preconfirmationTime?: number | undefined | undefined;
+    rpcUrls: {
+        readonly default: {
+            readonly http: readonly ["http://127.0.0.1:8545"];
+        };
+    };
+    sourceId?: number | undefined | undefined;
+    testnet?: boolean | undefined | undefined;
+    custom?: Record<string, unknown> | undefined;
+    fees?: import("viem").ChainFees<undefined> | undefined;
+    formatters?: undefined;
+    prepareTransactionRequest?: ((args: import("viem").PrepareTransactionRequestParameters, options: {
+        phase: "beforeFillTransaction" | "beforeFillParameters" | "afterFillParameters";
+    }) => Promise<import("viem").PrepareTransactionRequestParameters>) | [fn: ((args: import("viem").PrepareTransactionRequestParameters, options: {
+        phase: "beforeFillTransaction" | "beforeFillParameters" | "afterFillParameters";
+    }) => Promise<import("viem").PrepareTransactionRequestParameters>) | undefined, options: {
+        runAt: readonly ("beforeFillTransaction" | "beforeFillParameters" | "afterFillParameters")[];
+    }] | undefined;
+    serializers?: import("viem").ChainSerializers<undefined, import("viem").TransactionSerializable> | undefined;
+}], {
+    1: import("viem").HttpTransport<undefined, false>;
+    11155111: import("viem").HttpTransport<undefined, false>;
+    31337: import("viem").HttpTransport<undefined, false>;
+}, readonly [import("wagmi").CreateConnectorFn<{
+    on: <event extends keyof import("viem").EIP1193EventMap>(event: event, listener: import("viem").EIP1193EventMap[event]) => void;
+    removeListener: <event extends keyof import("viem").EIP1193EventMap>(event: event, listener: import("viem").EIP1193EventMap[event]) => void;
+    request: import("viem").EIP1193RequestFn<import("viem").EIP1474Methods>;
+    isApexWallet?: true | undefined;
+    isAvalanche?: true | undefined;
+    isBackpack?: true | undefined;
+    isBifrost?: true | undefined;
+    isBitKeep?: true | undefined;
+    isBitski?: true | undefined;
+    isBlockWallet?: true | undefined;
+    isBraveWallet?: true | undefined;
+    isCoinbaseWallet?: true | undefined;
+    isDawn?: true | undefined;
+    isEnkrypt?: true | undefined;
+    isExodus?: true | undefined;
+    isFrame?: true | undefined;
+    isFrontier?: true | undefined;
+    isGamestop?: true | undefined;
+    isHyperPay?: true | undefined;
+    isImToken?: true | undefined;
+    isKuCoinWallet?: true | undefined;
+    isMathWallet?: true | undefined;
+    isMetaMask?: true | undefined;
+    isOkxWallet?: true | undefined;
+    isOKExWallet?: true | undefined;
+    isOneInchAndroidWallet?: true | undefined;
+    isOneInchIOSWallet?: true | undefined;
+    isOpera?: true | undefined;
+    isPhantom?: true | undefined;
+    isPortal?: true | undefined;
+    isRabby?: true | undefined;
+    isRainbow?: true | undefined;
+    isStatus?: true | undefined;
+    isTally?: true | undefined;
+    isTokenPocket?: true | undefined;
+    isTokenary?: true | undefined;
+    isTrust?: true | undefined;
+    isTrustWallet?: true | undefined;
+    isUniswapWallet?: true | undefined;
+    isXDEFI?: true | undefined;
+    isZerion?: true | undefined;
+    providers?: {
+        on: <event extends keyof import("viem").EIP1193EventMap>(event: event, listener: import("viem").EIP1193EventMap[event]) => void;
+        removeListener: <event extends keyof import("viem").EIP1193EventMap>(event: event, listener: import("viem").EIP1193EventMap[event]) => void;
+        request: import("viem").EIP1193RequestFn<import("viem").EIP1474Methods>;
+        isApexWallet?: true | undefined;
+        isAvalanche?: true | undefined;
+        isBackpack?: true | undefined;
+        isBifrost?: true | undefined;
+        isBitKeep?: true | undefined;
+        isBitski?: true | undefined;
+        isBlockWallet?: true | undefined;
+        isBraveWallet?: true | undefined;
+        isCoinbaseWallet?: true | undefined;
+        isDawn?: true | undefined;
+        isEnkrypt?: true | undefined;
+        isExodus?: true | undefined;
+        isFrame?: true | undefined;
+        isFrontier?: true | undefined;
+        isGamestop?: true | undefined;
+        isHyperPay?: true | undefined;
+        isImToken?: true | undefined;
+        isKuCoinWallet?: true | undefined;
+        isMathWallet?: true | undefined;
+        isMetaMask?: true | undefined;
+        isOkxWallet?: true | undefined;
+        isOKExWallet?: true | undefined;
+        isOneInchAndroidWallet?: true | undefined;
+        isOneInchIOSWallet?: true | undefined;
+        isOpera?: true | undefined;
+        isPhantom?: true | undefined;
+        isPortal?: true | undefined;
+        isRabby?: true | undefined;
+        isRainbow?: true | undefined;
+        isStatus?: true | undefined;
+        isTally?: true | undefined;
+        isTokenPocket?: true | undefined;
+        isTokenary?: true | undefined;
+        isTrust?: true | undefined;
+        isTrustWallet?: true | undefined;
+        isUniswapWallet?: true | undefined;
+        isXDEFI?: true | undefined;
+        isZerion?: true | undefined;
+        providers?: any[] | undefined;
+        _events?: {
+            connect?: (() => void) | undefined;
+        } | undefined;
+        _state?: {
+            accounts?: string[];
+            initialized?: boolean;
+            isConnected?: boolean;
+            isPermanentlyDisconnected?: boolean;
+            isUnlocked?: boolean;
+        } | undefined;
+    }[] | undefined;
+    _events?: {
+        connect?: (() => void) | undefined;
+    } | undefined;
+    _state?: {
+        accounts?: string[];
+        initialized?: boolean;
+        isConnected?: boolean;
+        isPermanentlyDisconnected?: boolean;
+        isUnlocked?: boolean;
+    } | undefined;
+} | undefined, {
+    onConnect(connectInfo: import("viem").ProviderConnectInfo): void;
+}, {
+    [x: `${string}.disconnected`]: true;
+    "injected.connected": true;
+}>]>;
+declare module 'wagmi' {
+    interface Register {
+        config: typeof config;
+    }
+}
+</file>
+
+<file path="ai_skeleton_code/client/src/main.d.ts">
+import "./index.css";
+</file>
+
+<file path="ai_skeleton_code/client/src/pages/dashboard.d.ts">
+export default function Dashboard(): import("react").JSX.Element;
+</file>
+
+<file path="ai_skeleton_code/client/src/pages/evidence.d.ts">
+export default function Evidence(): import("react").JSX.Element;
+</file>
+
+<file path="ai_skeleton_code/client/src/pages/home.d.ts">
+export default function Home(): import("react").JSX.Element;
+</file>
+
+<file path="ai_skeleton_code/client/src/pages/learn.d.ts">
+export default function Learn(): import("react").JSX.Element;
+</file>
+
+<file path="ai_skeleton_code/client/src/pages/legal.d.ts">
+export default function Legal(): import("react").JSX.Element;
+</file>
+
+<file path="ai_skeleton_code/client/src/pages/not-found.d.ts">
+export default function NotFound(): import("react").JSX.Element;
+</file>
+
+<file path="ai_skeleton_code/client/src/pages/transfer/buy.d.ts">
+export default function Buy(): import("react").JSX.Element;
+</file>
+
+<file path="ai_skeleton_code/client/src/pages/transfer/index.d.ts">
+export default function Transfer(): import("react").JSX.Element;
+</file>
+
+<file path="ai_skeleton_code/client/src/pages/transfer/sell.d.ts">
+export default function Sell(): import("react").JSX.Element;
+</file>
+
+<file path="ai_skeleton_code/client/src/pages/wallet-transparency.d.ts">
+export default function WalletTransparency(): import("react").JSX.Element;
+</file>
+
+<file path="ai_skeleton_code/server/db.d.ts">
+import pg from "pg";
+import * as schema from "@shared/schema";
+export declare const pool: pg.Pool;
+export declare const db: import("drizzle-orm/node-postgres").NodePgDatabase<typeof schema> & {
+    $client: pg.Pool;
+};
+</file>
+
+<file path="ai_skeleton_code/server/index.d.ts">
+declare module "http" {
+    interface IncomingMessage {
+        rawBody: unknown;
+    }
+}
+export declare function log(message: string, source?: string): void;
+</file>
+
+<file path="ai_skeleton_code/server/routes.d.ts">
+import type { Express } from "express";
+import { type Server } from "http";
+export declare function registerRoutes(httpServer: Server, app: Express): Promise<Server>;
+</file>
+
+<file path="ai_skeleton_code/server/safe-watcher.d.ts">
+/**
+ * safe-watcher.ts
+ *
+ * Background job polling Safe Transaction Service API mỗi 30 giây
+ * cho tất cả trades đang ở trạng thái FUNDED.
+ *
+ * Nhiệm vụ (chỉ thông báo, không quyết định):
+ *  - Nonce tăng nhưng buyer chưa là owner → cảnh báo "bất thường"
+ *  - Buyer đã là owner và seller không còn là owner → thông báo "chuyển thành công"
+ */
+export declare function startSafeWatcher(): void;
+export declare function stopSafeWatcher(): void;
+export declare function clearTradeNotifyCache(tradeId: string): void;
+</file>
+
+<file path="ai_skeleton_code/server/static.d.ts">
+import { type Express } from "express";
+export declare function serveStatic(app: Express): void;
+</file>
+
+<file path="ai_skeleton_code/server/storage.d.ts">
+import { type User, type InsertUser, type Trade, type InsertTrade, type Evidence, type InsertEvidence, type SystemLog, type InsertSystemLog } from "@shared/schema";
+export interface IStorage {
+    getUser(id: string): Promise<User | undefined>;
+    getUserByWallet(walletAddress: string): Promise<User | undefined>;
+    createUser(user: InsertUser): Promise<User>;
+    getTrade(id: string): Promise<Trade | undefined>;
+    getTradesBySeller(sellerAddress: string): Promise<Trade[]>;
+    getTradesByBuyer(buyerAddress: string): Promise<Trade[]>;
+    getTradeBySafeAddress(safeAddress: string): Promise<Trade | undefined>;
+    getAllTrades(): Promise<Trade[]>;
+    createTrade(trade: InsertTrade): Promise<Trade>;
+    updateTrade(id: string, data: Partial<Trade>): Promise<Trade | undefined>;
+    getEvidence(id: string): Promise<Evidence | undefined>;
+    getEvidenceByTrade(tradeId: string): Promise<Evidence[]>;
+    getAllEvidence(): Promise<Evidence[]>;
+    createEvidence(evidence: InsertEvidence): Promise<Evidence>;
+    getSystemLogs(): Promise<SystemLog[]>;
+    getLogsByTrade(tradeId: string): Promise<SystemLog[]>;
+    createLog(log: InsertSystemLog): Promise<SystemLog>;
+}
+export declare class DatabaseStorage implements IStorage {
+    getUser(id: string): Promise<User | undefined>;
+    getUserByWallet(walletAddress: string): Promise<User | undefined>;
+    createUser(insertUser: InsertUser): Promise<User>;
+    getTrade(id: string): Promise<Trade | undefined>;
+    getTradesBySeller(sellerAddress: string): Promise<Trade[]>;
+    getTradesByBuyer(buyerAddress: string): Promise<Trade[]>;
+    getTradeBySafeAddress(safeAddress: string): Promise<Trade | undefined>;
+    getAllTrades(): Promise<Trade[]>;
+    createTrade(insertTrade: InsertTrade): Promise<Trade>;
+    updateTrade(id: string, data: Partial<Trade>): Promise<Trade | undefined>;
+    getEvidence(id: string): Promise<Evidence | undefined>;
+    getEvidenceByTrade(tradeId: string): Promise<Evidence[]>;
+    getAllEvidence(): Promise<Evidence[]>;
+    createEvidence(insertEvidence: InsertEvidence): Promise<Evidence>;
+    getSystemLogs(): Promise<SystemLog[]>;
+    getLogsByTrade(tradeId: string): Promise<SystemLog[]>;
+    createLog(insertLog: InsertSystemLog): Promise<SystemLog>;
+}
+export declare const storage: DatabaseStorage;
+</file>
+
+<file path="ai_skeleton_code/server/vite.d.ts">
+import { type Express } from "express";
+import { type Server } from "http";
+export declare function setupVite(server: Server, app: Express): Promise<void>;
+</file>
+
+<file path="ai_skeleton_code/server/websocket.d.ts">
+import type { Server } from 'http';
+declare class EventBroadcaster {
+    private wss;
+    private clients;
+    initialize(server: Server): void;
+    private handleMessage;
+    broadcast(eventType: string, data: any, channels?: string[]): void;
+    broadcastTradeUpdate(tradeId: string, status: string, data?: any): void;
+    broadcastNewTrade(trade: any): void;
+    broadcastContractEvent(eventName: string, eventData: any): void;
+    broadcastNotification(title: string, message: string, type?: 'info' | 'success' | 'warning' | 'error'): void;
+    getClientCount(): number;
+}
+export declare const eventBroadcaster: EventBroadcaster;
+export {};
+</file>
+
+<file path="ai_skeleton_code/shared/schema.d.ts">
+import { z } from "zod";
+export declare const tradeStatusEnum: import("drizzle-orm/pg-core").PgEnum<["DRAFT", "LISTED", "JOINED", "ARMED", "FUNDED", "COMPLETED", "CANCELLED"]>;
+export declare const logTypeEnum: import("drizzle-orm/pg-core").PgEnum<["TRADE_EVENT", "SECURITY", "SYSTEM"]>;
+export declare const users: import("drizzle-orm/pg-core").PgTableWithColumns<{
+    name: "users";
+    schema: undefined;
+    columns: {
+        id: import("drizzle-orm/pg-core").PgColumn<{
+            name: "id";
+            tableName: "users";
+            dataType: "string";
+            columnType: "PgVarchar";
+            data: string;
+            driverParam: string;
+            notNull: true;
+            hasDefault: true;
+            isPrimaryKey: true;
+            isAutoincrement: false;
+            hasRuntimeDefault: false;
+            enumValues: [string, ...string[]];
+            baseColumn: never;
+            identity: undefined;
+            generated: undefined;
+        }, {}, {
+            length: number | undefined;
+        }>;
+        walletAddress: import("drizzle-orm/pg-core").PgColumn<{
+            name: "wallet_address";
+            tableName: "users";
+            dataType: "string";
+            columnType: "PgText";
+            data: string;
+            driverParam: string;
+            notNull: true;
+            hasDefault: false;
+            isPrimaryKey: false;
+            isAutoincrement: false;
+            hasRuntimeDefault: false;
+            enumValues: [string, ...string[]];
+            baseColumn: never;
+            identity: undefined;
+            generated: undefined;
+        }, {}, {}>;
+        createdAt: import("drizzle-orm/pg-core").PgColumn<{
+            name: "created_at";
+            tableName: "users";
+            dataType: "date";
+            columnType: "PgTimestamp";
+            data: Date;
+            driverParam: string;
+            notNull: true;
+            hasDefault: true;
+            isPrimaryKey: false;
+            isAutoincrement: false;
+            hasRuntimeDefault: false;
+            enumValues: undefined;
+            baseColumn: never;
+            identity: undefined;
+            generated: undefined;
+        }, {}, {}>;
+    };
+    dialect: "pg";
+}>;
+export declare const trades: import("drizzle-orm/pg-core").PgTableWithColumns<{
+    name: "trades";
+    schema: undefined;
+    columns: {
+        id: import("drizzle-orm/pg-core").PgColumn<{
+            name: "id";
+            tableName: "trades";
+            dataType: "string";
+            columnType: "PgVarchar";
+            data: string;
+            driverParam: string;
+            notNull: true;
+            hasDefault: true;
+            isPrimaryKey: true;
+            isAutoincrement: false;
+            hasRuntimeDefault: false;
+            enumValues: [string, ...string[]];
+            baseColumn: never;
+            identity: undefined;
+            generated: undefined;
+        }, {}, {
+            length: number | undefined;
+        }>;
+        safeAddress: import("drizzle-orm/pg-core").PgColumn<{
+            name: "safe_address";
+            tableName: "trades";
+            dataType: "string";
+            columnType: "PgText";
+            data: string;
+            driverParam: string;
+            notNull: true;
+            hasDefault: false;
+            isPrimaryKey: false;
+            isAutoincrement: false;
+            hasRuntimeDefault: false;
+            enumValues: [string, ...string[]];
+            baseColumn: never;
+            identity: undefined;
+            generated: undefined;
+        }, {}, {}>;
+        sellerAddress: import("drizzle-orm/pg-core").PgColumn<{
+            name: "seller_address";
+            tableName: "trades";
+            dataType: "string";
+            columnType: "PgText";
+            data: string;
+            driverParam: string;
+            notNull: true;
+            hasDefault: false;
+            isPrimaryKey: false;
+            isAutoincrement: false;
+            hasRuntimeDefault: false;
+            enumValues: [string, ...string[]];
+            baseColumn: never;
+            identity: undefined;
+            generated: undefined;
+        }, {}, {}>;
+        buyerAddress: import("drizzle-orm/pg-core").PgColumn<{
+            name: "buyer_address";
+            tableName: "trades";
+            dataType: "string";
+            columnType: "PgText";
+            data: string;
+            driverParam: string;
+            notNull: false;
+            hasDefault: false;
+            isPrimaryKey: false;
+            isAutoincrement: false;
+            hasRuntimeDefault: false;
+            enumValues: [string, ...string[]];
+            baseColumn: never;
+            identity: undefined;
+            generated: undefined;
+        }, {}, {}>;
+        priceEth: import("drizzle-orm/pg-core").PgColumn<{
+            name: "price_eth";
+            tableName: "trades";
+            dataType: "string";
+            columnType: "PgNumeric";
+            data: string;
+            driverParam: string;
+            notNull: true;
+            hasDefault: false;
+            isPrimaryKey: false;
+            isAutoincrement: false;
+            hasRuntimeDefault: false;
+            enumValues: undefined;
+            baseColumn: never;
+            identity: undefined;
+            generated: undefined;
+        }, {}, {}>;
+        deadline: import("drizzle-orm/pg-core").PgColumn<{
+            name: "deadline";
+            tableName: "trades";
+            dataType: "date";
+            columnType: "PgTimestamp";
+            data: Date;
+            driverParam: string;
+            notNull: true;
+            hasDefault: false;
+            isPrimaryKey: false;
+            isAutoincrement: false;
+            hasRuntimeDefault: false;
+            enumValues: undefined;
+            baseColumn: never;
+            identity: undefined;
+            generated: undefined;
+        }, {}, {}>;
+        onchainTradeId: import("drizzle-orm/pg-core").PgColumn<{
+            name: "onchain_trade_id";
+            tableName: "trades";
+            dataType: "string";
+            columnType: "PgText";
+            data: string;
+            driverParam: string;
+            notNull: false;
+            hasDefault: false;
+            isPrimaryKey: false;
+            isAutoincrement: false;
+            hasRuntimeDefault: false;
+            enumValues: [string, ...string[]];
+            baseColumn: never;
+            identity: undefined;
+            generated: undefined;
+        }, {}, {}>;
+        snapshotNonce: import("drizzle-orm/pg-core").PgColumn<{
+            name: "snapshot_nonce";
+            tableName: "trades";
+            dataType: "string";
+            columnType: "PgText";
+            data: string;
+            driverParam: string;
+            notNull: false;
+            hasDefault: false;
+            isPrimaryKey: false;
+            isAutoincrement: false;
+            hasRuntimeDefault: false;
+            enumValues: [string, ...string[]];
+            baseColumn: never;
+            identity: undefined;
+            generated: undefined;
+        }, {}, {}>;
+        status: import("drizzle-orm/pg-core").PgColumn<{
+            name: "status";
+            tableName: "trades";
+            dataType: "string";
+            columnType: "PgEnumColumn";
+            data: "DRAFT" | "LISTED" | "JOINED" | "ARMED" | "FUNDED" | "COMPLETED" | "CANCELLED";
+            driverParam: string;
+            notNull: true;
+            hasDefault: true;
+            isPrimaryKey: false;
+            isAutoincrement: false;
+            hasRuntimeDefault: false;
+            enumValues: ["DRAFT", "LISTED", "JOINED", "ARMED", "FUNDED", "COMPLETED", "CANCELLED"];
+            baseColumn: never;
+            identity: undefined;
+            generated: undefined;
+        }, {}, {}>;
+        createdAt: import("drizzle-orm/pg-core").PgColumn<{
+            name: "created_at";
+            tableName: "trades";
+            dataType: "date";
+            columnType: "PgTimestamp";
+            data: Date;
+            driverParam: string;
+            notNull: true;
+            hasDefault: true;
+            isPrimaryKey: false;
+            isAutoincrement: false;
+            hasRuntimeDefault: false;
+            enumValues: undefined;
+            baseColumn: never;
+            identity: undefined;
+            generated: undefined;
+        }, {}, {}>;
+        updatedAt: import("drizzle-orm/pg-core").PgColumn<{
+            name: "updated_at";
+            tableName: "trades";
+            dataType: "date";
+            columnType: "PgTimestamp";
+            data: Date;
+            driverParam: string;
+            notNull: true;
+            hasDefault: true;
+            isPrimaryKey: false;
+            isAutoincrement: false;
+            hasRuntimeDefault: false;
+            enumValues: undefined;
+            baseColumn: never;
+            identity: undefined;
+            generated: undefined;
+        }, {}, {}>;
+    };
+    dialect: "pg";
+}>;
+export declare const evidence: import("drizzle-orm/pg-core").PgTableWithColumns<{
+    name: "evidence";
+    schema: undefined;
+    columns: {
+        id: import("drizzle-orm/pg-core").PgColumn<{
+            name: "id";
+            tableName: "evidence";
+            dataType: "string";
+            columnType: "PgVarchar";
+            data: string;
+            driverParam: string;
+            notNull: true;
+            hasDefault: true;
+            isPrimaryKey: true;
+            isAutoincrement: false;
+            hasRuntimeDefault: false;
+            enumValues: [string, ...string[]];
+            baseColumn: never;
+            identity: undefined;
+            generated: undefined;
+        }, {}, {
+            length: number | undefined;
+        }>;
+        tradeId: import("drizzle-orm/pg-core").PgColumn<{
+            name: "trade_id";
+            tableName: "evidence";
+            dataType: "string";
+            columnType: "PgVarchar";
+            data: string;
+            driverParam: string;
+            notNull: false;
+            hasDefault: false;
+            isPrimaryKey: false;
+            isAutoincrement: false;
+            hasRuntimeDefault: false;
+            enumValues: [string, ...string[]];
+            baseColumn: never;
+            identity: undefined;
+            generated: undefined;
+        }, {}, {
+            length: number | undefined;
+        }>;
+        hash: import("drizzle-orm/pg-core").PgColumn<{
+            name: "hash";
+            tableName: "evidence";
+            dataType: "string";
+            columnType: "PgText";
+            data: string;
+            driverParam: string;
+            notNull: true;
+            hasDefault: false;
+            isPrimaryKey: false;
+            isAutoincrement: false;
+            hasRuntimeDefault: false;
+            enumValues: [string, ...string[]];
+            baseColumn: never;
+            identity: undefined;
+            generated: undefined;
+        }, {}, {}>;
+        signerAddress: import("drizzle-orm/pg-core").PgColumn<{
+            name: "signer_address";
+            tableName: "evidence";
+            dataType: "string";
+            columnType: "PgText";
+            data: string;
+            driverParam: string;
+            notNull: true;
+            hasDefault: false;
+            isPrimaryKey: false;
+            isAutoincrement: false;
+            hasRuntimeDefault: false;
+            enumValues: [string, ...string[]];
+            baseColumn: never;
+            identity: undefined;
+            generated: undefined;
+        }, {}, {}>;
+        onchainTxHash: import("drizzle-orm/pg-core").PgColumn<{
+            name: "onchain_tx_hash";
+            tableName: "evidence";
+            dataType: "string";
+            columnType: "PgText";
+            data: string;
+            driverParam: string;
+            notNull: false;
+            hasDefault: false;
+            isPrimaryKey: false;
+            isAutoincrement: false;
+            hasRuntimeDefault: false;
+            enumValues: [string, ...string[]];
+            baseColumn: never;
+            identity: undefined;
+            generated: undefined;
+        }, {}, {}>;
+        payload: import("drizzle-orm/pg-core").PgColumn<{
+            name: "payload";
+            tableName: "evidence";
+            dataType: "string";
+            columnType: "PgText";
+            data: string;
+            driverParam: string;
+            notNull: false;
+            hasDefault: false;
+            isPrimaryKey: false;
+            isAutoincrement: false;
+            hasRuntimeDefault: false;
+            enumValues: [string, ...string[]];
+            baseColumn: never;
+            identity: undefined;
+            generated: undefined;
+        }, {}, {}>;
+        createdAt: import("drizzle-orm/pg-core").PgColumn<{
+            name: "created_at";
+            tableName: "evidence";
+            dataType: "date";
+            columnType: "PgTimestamp";
+            data: Date;
+            driverParam: string;
+            notNull: true;
+            hasDefault: true;
+            isPrimaryKey: false;
+            isAutoincrement: false;
+            hasRuntimeDefault: false;
+            enumValues: undefined;
+            baseColumn: never;
+            identity: undefined;
+            generated: undefined;
+        }, {}, {}>;
+    };
+    dialect: "pg";
+}>;
+export declare const systemLogs: import("drizzle-orm/pg-core").PgTableWithColumns<{
+    name: "system_logs";
+    schema: undefined;
+    columns: {
+        id: import("drizzle-orm/pg-core").PgColumn<{
+            name: "id";
+            tableName: "system_logs";
+            dataType: "string";
+            columnType: "PgVarchar";
+            data: string;
+            driverParam: string;
+            notNull: true;
+            hasDefault: true;
+            isPrimaryKey: true;
+            isAutoincrement: false;
+            hasRuntimeDefault: false;
+            enumValues: [string, ...string[]];
+            baseColumn: never;
+            identity: undefined;
+            generated: undefined;
+        }, {}, {
+            length: number | undefined;
+        }>;
+        type: import("drizzle-orm/pg-core").PgColumn<{
+            name: "type";
+            tableName: "system_logs";
+            dataType: "string";
+            columnType: "PgEnumColumn";
+            data: "TRADE_EVENT" | "SECURITY" | "SYSTEM";
+            driverParam: string;
+            notNull: true;
+            hasDefault: false;
+            isPrimaryKey: false;
+            isAutoincrement: false;
+            hasRuntimeDefault: false;
+            enumValues: ["TRADE_EVENT", "SECURITY", "SYSTEM"];
+            baseColumn: never;
+            identity: undefined;
+            generated: undefined;
+        }, {}, {}>;
+        message: import("drizzle-orm/pg-core").PgColumn<{
+            name: "message";
+            tableName: "system_logs";
+            dataType: "string";
+            columnType: "PgText";
+            data: string;
+            driverParam: string;
+            notNull: true;
+            hasDefault: false;
+            isPrimaryKey: false;
+            isAutoincrement: false;
+            hasRuntimeDefault: false;
+            enumValues: [string, ...string[]];
+            baseColumn: never;
+            identity: undefined;
+            generated: undefined;
+        }, {}, {}>;
+        relatedTradeId: import("drizzle-orm/pg-core").PgColumn<{
+            name: "related_trade_id";
+            tableName: "system_logs";
+            dataType: "string";
+            columnType: "PgVarchar";
+            data: string;
+            driverParam: string;
+            notNull: false;
+            hasDefault: false;
+            isPrimaryKey: false;
+            isAutoincrement: false;
+            hasRuntimeDefault: false;
+            enumValues: [string, ...string[]];
+            baseColumn: never;
+            identity: undefined;
+            generated: undefined;
+        }, {}, {
+            length: number | undefined;
+        }>;
+        metadata: import("drizzle-orm/pg-core").PgColumn<{
+            name: "metadata";
+            tableName: "system_logs";
+            dataType: "string";
+            columnType: "PgText";
+            data: string;
+            driverParam: string;
+            notNull: false;
+            hasDefault: false;
+            isPrimaryKey: false;
+            isAutoincrement: false;
+            hasRuntimeDefault: false;
+            enumValues: [string, ...string[]];
+            baseColumn: never;
+            identity: undefined;
+            generated: undefined;
+        }, {}, {}>;
+        createdAt: import("drizzle-orm/pg-core").PgColumn<{
+            name: "created_at";
+            tableName: "system_logs";
+            dataType: "date";
+            columnType: "PgTimestamp";
+            data: Date;
+            driverParam: string;
+            notNull: true;
+            hasDefault: true;
+            isPrimaryKey: false;
+            isAutoincrement: false;
+            hasRuntimeDefault: false;
+            enumValues: undefined;
+            baseColumn: never;
+            identity: undefined;
+            generated: undefined;
+        }, {}, {}>;
+    };
+    dialect: "pg";
+}>;
+export declare const tradesRelations: import("drizzle-orm").Relations<"trades", {
+    evidence: import("drizzle-orm").Many<"evidence">;
+    logs: import("drizzle-orm").Many<"system_logs">;
+}>;
+export declare const evidenceRelations: import("drizzle-orm").Relations<"evidence", {
+    trade: import("drizzle-orm").One<"trades", false>;
+}>;
+export declare const systemLogsRelations: import("drizzle-orm").Relations<"system_logs", {
+    trade: import("drizzle-orm").One<"trades", false>;
+}>;
+export declare const insertUserSchema: z.ZodObject<Pick<{
+    id: z.ZodOptional<z.ZodString>;
+    walletAddress: z.ZodString;
+    createdAt: z.ZodOptional<z.ZodDate>;
+}, "walletAddress">, "strip", z.ZodTypeAny, {
+    walletAddress: string;
+}, {
+    walletAddress: string;
+}>;
+export declare const insertTradeSchema: z.ZodObject<Omit<{
+    id: z.ZodOptional<z.ZodString>;
+    safeAddress: z.ZodString;
+    sellerAddress: z.ZodString;
+    buyerAddress: z.ZodOptional<z.ZodNullable<z.ZodString>>;
+    priceEth: z.ZodString;
+    deadline: z.ZodDate;
+    onchainTradeId: z.ZodOptional<z.ZodNullable<z.ZodString>>;
+    snapshotNonce: z.ZodOptional<z.ZodNullable<z.ZodString>>;
+    status: z.ZodOptional<z.ZodEnum<["DRAFT", "LISTED", "JOINED", "ARMED", "FUNDED", "COMPLETED", "CANCELLED"]>>;
+    createdAt: z.ZodOptional<z.ZodDate>;
+    updatedAt: z.ZodOptional<z.ZodDate>;
+}, "id" | "createdAt" | "updatedAt">, "strip", z.ZodTypeAny, {
+    deadline: Date;
+    safeAddress: string;
+    sellerAddress: string;
+    priceEth: string;
+    status?: "DRAFT" | "LISTED" | "JOINED" | "ARMED" | "FUNDED" | "COMPLETED" | "CANCELLED" | undefined;
+    snapshotNonce?: string | null | undefined;
+    buyerAddress?: string | null | undefined;
+    onchainTradeId?: string | null | undefined;
+}, {
+    deadline: Date;
+    safeAddress: string;
+    sellerAddress: string;
+    priceEth: string;
+    status?: "DRAFT" | "LISTED" | "JOINED" | "ARMED" | "FUNDED" | "COMPLETED" | "CANCELLED" | undefined;
+    snapshotNonce?: string | null | undefined;
+    buyerAddress?: string | null | undefined;
+    onchainTradeId?: string | null | undefined;
+}>;
+export declare const insertEvidenceSchema: z.ZodObject<Omit<{
+    id: z.ZodOptional<z.ZodString>;
+    tradeId: z.ZodOptional<z.ZodNullable<z.ZodString>>;
+    hash: z.ZodString;
+    signerAddress: z.ZodString;
+    onchainTxHash: z.ZodOptional<z.ZodNullable<z.ZodString>>;
+    payload: z.ZodOptional<z.ZodNullable<z.ZodString>>;
+    createdAt: z.ZodOptional<z.ZodDate>;
+}, "id" | "createdAt">, "strip", z.ZodTypeAny, {
+    hash: string;
+    signerAddress: string;
+    payload?: string | null | undefined;
+    tradeId?: string | null | undefined;
+    onchainTxHash?: string | null | undefined;
+}, {
+    hash: string;
+    signerAddress: string;
+    payload?: string | null | undefined;
+    tradeId?: string | null | undefined;
+    onchainTxHash?: string | null | undefined;
+}>;
+export declare const insertSystemLogSchema: z.ZodObject<Omit<{
+    id: z.ZodOptional<z.ZodString>;
+    type: z.ZodEnum<["TRADE_EVENT", "SECURITY", "SYSTEM"]>;
+    message: z.ZodString;
+    relatedTradeId: z.ZodOptional<z.ZodNullable<z.ZodString>>;
+    metadata: z.ZodOptional<z.ZodNullable<z.ZodString>>;
+    createdAt: z.ZodOptional<z.ZodDate>;
+}, "id" | "createdAt">, "strip", z.ZodTypeAny, {
+    type: "TRADE_EVENT" | "SECURITY" | "SYSTEM";
+    message: string;
+    metadata?: string | null | undefined;
+    relatedTradeId?: string | null | undefined;
+}, {
+    type: "TRADE_EVENT" | "SECURITY" | "SYSTEM";
+    message: string;
+    metadata?: string | null | undefined;
+    relatedTradeId?: string | null | undefined;
+}>;
+export type InsertUser = z.infer<typeof insertUserSchema>;
+export type User = typeof users.$inferSelect;
+export type InsertTrade = z.infer<typeof insertTradeSchema>;
+export type Trade = typeof trades.$inferSelect;
+export type InsertEvidence = z.infer<typeof insertEvidenceSchema>;
+export type Evidence = typeof evidence.$inferSelect;
+export type InsertSystemLog = z.infer<typeof insertSystemLogSchema>;
+export type SystemLog = typeof systemLogs.$inferSelect;
+export type TradeStatus = "DRAFT" | "LISTED" | "JOINED" | "ARMED" | "FUNDED" | "COMPLETED" | "CANCELLED";
+export type LogType = "TRADE_EVENT" | "SECURITY" | "SYSTEM";
+</file>
+
+<file path="ai_skeleton_code/vite.config.d.ts">
+declare const _default: import("vite").UserConfig;
+export default _default;
+</file>
+
+</files>
