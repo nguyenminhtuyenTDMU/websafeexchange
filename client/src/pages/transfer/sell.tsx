@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
-import { useAccount } from "wagmi";
+import { useAccount, useWriteContract, usePublicClient, useChainId } from "wagmi";
+import { parseEther, keccak256, encodePacked } from "viem";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -12,10 +13,12 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Stepper } from "@/components/stepper";
 import { TradeStatusBadge } from "@/components/trade-status-badge";
 import { ConnectWallet } from "@/components/connect-wallet";
-import { Loader2, AlertCircle, CheckCircle2, Copy, Shield, Settings2 } from "lucide-react";
+import { Loader2, AlertCircle, CheckCircle2, Copy, Shield } from "lucide-react";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { useSafeSdk } from "@/hooks/use-safe-sdk";
+import { escrowABI } from "@/lib/contracts/EscrowABI";
+import { getEscrowAddress } from "@/lib/contracts/addresses";
 import type { Trade } from "@shared/schema";
 import type { SafeInfo } from "@/lib/safe-sdk";
 
@@ -34,53 +37,41 @@ const sellFormSchema = z.object({
 type SellFormValues = z.infer<typeof sellFormSchema>;
 
 const sellerSteps = [
-  { id: 1, title: "Tạo đơn bán", description: "Nhập thông tin" },
+  { id: 1, title: "Tạo đơn bán",   description: "Nhập thông tin" },
   { id: 2, title: "Chờ người mua", description: "Người mua tham gia" },
-  { id: 3, title: "Kích hoạt", description: "Kích hoạt on-chain" },
-  { id: 4, title: "Chờ ký quỹ", description: "Người mua gửi ETH" },
-  { id: 5, title: "Hoàn tất", description: "Chuyển sở hữu" },
+  { id: 3, title: "Kích hoạt",     description: "Arm on-chain" },
+  { id: 4, title: "Chờ ký quỹ",   description: "Người mua gửi ETH" },
+  { id: 5, title: "Hoàn tất",      description: "Chuyển sở hữu & nhận tiền" },
 ];
 
 function getStepFromStatus(status: string): number {
   switch (status) {
     case "DRAFT":
-    case "LISTED":
-      return 2;
-    case "JOINED":
-      return 3;
-    case "ARMED":
-      return 4;
-    case "FUNDED":
-      return 5;
-    case "COMPLETED":
-    case "CANCELLED":
-      return 6;
-    default:
-      return 1;
+    case "LISTED":  return 2;
+    case "JOINED":  return 3;
+    case "ARMED":   return 4;
+    case "FUNDED":  return 5;
+    default:        return status === "COMPLETED" || status === "CANCELLED" ? 6 : 1;
   }
 }
 
-const GUARD_CONTRACT_ADDRESS = "0xB5F8BC6FA44BE0A44C1f0328E5bEF48b4e0645d6";
-// import.meta.env.VITE_GUARD_CONTRACT_ADDRESS ||
-console.log("Guard Contract Address:", GUARD_CONTRACT_ADDRESS);
 export default function Sell() {
   const { address, isConnected } = useAccount();
+  const chainId = useChainId();
+  const publicClient = usePublicClient();
+  const { writeContractAsync } = useWriteContract();
   const { toast } = useToast();
+
   const [createdTradeId, setCreatedTradeId] = useState<string | null>(null);
   const [safeInfo, setSafeInfo] = useState<SafeInfo | null>(null);
   const [isCheckingSafe, setIsCheckingSafe] = useState(false);
-  const [isSettingGuard, setIsSettingGuard] = useState(false);
   const [isSwappingOwner, setIsSwappingOwner] = useState(false);
-  
-  const { getSafeInfo, setGuard, swapOwner, isOwner, loading: safeSdkLoading } = useSafeSdk();
+
+  const { getSafeInfo, swapOwner, isOwner } = useSafeSdk();
 
   const form = useForm<SellFormValues>({
     resolver: zodResolver(sellFormSchema),
-    defaultValues: {
-      safeAddress: "",
-      priceEth: "",
-      deadlineHours: "24",
-    },
+    defaultValues: { safeAddress: "", priceEth: "", deadlineHours: "24" },
   });
 
   const { data: trade, isLoading: isLoadingTrade } = useQuery<Trade>({
@@ -89,11 +80,11 @@ export default function Sell() {
     refetchInterval: 5000,
   });
 
+  // ── Step 1: Tạo listing trên backend ─────────────────────────────────────
   const createTradeMutation = useMutation({
     mutationFn: async (values: SellFormValues) => {
       const deadline = new Date();
       deadline.setHours(deadline.getHours() + parseInt(values.deadlineHours));
-      
       const res = await apiRequest("POST", "/api/trades", {
         safeAddress: values.safeAddress,
         sellerAddress: address,
@@ -105,54 +96,111 @@ export default function Sell() {
     },
     onSuccess: (data) => {
       setCreatedTradeId(data.id);
-      toast({
-        title: "Tạo đơn bán thành công",
-        description: "Đơn bán của bạn đã được tạo. Chờ người mua tham gia.",
-      });
+      toast({ title: "Tạo đơn bán thành công", description: "Chờ người mua tham gia." });
       queryClient.invalidateQueries({ queryKey: ["/api/trades"] });
     },
     onError: (error: Error) => {
-      toast({
-        variant: "destructive",
-        title: "Lỗi",
-        description: error.message || "Không thể tạo đơn bán",
-      });
+      toast({ variant: "destructive", title: "Lỗi", description: error.message });
     },
   });
 
+  // ── Step 3: Arm on-chain rồi sync backend ────────────────────────────────
   const armTradeMutation = useMutation({
     mutationFn: async () => {
-      const res = await apiRequest("POST", `/api/trades/${createdTradeId}/arm`, {});
+      if (!trade?.buyerAddress || !address) throw new Error("Thiếu thông tin buyer hoặc seller");
+
+      const contractAddress = getEscrowAddress(chainId);
+      const safeAddr = trade.safeAddress as `0x${string}`;
+      const buyerAddr = trade.buyerAddress as `0x${string}`;
+      const amount = parseEther(trade.priceEth);
+      const deadlineTs = BigInt(Math.floor(new Date(trade.deadline).getTime() / 1000));
+
+      // 1. Gọi armTrade() trên SC
+      const txHash = await writeContractAsync({
+        address: contractAddress,
+        abi: escrowABI,
+        functionName: "armTrade",
+        args: [safeAddr, buyerAddr, amount, deadlineTs],
+      });
+
+      // 2. Chờ receipt và đọc snapshotNonce từ contract
+      const receipt = await publicClient!.waitForTransactionReceipt({ hash: txHash });
+      if (receipt.status === "reverted") throw new Error("Transaction bị revert");
+
+      // Compute onchain tradeId (keccak256 của buyer+seller+safe)
+      const onchainTradeId = keccak256(
+        encodePacked(["address", "address", "address"], [buyerAddr, address as `0x${string}`, safeAddr])
+      );
+
+      // Đọc snapshotNonce từ trades() getter
+      const tradeData = await publicClient!.readContract({
+        address: contractAddress,
+        abi: escrowABI,
+        functionName: "trades",
+        args: [onchainTradeId],
+      }) as readonly [string, string, string, bigint, bigint, bigint, number, boolean];
+      const snapshotNonce = tradeData[5]; // index 5
+
+      // 3. Sync backend
+      const res = await apiRequest("POST", `/api/trades/${createdTradeId}/arm`, {
+        onchainTradeId,
+        snapshotNonce: snapshotNonce.toString(),
+      });
       return res.json();
     },
     onSuccess: () => {
-      toast({
-        title: "Kích hoạt thành công",
-        description: "Giao dịch đã được kích hoạt trên blockchain.",
-      });
+      toast({ title: "Kích hoạt thành công", description: "Giao dịch đã được arm trên blockchain." });
       queryClient.invalidateQueries({ queryKey: ["/api/trades", createdTradeId] });
     },
     onError: (error: Error) => {
-      toast({
-        variant: "destructive",
-        title: "Lỗi",
-        description: error.message || "Không thể arm trade",
-      });
+      toast({ variant: "destructive", title: "Lỗi arm trade", description: error.message });
     },
   });
 
-  const onSubmit = (values: SellFormValues) => {
-    createTradeMutation.mutate(values);
+  // ── Step 5: Chuyển owner Safe rồi gọi releaseFunds() trên SC ─────────────
+  const handleTransferAndRelease = async () => {
+    if (!trade?.buyerAddress || !address) return;
+
+    setIsSwappingOwner(true);
+    try {
+      // 1. Chuyển owner qua Safe SDK
+      const swapResult = await swapOwner(trade.safeAddress, address, trade.buyerAddress);
+      if (!swapResult.success) throw new Error(swapResult.error || "Chuyển owner thất bại");
+
+      toast({ title: "Đã chuyển quyền sở hữu", description: "Đang giải ngân ký quỹ..." });
+
+      // 2. Gọi releaseFunds() — SC tự verify isOwner(buyer) && !isOwner(seller)
+      const contractAddress = getEscrowAddress(chainId);
+      const onchainTradeId = trade.onchainTradeId as `0x${string}`;
+
+      const txHash = await writeContractAsync({
+        address: contractAddress,
+        abi: escrowABI,
+        functionName: "releaseFunds",
+        args: [onchainTradeId],
+      });
+
+      await publicClient!.waitForTransactionReceipt({ hash: txHash });
+
+      // 3. Sync backend
+      await apiRequest("POST", `/api/trades/${trade.id}/complete`, { txHash });
+      queryClient.invalidateQueries({ queryKey: ["/api/trades", createdTradeId] });
+
+      toast({ title: "Hoàn tất!", description: "ETH đã được chuyển vào ví của bạn." });
+    } catch (error: any) {
+      toast({ variant: "destructive", title: "Lỗi", description: error.message });
+    } finally {
+      setIsSwappingOwner(false);
+    }
   };
 
+  // ── Safe info auto-check ───────────────────────────────────────────────────
   const checkSafeInfo = async (safeAddress: string) => {
     if (!safeAddress || !/^0x[a-fA-F0-9]{40}$/.test(safeAddress)) return;
-    
     setIsCheckingSafe(true);
     try {
       const info = await getSafeInfo(safeAddress);
       setSafeInfo(info);
-      
       if (info && address) {
         const ownerCheck = await isOwner(safeAddress, address);
         if (!ownerCheck) {
@@ -163,97 +211,24 @@ export default function Sell() {
           });
         }
       }
-    } catch (error) {
-      console.error("Lỗi khi lấy thông tin Safe:", error);
+    } catch (err) {
+      console.error("Lỗi khi lấy thông tin Safe:", err);
     } finally {
       setIsCheckingSafe(false);
     }
   };
 
-  const handleSetGuard = async () => {
-    const safeAddressValue = form.getValues("safeAddress");
-    if (!safeAddressValue) return;
-    
-    setIsSettingGuard(true);
-    try {
-      const result = await setGuard(safeAddressValue, GUARD_CONTRACT_ADDRESS);
-      
-      if (result.success) {
-        toast({
-          title: "Thiết lập Guard thành công",
-          description: "Guard contract đã được thiết lập cho Safe của bạn.",
-        });
-        await checkSafeInfo(safeAddressValue);
-      } else {
-        toast({
-          variant: "destructive",
-          title: "Lỗi",
-          description: result.error || "Không thể thiết lập Guard",
-        });
-      }
-    } finally {
-      setIsSettingGuard(false);
-    }
-  };
-
   const safeAddress = form.watch("safeAddress");
-  
   useEffect(() => {
-    const timeoutId = setTimeout(() => {
+    const t = setTimeout(() => {
       if (safeAddress && /^0x[a-fA-F0-9]{40}$/.test(safeAddress)) {
         checkSafeInfo(safeAddress);
       } else {
         setSafeInfo(null);
       }
     }, 500);
-    
-    return () => clearTimeout(timeoutId);
+    return () => clearTimeout(t);
   }, [safeAddress]);
-
-  const isGuardSet = safeInfo?.guard && safeInfo.guard !== "0x0000000000000000000000000000000000000000";
-  const isCorrectGuard = isGuardSet && safeInfo?.guard?.toLowerCase() === GUARD_CONTRACT_ADDRESS.toLowerCase();
-
-  const handleSwapOwner = async () => {
-    if (!trade?.buyerAddress || !address) {
-      toast({
-        variant: "destructive",
-        title: "Lỗi",
-        description: "Thiếu thông tin người mua hoặc người bán",
-      });
-      return;
-    }
-    
-    setIsSwappingOwner(true);
-    try {
-      const result = await swapOwner(trade.safeAddress, address, trade.buyerAddress);
-      
-      if (result.success) {
-        toast({
-          title: "Chuyển quyền sở hữu thành công",
-          description: "Quyền sở hữu Safe đã được chuyển cho người mua.",
-        });
-        
-        await apiRequest("POST", `/api/trades/${trade.id}/complete`, {
-          txHash: result.txHash,
-        });
-        queryClient.invalidateQueries({ queryKey: ["/api/trades", createdTradeId] });
-      } else {
-        toast({
-          variant: "destructive",
-          title: "Lỗi",
-          description: result.error || "Không thể chuyển quyền sở hữu",
-        });
-      }
-    } catch (error: any) {
-      toast({
-        variant: "destructive",
-        title: "Lỗi",
-        description: error.message || "Không thể chuyển quyền sở hữu",
-      });
-    } finally {
-      setIsSwappingOwner(false);
-    }
-  };
 
   const copyTradeId = () => {
     if (createdTradeId) {
@@ -268,9 +243,7 @@ export default function Sell() {
         <div className="max-w-lg mx-auto text-center">
           <Shield className="h-16 w-16 text-muted-foreground mx-auto mb-6" />
           <h1 className="text-2xl font-bold mb-4">Kết nối ví để bắt đầu</h1>
-          <p className="text-muted-foreground mb-6">
-            Bạn cần kết nối ví MetaMask để đăng bán Safe wallet.
-          </p>
+          <p className="text-muted-foreground mb-6">Bạn cần kết nối ví MetaMask để đăng bán Safe wallet.</p>
           <ConnectWallet />
         </div>
       </div>
@@ -284,96 +257,55 @@ export default function Sell() {
       <div className="max-w-4xl mx-auto">
         <div className="mb-8">
           <h1 className="text-2xl md:text-3xl font-bold mb-2">Bán Safe Wallet</h1>
-          <p className="text-muted-foreground">
-            Tạo đơn bán để chuyển nhượng quyền sở hữu Safe wallet của bạn
-          </p>
+          <p className="text-muted-foreground">Tạo đơn bán để chuyển nhượng quyền sở hữu Safe wallet</p>
         </div>
 
         <Stepper steps={sellerSteps} currentStep={currentStep} className="mb-8" />
 
         {!createdTradeId ? (
+          // ── Form tạo listing ────────────────────────────────────────────
           <Card>
             <CardHeader>
               <CardTitle>Bước 1: Tạo đơn bán</CardTitle>
-              <CardDescription>
-                Nhập thông tin Safe wallet bạn muốn bán
-              </CardDescription>
+              <CardDescription>Nhập thông tin Safe wallet bạn muốn bán</CardDescription>
             </CardHeader>
             <CardContent>
               <Form {...form}>
-                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-                  <FormField
-                    control={form.control}
-                    name="safeAddress"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Địa chỉ Safe</FormLabel>
-                        <FormControl>
-                          <Input
-                            placeholder="0x..."
-                            className="font-mono"
-                            {...field}
-                            data-testid="input-safe-address"
-                          />
-                        </FormControl>
-                        <FormDescription>
-                          Địa chỉ của Safe wallet bạn muốn bán
-                        </FormDescription>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
+                <form onSubmit={form.handleSubmit((v) => createTradeMutation.mutate(v))} className="space-y-6">
+                  <FormField control={form.control} name="safeAddress" render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Địa chỉ Safe</FormLabel>
+                      <FormControl>
+                        <Input placeholder="0x..." className="font-mono" {...field} data-testid="input-safe-address" />
+                      </FormControl>
+                      <FormDescription>Địa chỉ của Safe wallet bạn muốn bán</FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )} />
 
-                  <FormField
-                    control={form.control}
-                    name="priceEth"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Giá bán (ETH)</FormLabel>
-                        <FormControl>
-                          <div className="relative">
-                            <Input
-                              type="number"
-                              step="0.001"
-                              placeholder="0.5"
-                              {...field}
-                              data-testid="input-price"
-                            />
-                            <span className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground font-medium">
-                              ETH
-                            </span>
-                          </div>
-                        </FormControl>
-                        <FormDescription>
-                          Số ETH bạn muốn nhận khi bán Safe
-                        </FormDescription>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
+                  <FormField control={form.control} name="priceEth" render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Giá bán (ETH)</FormLabel>
+                      <FormControl>
+                        <div className="relative">
+                          <Input type="number" step="0.001" placeholder="0.5" {...field} data-testid="input-price" />
+                          <span className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground font-medium">ETH</span>
+                        </div>
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )} />
 
-                  <FormField
-                    control={form.control}
-                    name="deadlineHours"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Thời hạn (giờ)</FormLabel>
-                        <FormControl>
-                          <Input
-                            type="number"
-                            min="1"
-                            placeholder="24"
-                            {...field}
-                            data-testid="input-deadline"
-                          />
-                        </FormControl>
-                        <FormDescription>
-                          Thời gian để hoàn tất giao dịch (tính từ khi arm trade)
-                        </FormDescription>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
+                  <FormField control={form.control} name="deadlineHours" render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Thời hạn (giờ)</FormLabel>
+                      <FormControl>
+                        <Input type="number" min="1" placeholder="24" {...field} data-testid="input-deadline" />
+                      </FormControl>
+                      <FormDescription>Thời gian để hoàn tất giao dịch</FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )} />
 
                   {safeInfo && (
                     <Card className="bg-muted/50">
@@ -383,61 +315,28 @@ export default function Sell() {
                           Thông tin Safe
                         </CardTitle>
                       </CardHeader>
-                      <CardContent className="space-y-3">
-                        <div className="grid grid-cols-2 gap-2 text-sm">
-                          <div>
-                            <p className="text-muted-foreground">Số owner</p>
-                            <p className="font-medium">{safeInfo.owners.length}</p>
+                      <CardContent>
+                        {isCheckingSafe ? (
+                          <div className="flex items-center gap-2 text-sm">
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                            <span>Đang kiểm tra...</span>
                           </div>
-                          <div>
-                            <p className="text-muted-foreground">Ngưỡng ký</p>
-                            <p className="font-medium">{safeInfo.threshold}/{safeInfo.owners.length}</p>
+                        ) : (
+                          <div className="grid grid-cols-3 gap-2 text-sm">
+                            <div>
+                              <p className="text-muted-foreground">Số owner</p>
+                              <p className="font-medium">{safeInfo.owners.length}</p>
+                            </div>
+                            <div>
+                              <p className="text-muted-foreground">Ngưỡng ký</p>
+                              <p className="font-medium">{safeInfo.threshold}/{safeInfo.owners.length}</p>
+                            </div>
+                            <div>
+                              <p className="text-muted-foreground">Nonce hiện tại</p>
+                              <p className="font-medium">{safeInfo.nonce}</p>
+                            </div>
                           </div>
-                        </div>
-                        
-                        <div className="text-sm">
-                          <p className="text-muted-foreground mb-1">Trạng thái Guard</p>
-                          {isCheckingSafe ? (
-                            <div className="flex items-center gap-2">
-                              <Loader2 className="h-4 w-4 animate-spin" />
-                              <span>Đang kiểm tra...</span>
-                            </div>
-                          ) : isCorrectGuard ? (
-                            <div className="flex items-center gap-2 text-success">
-                              <CheckCircle2 className="h-4 w-4" />
-                              <span>Guard đã được thiết lập đúng</span>
-                            </div>
-                          ) : isGuardSet ? (
-                            <div className="flex items-center gap-2 text-warning">
-                              <AlertCircle className="h-4 w-4" />
-                              <span>Guard khác đang được sử dụng</span>
-                            </div>
-                          ) : (
-                            <div className="flex items-center justify-between gap-2 flex-wrap">
-                              <span className="text-muted-foreground">Chưa có Guard</span>
-                              <Button
-                                type="button"
-                                variant="outline"
-                                size="sm"
-                                onClick={handleSetGuard}
-                                disabled={isSettingGuard}
-                                data-testid="button-set-guard"
-                              >
-                                {isSettingGuard ? (
-                                  <>
-                                    <Loader2 className="mr-2 h-3 w-3 animate-spin" />
-                                    Đang thiết lập...
-                                  </>
-                                ) : (
-                                  <>
-                                    <Settings2 className="mr-2 h-3 w-3" />
-                                    Thiết lập Guard
-                                  </>
-                                )}
-                              </Button>
-                            </div>
-                          )}
-                        </div>
+                        )}
                       </CardContent>
                     </Card>
                   )}
@@ -446,40 +345,27 @@ export default function Sell() {
                     <AlertCircle className="h-4 w-4" />
                     <AlertTitle>Lưu ý quan trọng</AlertTitle>
                     <AlertDescription>
-                      Bạn cần phải là owner của Safe wallet này để có thể bán. 
-                      Guard contract sẽ được thiết lập tự động khi tạo đơn bán.
+                      Sau khi arm giao dịch, Safe sẽ được "đóng băng" về mặt hợp đồng — không nên thực hiện
+                      bất kỳ transaction nào trên Safe cho đến khi chuyển quyền cho người mua.
                     </AlertDescription>
                   </Alert>
 
-                  <Button
-                    type="submit"
-                    className="w-full"
-                    disabled={createTradeMutation.isPending}
-                    data-testid="button-create-listing"
-                  >
-                    {createTradeMutation.isPending ? (
-                      <>
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        Đang tạo...
-                      </>
-                    ) : (
-                      "Tạo đơn bán"
-                    )}
+                  <Button type="submit" className="w-full" disabled={createTradeMutation.isPending} data-testid="button-create-listing">
+                    {createTradeMutation.isPending ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Đang tạo...</> : "Tạo đơn bán"}
                   </Button>
                 </form>
               </Form>
             </CardContent>
           </Card>
         ) : (
+          // ── Trade flow ──────────────────────────────────────────────────
           <div className="space-y-6">
             <Card>
               <CardHeader>
                 <div className="flex items-center justify-between flex-wrap gap-4">
                   <div>
                     <CardTitle>Thông tin giao dịch</CardTitle>
-                    <CardDescription>
-                      Theo dõi trạng thái giao dịch
-                    </CardDescription>
+                    <CardDescription>Theo dõi trạng thái giao dịch</CardDescription>
                   </div>
                   {trade && <TradeStatusBadge status={trade.status} />}
                 </div>
@@ -495,24 +381,15 @@ export default function Sell() {
                       <div className="space-y-1">
                         <p className="text-sm text-muted-foreground">Mã giao dịch</p>
                         <div className="flex items-center gap-2">
-                          <code className="text-sm font-mono bg-muted px-2 py-1 rounded truncate max-w-[200px]">
-                            {trade.id}
-                          </code>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={copyTradeId}
-                            data-testid="button-copy-trade-id"
-                          >
+                          <code className="text-sm font-mono bg-muted px-2 py-1 rounded truncate max-w-[200px]">{trade.id}</code>
+                          <Button variant="ghost" size="icon" onClick={copyTradeId} data-testid="button-copy-trade-id">
                             <Copy className="h-4 w-4" />
                           </Button>
                         </div>
                       </div>
                       <div className="space-y-1">
                         <p className="text-sm text-muted-foreground">Safe Address</p>
-                        <code className="text-sm font-mono bg-muted px-2 py-1 rounded block truncate">
-                          {trade.safeAddress}
-                        </code>
+                        <code className="text-sm font-mono bg-muted px-2 py-1 rounded block truncate">{trade.safeAddress}</code>
                       </div>
                       <div className="space-y-1">
                         <p className="text-sm text-muted-foreground">Giá bán</p>
@@ -520,37 +397,39 @@ export default function Sell() {
                       </div>
                       <div className="space-y-1">
                         <p className="text-sm text-muted-foreground">Thời hạn</p>
-                        <p className="font-semibold">
-                          {new Date(trade.deadline).toLocaleString("vi-VN")}
-                        </p>
+                        <p className="font-semibold">{new Date(trade.deadline).toLocaleString("vi-VN")}</p>
                       </div>
                       {trade.buyerAddress && (
                         <div className="space-y-1 md:col-span-2">
                           <p className="text-sm text-muted-foreground">Người mua</p>
-                          <code className="text-sm font-mono bg-muted px-2 py-1 rounded block truncate">
-                            {trade.buyerAddress}
-                          </code>
+                          <code className="text-sm font-mono bg-muted px-2 py-1 rounded block truncate">{trade.buyerAddress}</code>
+                        </div>
+                      )}
+                      {trade.onchainTradeId && (
+                        <div className="space-y-1 md:col-span-2">
+                          <p className="text-sm text-muted-foreground">Onchain Trade ID</p>
+                          <code className="text-sm font-mono bg-muted px-2 py-1 rounded block truncate">{trade.onchainTradeId}</code>
                         </div>
                       )}
                     </div>
 
+                    {/* LISTED: chờ buyer */}
                     {trade.status === "LISTED" && (
                       <Alert>
                         <Loader2 className="h-4 w-4 animate-spin" />
                         <AlertTitle>Chờ người mua tham gia</AlertTitle>
-                        <AlertDescription>
-                          Chia sẻ mã giao dịch cho người muốn mua Safe của bạn.
-                        </AlertDescription>
+                        <AlertDescription>Chia sẻ mã giao dịch cho người muốn mua Safe của bạn.</AlertDescription>
                       </Alert>
                     )}
 
+                    {/* JOINED: arm on-chain */}
                     {trade.status === "JOINED" && (
                       <div className="space-y-4">
                         <Alert className="border-warning">
                           <CheckCircle2 className="h-4 w-4 text-warning" />
                           <AlertTitle>Người mua đã tham gia</AlertTitle>
                           <AlertDescription>
-                            Bước tiếp theo: Thiết lập Guard contract và kích hoạt giao dịch trên blockchain.
+                            Kích hoạt giao dịch trên blockchain để "đóng băng" Safe và chờ buyer gửi ký quỹ.
                           </AlertDescription>
                         </Alert>
                         <Button
@@ -559,51 +438,45 @@ export default function Sell() {
                           disabled={armTradeMutation.isPending}
                           data-testid="button-arm-trade"
                         >
-                          {armTradeMutation.isPending ? (
-                            <>
-                              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                              Đang xử lý...
-                            </>
-                          ) : (
-                            "Kích hoạt giao dịch"
-                          )}
+                          {armTradeMutation.isPending
+                            ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Đang arm on-chain...</>
+                            : "Kích hoạt giao dịch (on-chain)"}
                         </Button>
                       </div>
                     )}
 
+                    {/* ARMED: chờ deposit */}
                     {trade.status === "ARMED" && (
                       <Alert>
                         <Loader2 className="h-4 w-4 animate-spin" />
                         <AlertTitle>Chờ người mua gửi ký quỹ ETH</AlertTitle>
                         <AlertDescription>
-                          Safe đã bị khóa bởi Guard. Chờ người mua gửi ETH vào ký quỹ.
+                          Giao dịch đã được arm. Safe đang trong trạng thái "đóng băng".
+                          Không thực hiện bất kỳ transaction nào trên Safe cho đến khi chuyển quyền.
                         </AlertDescription>
                       </Alert>
                     )}
 
+                    {/* FUNDED: chuyển owner + release */}
                     {trade.status === "FUNDED" && (
                       <div className="space-y-4">
                         <Alert className="border-success">
                           <CheckCircle2 className="h-4 w-4 text-success" />
-                          <AlertTitle>Người mua đã gửi ký quỹ</AlertTitle>
+                          <AlertTitle>Người mua đã gửi ký quỹ {trade.priceEth} ETH</AlertTitle>
                           <AlertDescription>
-                            Bấm nút bên dưới để tự động chuyển quyền sở hữu Safe cho người mua và nhận ETH.
+                            Bấm nút bên dưới để chuyển quyền sở hữu Safe cho người mua.
+                            Sau khi chuyển thành công, ETH sẽ tự động được giải ngân vào ví của bạn.
                           </AlertDescription>
                         </Alert>
                         <Button
                           className="w-full"
-                          onClick={handleSwapOwner}
+                          onClick={handleTransferAndRelease}
                           disabled={isSwappingOwner}
                           data-testid="button-swap-owner"
                         >
-                          {isSwappingOwner ? (
-                            <>
-                              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                              Đang chuyển quyền sở hữu...
-                            </>
-                          ) : (
-                            "Chuyển quyền sở hữu cho người mua"
-                          )}
+                          {isSwappingOwner
+                            ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Đang xử lý...</>
+                            : "Chuyển quyền sở hữu & nhận ETH"}
                         </Button>
                       </div>
                     )}
@@ -612,9 +485,7 @@ export default function Sell() {
                       <Alert className="border-success">
                         <CheckCircle2 className="h-4 w-4 text-success" />
                         <AlertTitle>Giao dịch hoàn tất</AlertTitle>
-                        <AlertDescription>
-                          Quyền sở hữu đã được chuyển và bạn đã nhận được thanh toán.
-                        </AlertDescription>
+                        <AlertDescription>Quyền sở hữu đã được chuyển và bạn đã nhận được thanh toán.</AlertDescription>
                       </Alert>
                     )}
 
@@ -622,9 +493,7 @@ export default function Sell() {
                       <Alert variant="destructive">
                         <AlertCircle className="h-4 w-4" />
                         <AlertTitle>Giao dịch đã bị hủy</AlertTitle>
-                        <AlertDescription>
-                          Giao dịch đã bị hủy do hết thời hạn hoặc vi phạm điều khoản.
-                        </AlertDescription>
+                        <AlertDescription>Giao dịch đã bị hủy. Ký quỹ (nếu có) đã được hoàn trả cho người mua.</AlertDescription>
                       </Alert>
                     )}
                   </>
