@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useAccount, useWriteContract, usePublicClient, useChainId } from "wagmi";
+import { useAccount, useWriteContract, usePublicClient, useChainId, useSwitchChain } from "wagmi";
 import { parseEther } from "viem";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -18,7 +18,7 @@ import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { useWebSocket } from "@/hooks/use-websocket";
 import { escrowABI } from "@/lib/contracts/EscrowABI";
-import { getEscrowAddress } from "@/lib/contracts/addresses";
+import { getEscrowAddress, SUPPORTED_CHAIN_ID } from "@/lib/contracts/addresses";
 import { Link } from "wouter";
 import type { Trade } from "@shared/schema";
 
@@ -53,8 +53,10 @@ export default function Buy() {
   const chainId = useChainId();
   const publicClient = usePublicClient();
   const { writeContractAsync } = useWriteContract();
+  const { switchChain, isPending: isSwitchingChain } = useSwitchChain();
   const { toast } = useToast();
   const { lastMessage } = useWebSocket();
+  const isWrongNetwork = isConnected && chainId !== SUPPORTED_CHAIN_ID;
 
   const [foundTrade, setFoundTrade] = useState<Trade | null>(null);
   const [suspiciousDetected, setSuspiciousDetected] = useState(false);
@@ -215,7 +217,7 @@ export default function Buy() {
         functionName: "buyerRequestCancel",
         args: [onchainTradeId],
       });
-
+      console.log(contractAddress)
       const receipt = await publicClient!.waitForTransactionReceipt({ hash: txHash });
       if (receipt.status === "reverted") throw new Error("SC từ chối hủy — chưa đủ điều kiện bất thường");
 
@@ -234,6 +236,39 @@ export default function Buy() {
     },
   });
 
+  // ── cancelTimeout: buyer dùng khi deadline qua mà chưa ai xử lý ────────────
+  const cancelTimeoutMutation = useMutation({
+    mutationFn: async () => {
+      const currentTrade = trade || foundTrade;
+      if (!currentTrade?.onchainTradeId) throw new Error("Chưa có trade ID trên blockchain");
+
+      const contractAddress = getEscrowAddress(chainId);
+      const onchainTradeId = currentTrade.onchainTradeId as `0x${string}`;
+
+      const txHash = await writeContractAsync({
+        address: contractAddress,
+        abi: escrowABI,
+        functionName: "cancelTimeout",
+        args: [onchainTradeId],
+      });
+
+      const receipt = await publicClient!.waitForTransactionReceipt({ hash: txHash });
+      if (receipt.status === "reverted") throw new Error("SC từ chối — deadline chưa qua");
+
+      const res = await apiRequest("POST", `/api/trades/${currentTrade.id}/cancel`, {
+        reason: "Hủy do hết thời hạn giao dịch",
+      });
+      return res.json();
+    },
+    onSuccess: () => {
+      toast({ title: "Đã hủy giao dịch", description: "ETH ký quỹ đã được hoàn trả về ví của bạn." });
+      queryClient.invalidateQueries({ queryKey: ["/api/trades", foundTrade?.id] });
+    },
+    onError: (error: Error) => {
+      toast({ variant: "destructive", title: "Lỗi hủy timeout", description: error.message });
+    },
+  });
+
   if (!isConnected) {
     return (
       <div className="container px-4 md:px-8 py-12 md:py-16">
@@ -244,6 +279,30 @@ export default function Buy() {
             Bạn cần kết nối ví MetaMask để mua Safe wallet.
           </p>
           <ConnectWallet />
+        </div>
+      </div>
+    );
+  }
+
+  if (isWrongNetwork) {
+    return (
+      <div className="container px-4 md:px-8 py-12 md:py-16">
+        <div className="max-w-lg mx-auto text-center">
+          <AlertCircle className="h-16 w-16 text-destructive mx-auto mb-6" />
+          <h1 className="text-2xl font-bold mb-4">Sai mạng</h1>
+          <p className="text-muted-foreground mb-6">
+            Ứng dụng chạy trên <strong>Sepolia testnet</strong>. Vui lòng chuyển mạng để tiếp tục.
+          </p>
+          <Button
+            onClick={() => switchChain({ chainId: SUPPORTED_CHAIN_ID })}
+            disabled={isSwitchingChain}
+          >
+            {isSwitchingChain ? (
+              <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Đang chuyển mạng...</>
+            ) : (
+              "Chuyển sang Sepolia"
+            )}
+          </Button>
         </div>
       </div>
     );
@@ -523,6 +582,31 @@ export default function Buy() {
                           Bạn đã trở thành owner của Safe wallet này.
                         </AlertDescription>
                       </Alert>
+                    )}
+
+                    {/* ── Timeout: hủy khi deadline qua (ARMED hoặc FUNDED) ── */}
+                    {(currentTrade.status === "ARMED" || currentTrade.status === "FUNDED") &&
+                      new Date(currentTrade.deadline) < new Date() && (
+                      <div className="space-y-3 pt-2 border-t">
+                        <Alert variant="destructive">
+                          <AlertCircle className="h-4 w-4" />
+                          <AlertTitle>Hết thời hạn giao dịch</AlertTitle>
+                          <AlertDescription>
+                            Deadline đã qua. Bạn có thể yêu cầu hủy và nhận lại ETH ký quỹ.
+                          </AlertDescription>
+                        </Alert>
+                        <Button
+                          variant="destructive"
+                          className="w-full"
+                          onClick={() => cancelTimeoutMutation.mutate()}
+                          disabled={cancelTimeoutMutation.isPending}
+                          data-testid="button-cancel-timeout"
+                        >
+                          {cancelTimeoutMutation.isPending
+                            ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Đang hủy on-chain...</>
+                            : "Hủy giao dịch & nhận lại ETH"}
+                        </Button>
+                      </div>
                     )}
 
                     {/* ── CANCELLED ────────────────────────────────────────── */}

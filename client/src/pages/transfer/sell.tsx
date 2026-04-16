@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useAccount, useWriteContract, usePublicClient, useChainId } from "wagmi";
+import { useAccount, useWriteContract, usePublicClient, useChainId, useSwitchChain } from "wagmi";
 import { parseEther, keccak256, encodePacked } from "viem";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -18,7 +18,7 @@ import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { useSafeSdk } from "@/hooks/use-safe-sdk";
 import { escrowABI } from "@/lib/contracts/EscrowABI";
-import { getEscrowAddress } from "@/lib/contracts/addresses";
+import { getEscrowAddress, SUPPORTED_CHAIN_ID } from "@/lib/contracts/addresses";
 import type { Trade } from "@shared/schema";
 import type { SafeInfo } from "@/lib/safe-sdk";
 
@@ -28,9 +28,9 @@ const sellFormSchema = z.object({
     (val) => !isNaN(parseFloat(val)) && parseFloat(val) > 0,
     "Giá phải lớn hơn 0"
   ),
-  deadlineHours: z.string().min(1, "Vui lòng chọn thời hạn").refine(
-    (val) => !isNaN(parseInt(val)) && parseInt(val) >= 1,
-    "Thời hạn phải ít nhất 1 giờ"
+  deadlineMinutes: z.string().min(1, "Vui lòng chọn thời hạn").refine(
+    (val) => !isNaN(parseInt(val)) && parseInt(val) >= 5,
+    "Thời hạn phải ít nhất 5 phút"
   ),
 });
 
@@ -60,7 +60,9 @@ export default function Sell() {
   const chainId = useChainId();
   const publicClient = usePublicClient();
   const { writeContractAsync } = useWriteContract();
+  const { switchChain, isPending: isSwitchingChain } = useSwitchChain();
   const { toast } = useToast();
+  const isWrongNetwork = isConnected && chainId !== SUPPORTED_CHAIN_ID;
 
   const [createdTradeId, setCreatedTradeId] = useState<string | null>(null);
   const [safeInfo, setSafeInfo] = useState<SafeInfo | null>(null);
@@ -71,7 +73,7 @@ export default function Sell() {
 
   const form = useForm<SellFormValues>({
     resolver: zodResolver(sellFormSchema),
-    defaultValues: { safeAddress: "", priceEth: "", deadlineHours: "24" },
+    defaultValues: { safeAddress: "", priceEth: "", deadlineMinutes: "1440" },
   });
 
   const { data: trade, isLoading: isLoadingTrade } = useQuery<Trade>({
@@ -84,7 +86,7 @@ export default function Sell() {
   const createTradeMutation = useMutation({
     mutationFn: async (values: SellFormValues) => {
       const deadline = new Date();
-      deadline.setHours(deadline.getHours() + parseInt(values.deadlineHours));
+      deadline.setMinutes(deadline.getMinutes() + parseInt(values.deadlineMinutes));
       const res = await apiRequest("POST", "/api/trades", {
         safeAddress: values.safeAddress,
         sellerAddress: address,
@@ -115,22 +117,74 @@ export default function Sell() {
       const amount = parseEther(trade.priceEth);
       const deadlineTs = BigInt(Math.floor(new Date(trade.deadline).getTime() / 1000));
 
-      // 1. Gọi armTrade() trên SC
-      const txHash = await writeContractAsync({
-        address: contractAddress,
-        abi: escrowABI,
-        functionName: "armTrade",
-        args: [safeAddr, buyerAddr, amount, deadlineTs],
-      });
+      // 0. Client-side deadline check
+      const nowSec = BigInt(Math.floor(Date.now() / 1000));
+      if (deadlineTs <= nowSec) {
+        throw new Error("Thời hạn giao dịch đã hết. Vui lòng tạo giao dịch mới với thời hạn dài hơn.");
+      }
 
-      // 2. Chờ receipt và đọc snapshotNonce từ contract
-      const receipt = await publicClient!.waitForTransactionReceipt({ hash: txHash });
-      if (receipt.status === "reverted") throw new Error("Transaction bị revert");
-
-      // Compute onchain tradeId (keccak256 của buyer+seller+safe)
+      // Compute onchain tradeId up-front (buyer + seller + safe)
       const onchainTradeId = keccak256(
         encodePacked(["address", "address", "address"], [buyerAddr, address as `0x${string}`, safeAddr])
       );
+
+      // 1. Simulate để decode lỗi revert rõ ràng trước khi gửi TX
+      let alreadyArmed = false;
+      try {
+        await publicClient!.simulateContract({
+          address: contractAddress,
+          abi: escrowABI,
+          functionName: "armTrade",
+          args: [safeAddr, buyerAddr, amount, deadlineTs],
+          account: address as `0x${string}`,
+        });
+      } catch (simErr: any) {
+        const errName: string =
+          simErr?.cause?.data?.errorName ??
+          simErr?.data?.errorName ??
+          simErr?.name ??
+          "";
+
+        if (errName === "InvalidState") {
+          // Kiểm tra xem trade này đã được arm on-chain chưa (partial failure khi sync backend)
+          const activeId = await publicClient!.readContract({
+            address: contractAddress,
+            abi: escrowABI,
+            functionName: "activeTradeBySafe",
+            args: [safeAddr],
+          }) as `0x${string}`;
+
+          if (activeId === onchainTradeId) {
+            // Trade đã được arm on-chain — chỉ cần re-sync backend
+            alreadyArmed = true;
+          } else {
+            throw new Error(
+              "Safe này đã có giao dịch khác đang diễn ra trên blockchain. " +
+              "Hãy đợi giao dịch đó hoàn tất hoặc hết hạn trước."
+            );
+          }
+        } else {
+          const MESSAGES: Record<string, string> = {
+            DeadlinePassed: "Thời hạn giao dịch đã hết. Vui lòng tạo giao dịch mới.",
+            NotSeller:      "Ví hiện tại không phải owner của Safe này.",
+            Invalid:        "Thông tin giao dịch không hợp lệ (địa chỉ hoặc amount sai).",
+          };
+          throw new Error(MESSAGES[errName] ?? simErr?.shortMessage ?? simErr?.message ?? "Giao dịch bị revert");
+        }
+      }
+
+      // 2. Gọi armTrade() on-chain (bỏ qua nếu đã arm rồi)
+      if (!alreadyArmed) {
+        const txHash = await writeContractAsync({
+          address: contractAddress,
+          abi: escrowABI,
+          functionName: "armTrade",
+          args: [safeAddr, buyerAddr, amount, deadlineTs],
+        });
+
+        const receipt = await publicClient!.waitForTransactionReceipt({ hash: txHash });
+        if (receipt.status === "reverted") throw new Error("Transaction bị revert");
+      }
 
       // Đọc snapshotNonce từ trades() getter
       const tradeData = await publicClient!.readContract({
@@ -194,6 +248,37 @@ export default function Sell() {
     }
   };
 
+  // ── cancelTimeout: ai cũng có thể gọi sau khi deadline qua ──────────────────
+  const cancelTimeoutMutation = useMutation({
+    mutationFn: async () => {
+      const contractAddress = getEscrowAddress(chainId);
+      const onchainTradeId = trade?.onchainTradeId as `0x${string}`;
+      if (!onchainTradeId) throw new Error("Chưa có trade ID trên blockchain");
+
+      const txHash = await writeContractAsync({
+        address: contractAddress,
+        abi: escrowABI,
+        functionName: "cancelTimeout",
+        args: [onchainTradeId],
+      });
+
+      const receipt = await publicClient!.waitForTransactionReceipt({ hash: txHash });
+      if (receipt.status === "reverted") throw new Error("Transaction bị revert — deadline chưa qua");
+
+      const res = await apiRequest("POST", `/api/trades/${createdTradeId}/cancel`, {
+        reason: "Hủy do hết thời hạn giao dịch",
+      });
+      return res.json();
+    },
+    onSuccess: () => {
+      toast({ title: "Đã hủy giao dịch", description: "Hết thời hạn. ETH ký quỹ (nếu có) đã hoàn về buyer." });
+      queryClient.invalidateQueries({ queryKey: ["/api/trades", createdTradeId] });
+    },
+    onError: (error: Error) => {
+      toast({ variant: "destructive", title: "Lỗi hủy timeout", description: error.message });
+    },
+  });
+
   // ── Safe info auto-check ───────────────────────────────────────────────────
   const checkSafeInfo = async (safeAddress: string) => {
     if (!safeAddress || !/^0x[a-fA-F0-9]{40}$/.test(safeAddress)) return;
@@ -250,6 +335,30 @@ export default function Sell() {
     );
   }
 
+  if (isWrongNetwork) {
+    return (
+      <div className="container px-4 md:px-8 py-12 md:py-16">
+        <div className="max-w-lg mx-auto text-center">
+          <AlertCircle className="h-16 w-16 text-destructive mx-auto mb-6" />
+          <h1 className="text-2xl font-bold mb-4">Sai mạng</h1>
+          <p className="text-muted-foreground mb-6">
+            Ứng dụng chạy trên <strong>Sepolia testnet</strong>. Vui lòng chuyển mạng để tiếp tục.
+          </p>
+          <Button
+            onClick={() => switchChain({ chainId: SUPPORTED_CHAIN_ID })}
+            disabled={isSwitchingChain}
+          >
+            {isSwitchingChain ? (
+              <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Đang chuyển mạng...</>
+            ) : (
+              "Chuyển sang Sepolia"
+            )}
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
   const currentStep = trade ? getStepFromStatus(trade.status) : 1;
 
   return (
@@ -296,13 +405,13 @@ export default function Sell() {
                     </FormItem>
                   )} />
 
-                  <FormField control={form.control} name="deadlineHours" render={({ field }) => (
+                  <FormField control={form.control} name="deadlineMinutes" render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Thời hạn (giờ)</FormLabel>
+                      <FormLabel>Thời hạn (phút)</FormLabel>
                       <FormControl>
-                        <Input type="number" min="1" placeholder="24" {...field} data-testid="input-deadline" />
+                        <Input type="number" min="5" placeholder="1440" {...field} data-testid="input-deadline" />
                       </FormControl>
-                      <FormDescription>Thời gian để hoàn tất giao dịch</FormDescription>
+                      <FormDescription>Tối thiểu 5 phút · 1440 = 24 giờ · 10080 = 7 ngày</FormDescription>
                       <FormMessage />
                     </FormItem>
                   )} />
@@ -477,6 +586,32 @@ export default function Sell() {
                           {isSwappingOwner
                             ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Đang xử lý...</>
                             : "Chuyển quyền sở hữu & nhận ETH"}
+                        </Button>
+                      </div>
+                    )}
+
+                    {/* Timeout: hủy khi deadline đã qua (ARMED hoặc FUNDED) */}
+                    {(trade.status === "ARMED" || trade.status === "FUNDED") &&
+                      new Date(trade.deadline) < new Date() && (
+                      <div className="space-y-3 pt-2 border-t">
+                        <Alert variant="destructive">
+                          <AlertCircle className="h-4 w-4" />
+                          <AlertTitle>Hết thời hạn giao dịch</AlertTitle>
+                          <AlertDescription>
+                            Deadline đã qua. Bạn có thể hủy giao dịch trên blockchain.
+                            {trade.status === "FUNDED" && " ETH ký quỹ sẽ được hoàn trả về ví người mua."}
+                          </AlertDescription>
+                        </Alert>
+                        <Button
+                          variant="destructive"
+                          className="w-full"
+                          onClick={() => cancelTimeoutMutation.mutate()}
+                          disabled={cancelTimeoutMutation.isPending}
+                          data-testid="button-cancel-timeout"
+                        >
+                          {cancelTimeoutMutation.isPending
+                            ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Đang hủy on-chain...</>
+                            : "Hủy giao dịch (hết hạn)"}
                         </Button>
                       </div>
                     )}
