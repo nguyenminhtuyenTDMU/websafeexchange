@@ -5,6 +5,7 @@ import { insertTradeSchema, insertEvidenceSchema, insertSystemLogSchema } from "
 import { z } from "zod";
 import { recoverMessageAddress } from "viem";
 import { eventBroadcaster } from "./websocket";
+import { onTradeArmed, clearTradeNotifyCache } from "./safe-watcher";
 
 export async function registerRoutes(
   httpServer: Server,
@@ -181,6 +182,9 @@ export async function registerRoutes(
         "success"
       );
 
+      // Bắt đầu subscribe ExecutionSuccess trên Safe này ngay lập tức
+      onTradeArmed(trade.safeAddress);
+
       res.json(updated);
     } catch (error) {
       res.status(500).json({ error: "Lỗi khi arm trade" });
@@ -249,6 +253,8 @@ export async function registerRoutes(
         "success"
       );
 
+      clearTradeNotifyCache(trade.id);
+
       res.json(updated);
     } catch (error) {
       res.status(500).json({ error: "Lỗi khi hoàn tất trade" });
@@ -279,6 +285,8 @@ export async function registerRoutes(
         `Giao dịch đã bị hủy: ${reason || "Không rõ lý do"}`,
         "warning"
       );
+
+      clearTradeNotifyCache(trade.id);
 
       res.json(updated);
     } catch (error) {
