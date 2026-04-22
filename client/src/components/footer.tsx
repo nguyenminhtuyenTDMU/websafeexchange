@@ -1,4 +1,4 @@
-import { Shield, Github, ExternalLink } from "lucide-react";
+import { Shield, ExternalLink } from "lucide-react";
 import { Link } from "wouter";
 
 export function Footer() {
@@ -38,16 +38,16 @@ export function Footer() {
           </div>
 
           <div className="space-y-4">
-            <h4 className="font-semibold text-sm">Tài nguyên</h4>
+            <h4 className="font-semibold text-sm">Cộng đồng</h4>
             <ul className="space-y-2 text-sm text-muted-foreground">
               <li>
-                <Link href="/learn" className="hover:text-foreground transition-colors" data-testid="link-footer-learn">
-                  Hướng dẫn sử dụng
+                <Link href="/forum" className="hover:text-foreground transition-colors" data-testid="link-footer-forum">
+                  Diễn đàn
                 </Link>
               </li>
               <li>
-                <Link href="/evidence" className="hover:text-foreground transition-colors" data-testid="link-footer-evidence">
-                  Thu thập bằng chứng
+                <Link href="/forum#buy" className="hover:text-foreground transition-colors" data-testid="link-footer-forum-buy">
+                  Tìm mua ví
                 </Link>
               </li>
               <li>
@@ -59,18 +59,18 @@ export function Footer() {
           </div>
 
           <div className="space-y-4">
-            <h4 className="font-semibold text-sm">Pháp lý</h4>
+            <h4 className="font-semibold text-sm">Liên kết</h4>
             <ul className="space-y-2 text-sm text-muted-foreground">
               <li>
-                <Link href="/legal" className="hover:text-foreground transition-colors" data-testid="link-footer-legal">
-                  Điều khoản sử dụng
+                <Link href="/forum#qa" className="hover:text-foreground transition-colors" data-testid="link-footer-qa">
+                  Q&amp;A
                 </Link>
               </li>
               <li>
-                <a 
-                  href="https://github.com" 
-                  target="_blank" 
-                  rel="noopener noreferrer" 
+                <a
+                  href="https://github.com"
+                  target="_blank"
+                  rel="noopener noreferrer"
                   className="hover:text-foreground transition-colors inline-flex items-center gap-1"
                   data-testid="link-footer-github"
                 >

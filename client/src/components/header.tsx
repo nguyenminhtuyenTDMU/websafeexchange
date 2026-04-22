@@ -10,10 +10,8 @@ import { useState } from "react";
 const navItems = [
   { href: "/transfer", label: "Chuyển nhượng" },
   { href: "/wallet-transparency", label: "Thông tin ví" },
-  { href: "/evidence", label: "Bằng chứng" },
+  { href: "/forum", label: "Diễn đàn" },
   { href: "/dashboard", label: "Bảng điều khiển" },
-  { href: "/learn", label: "Hướng dẫn" },
-  { href: "/legal", label: "Pháp lý" },
 ];
 
 export function Header() {

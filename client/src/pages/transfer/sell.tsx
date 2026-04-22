@@ -64,12 +64,29 @@ export default function Sell() {
   const { toast } = useToast();
   const isWrongNetwork = isConnected && chainId !== SUPPORTED_CHAIN_ID;
 
-  const [createdTradeId, setCreatedTradeId] = useState<string | null>(null);
+  const [createdTradeId, setCreatedTradeId] = useState<string | null>(() => {
+    if (typeof window === "undefined") return null;
+    return new URLSearchParams(window.location.search).get("tradeId") || null;
+  });
   const [safeInfo, setSafeInfo] = useState<SafeInfo | null>(null);
   const [isCheckingSafe, setIsCheckingSafe] = useState(false);
   const [isSwappingOwner, setIsSwappingOwner] = useState(false);
 
   const { getSafeInfo, swapOwner, isOwner } = useSafeSdk();
+
+  // ── Persist / restore trade session ──────────────────────────────────────
+  // Restore from localStorage when wallet connects (only if URL param didn't already set it)
+  useEffect(() => {
+    if (createdTradeId || !address) return;
+    const saved = localStorage.getItem(`sel_trade_${address}`);
+    if (saved) setCreatedTradeId(saved);
+  }, [address]);
+
+  // Save whenever tradeId is set
+  useEffect(() => {
+    if (!address || !createdTradeId) return;
+    localStorage.setItem(`sel_trade_${address}`, createdTradeId);
+  }, [createdTradeId, address]);
 
   const form = useForm<SellFormValues>({
     resolver: zodResolver(sellFormSchema),
@@ -81,6 +98,14 @@ export default function Sell() {
     enabled: !!createdTradeId,
     refetchInterval: 5000,
   });
+
+  // Clear localStorage on terminal state (after trade is declared)
+  useEffect(() => {
+    if (!address || !trade) return;
+    if (trade.status === "COMPLETED" || trade.status === "CANCELLED") {
+      localStorage.removeItem(`sel_trade_${address}`);
+    }
+  }, [trade?.status, address]);
 
   // ── Step 1: Tạo listing trên backend ─────────────────────────────────────
   const createTradeMutation = useMutation({
@@ -617,19 +642,29 @@ export default function Sell() {
                     )}
 
                     {trade.status === "COMPLETED" && (
-                      <Alert className="border-success">
-                        <CheckCircle2 className="h-4 w-4 text-success" />
-                        <AlertTitle>Giao dịch hoàn tất</AlertTitle>
-                        <AlertDescription>Quyền sở hữu đã được chuyển và bạn đã nhận được thanh toán.</AlertDescription>
-                      </Alert>
+                      <div className="space-y-3">
+                        <Alert className="border-success">
+                          <CheckCircle2 className="h-4 w-4 text-success" />
+                          <AlertTitle>Giao dịch hoàn tất</AlertTitle>
+                          <AlertDescription>Quyền sở hữu đã được chuyển và bạn đã nhận được thanh toán.</AlertDescription>
+                        </Alert>
+                        <Button variant="outline" className="w-full" onClick={() => setCreatedTradeId(null)}>
+                          Bắt đầu giao dịch mới
+                        </Button>
+                      </div>
                     )}
 
                     {trade.status === "CANCELLED" && (
-                      <Alert variant="destructive">
-                        <AlertCircle className="h-4 w-4" />
-                        <AlertTitle>Giao dịch đã bị hủy</AlertTitle>
-                        <AlertDescription>Giao dịch đã bị hủy. Ký quỹ (nếu có) đã được hoàn trả cho người mua.</AlertDescription>
-                      </Alert>
+                      <div className="space-y-3">
+                        <Alert variant="destructive">
+                          <AlertCircle className="h-4 w-4" />
+                          <AlertTitle>Giao dịch đã bị hủy</AlertTitle>
+                          <AlertDescription>Giao dịch đã bị hủy. Ký quỹ (nếu có) đã được hoàn trả cho người mua.</AlertDescription>
+                        </Alert>
+                        <Button variant="outline" className="w-full" onClick={() => setCreatedTradeId(null)}>
+                          Bắt đầu giao dịch mới
+                        </Button>
+                      </div>
                     )}
                   </>
                 ) : null}

@@ -1,6 +1,9 @@
 import { useState, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { useAccount } from "wagmi";
+import { Link } from "wouter";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -9,7 +12,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { TradeStatusBadge } from "@/components/trade-status-badge";
-import { Activity, BarChart3, FileText, Clock, CheckCircle2, XCircle, Search, Filter, X, Download, Shield } from "lucide-react";
+import { Activity, BarChart3, FileText, Clock, CheckCircle2, XCircle, Search, Filter, X, Download, Shield, PlayCircle } from "lucide-react";
 import { exportTradeEvidencePDF } from "@/lib/export-pdf";
 import type { Trade, SystemLog } from "@shared/schema";
 
@@ -44,11 +47,14 @@ const statusOptions = [
   { value: "CANCELLED", label: "Đã hủy" },
 ];
 
+const ACTIVE_STATUSES = ["LISTED", "JOINED", "ARMED", "FUNDED"];
+
 export default function Dashboard() {
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("ALL");
   const [logTypeFilter, setLogTypeFilter] = useState("ALL");
   const [dateSort, setDateSort] = useState<"asc" | "desc">("desc");
+  const { address } = useAccount();
 
   const { data: trades, isLoading: isLoadingTrades } = useQuery<Trade[]>({
     queryKey: ["/api/trades"],
@@ -105,6 +111,16 @@ export default function Dashboard() {
 
     return result;
   }, [logs, logTypeFilter, dateSort]);
+
+  const myActiveTrades = useMemo(() => {
+    if (!trades || !address) return [];
+    return trades.filter(
+      (t) =>
+        ACTIVE_STATUSES.includes(t.status) &&
+        (t.sellerAddress.toLowerCase() === address.toLowerCase() ||
+          t.buyerAddress?.toLowerCase() === address.toLowerCase()),
+    );
+  }, [trades, address]);
 
   const stats = {
     total: trades?.length || 0,
@@ -189,6 +205,30 @@ export default function Dashboard() {
             </CardContent>
           </Card>
         </div>
+
+        {/* ── Banner: giao dịch đang xử lý của ví hiện tại ── */}
+        {myActiveTrades.length > 0 && (
+          <Alert className="mb-6 border-warning">
+            <PlayCircle className="h-4 w-4 text-warning" />
+            <AlertTitle>Bạn có {myActiveTrades.length} giao dịch đang xử lý</AlertTitle>
+            <AlertDescription className="mt-2 flex flex-wrap gap-2">
+              {myActiveTrades.map((t) => {
+                const isSeller = t.sellerAddress.toLowerCase() === address!.toLowerCase();
+                const href = isSeller
+                  ? `/transfer/sell?tradeId=${t.id}`
+                  : `/transfer/buy?tradeId=${t.id}`;
+                return (
+                  <Link key={t.id} href={href}>
+                    <Button size="sm" variant="outline" className="gap-1.5">
+                      <PlayCircle className="h-3.5 w-3.5" />
+                      {isSeller ? "Tiếp tục bán" : "Tiếp tục mua"} · {formatAddress(t.id)}
+                    </Button>
+                  </Link>
+                );
+              })}
+            </AlertDescription>
+          </Alert>
+        )}
 
         <Tabs defaultValue="trades" className="space-y-6">
           <TabsList>
@@ -309,6 +349,23 @@ export default function Dashboard() {
                               {formatDate(trade.createdAt)}
                             </TableCell>
                             <TableCell>
+                              {ACTIVE_STATUSES.includes(trade.status) && address && (
+                                trade.sellerAddress.toLowerCase() === address.toLowerCase() ||
+                                trade.buyerAddress?.toLowerCase() === address.toLowerCase()
+                              ) && (
+                                <Link
+                                  href={
+                                    trade.sellerAddress.toLowerCase() === address!.toLowerCase()
+                                      ? `/transfer/sell?tradeId=${trade.id}`
+                                      : `/transfer/buy?tradeId=${trade.id}`
+                                  }
+                                >
+                                  <Button variant="outline" size="sm" className="mr-1 gap-1">
+                                    <PlayCircle className="h-3.5 w-3.5" />
+                                    Tiếp tục
+                                  </Button>
+                                </Link>
+                              )}
                               <Button
                                 variant="ghost"
                                 size="icon"
