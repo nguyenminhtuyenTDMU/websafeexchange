@@ -1,7 +1,7 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { insertTradeSchema, insertEvidenceSchema, insertSystemLogSchema } from "@shared/schema";
+import { insertTradeSchema, insertEvidenceSchema, insertSystemLogSchema, insertForumPostSchema, insertForumCommentSchema, type ForumPostType } from "@shared/schema";
 import { z } from "zod";
 import { recoverMessageAddress } from "viem";
 import { eventBroadcaster } from "./websocket";
@@ -389,6 +389,95 @@ export async function registerRoutes(
       res.json(logs);
     } catch (error) {
       res.status(500).json({ error: "Lỗi khi lấy logs" });
+    }
+  });
+
+  app.get("/api/forum/posts", async (req, res) => {
+    try {
+      const type = req.query.type as ForumPostType | undefined;
+      const validTypes: ForumPostType[] = ["SELL", "BUY_REQUEST", "DISCUSSION", "QA", "PINNED"];
+      if (type && !validTypes.includes(type)) {
+        return res.status(400).json({ error: "Loại bài đăng không hợp lệ" });
+      }
+      const posts = await storage.getForumPosts(type);
+      res.json(posts);
+    } catch (error) {
+      res.status(500).json({ error: "Lỗi khi lấy bài đăng diễn đàn" });
+    }
+  });
+
+  app.post("/api/forum/posts", async (req, res) => {
+    try {
+      const data = insertForumPostSchema.parse({
+        ...req.body,
+        isPinned: false,
+      });
+      if (data.type === "PINNED") {
+        return res.status(403).json({ error: "Không thể tạo bài ghim" });
+      }
+      const post = await storage.createForumPost(data);
+      res.status(201).json(post);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ error: "Dữ liệu không hợp lệ", details: error.errors });
+      }
+      res.status(500).json({ error: "Lỗi khi đăng bài" });
+    }
+  });
+
+  app.get("/api/forum/posts/:id", async (req, res) => {
+    try {
+      const post = await storage.getForumPost(req.params.id);
+      if (!post) return res.status(404).json({ error: "Không tìm thấy bài đăng" });
+      const comments = await storage.getCommentsByPost(post.id);
+      res.json({ ...post, comments });
+    } catch (error) {
+      res.status(500).json({ error: "Lỗi khi lấy bài đăng" });
+    }
+  });
+
+  app.post("/api/forum/posts/:id/comments", async (req, res) => {
+    try {
+      const post = await storage.getForumPost(req.params.id);
+      if (!post) return res.status(404).json({ error: "Không tìm thấy bài đăng" });
+      const data = insertForumCommentSchema.parse({
+        ...req.body,
+        postId: post.id,
+      });
+      const comment = await storage.createComment(data);
+      res.status(201).json(comment);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ error: "Dữ liệu không hợp lệ", details: error.errors });
+      }
+      res.status(500).json({ error: "Lỗi khi đăng bình luận" });
+    }
+  });
+
+  app.get("/api/users/profile", async (req, res) => {
+    try {
+      const address = req.query.address as string;
+      if (!address || !address.startsWith("0x")) {
+        return res.status(400).json({ error: "Địa chỉ ví không hợp lệ" });
+      }
+      const user = await storage.getUserByWalletOrCreate(address);
+      res.json(user);
+    } catch (error) {
+      res.status(500).json({ error: "Lỗi khi lấy profile" });
+    }
+  });
+
+  app.patch("/api/users/profile", async (req, res) => {
+    try {
+      const { address, displayName } = req.body;
+      if (!address || !displayName?.trim()) {
+        return res.status(400).json({ error: "Thiếu address hoặc displayName" });
+      }
+      const user = await storage.updateUserDisplayName(address, displayName);
+      if (!user) return res.status(404).json({ error: "Không tìm thấy người dùng" });
+      res.json(user);
+    } catch (error) {
+      res.status(500).json({ error: "Lỗi khi cập nhật tên" });
     }
   });
 

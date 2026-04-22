@@ -6,15 +6,21 @@ import { useMutation } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Form, FormControl, FormField, FormItem, FormMessage } from "@/components/ui/form";
 import { Badge } from "@/components/ui/badge";
-import { Separator } from "@/components/ui/separator";
 import { Loader2, Search, Shield, ShieldCheck, ShieldOff, Users, Box, ExternalLink, CheckCircle2, XCircle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useLocation } from "wouter";
 
+const CHAINS: Record<number, { label: string; safePrefix: string; explorer: string }> = {
+  1:        { label: "Ethereum Mainnet", safePrefix: "eth", explorer: "https://etherscan.io" },
+  11155111: { label: "Sepolia Testnet",  safePrefix: "sep", explorer: "https://sepolia.etherscan.io" },
+};
+
 const searchSchema = z.object({
   safeAddress: z.string().regex(/^0x[a-fA-F0-9]{40}$/, "Địa chỉ Safe không hợp lệ"),
+  chainId: z.coerce.number(),
 });
 
 type SearchValues = z.infer<typeof searchSchema>;
@@ -50,12 +56,13 @@ export default function WalletTransparency() {
     resolver: zodResolver(searchSchema),
     defaultValues: {
       safeAddress: initialSafe,
+      chainId: 11155111,
     },
   });
 
   const searchMutation = useMutation({
     mutationFn: async (values: SearchValues) => {
-      const res = await fetch(`/api/safe-info?address=${values.safeAddress}`);
+      const res = await fetch(`/api/safe-info?address=${values.safeAddress}&chainId=${values.chainId}`);
       if (!res.ok) throw new Error("Không thể lấy thông tin Safe");
       return res.json();
     },
@@ -98,7 +105,30 @@ export default function WalletTransparency() {
           </CardHeader>
           <CardContent>
             <Form {...form}>
-              <form onSubmit={form.handleSubmit(onSubmit)} className="flex gap-4">
+              <form onSubmit={form.handleSubmit(onSubmit)} className="flex gap-2 flex-wrap sm:flex-nowrap">
+                <FormField
+                  control={form.control}
+                  name="chainId"
+                  render={({ field }) => (
+                    <FormItem className="w-full sm:w-48 shrink-0">
+                      <Select
+                        value={String(field.value)}
+                        onValueChange={(v) => field.onChange(Number(v))}
+                      >
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {Object.entries(CHAINS).map(([id, c]) => (
+                            <SelectItem key={id} value={id}>{c.label}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </FormItem>
+                  )}
+                />
                 <FormField
                   control={form.control}
                   name="safeAddress"
@@ -159,7 +189,7 @@ export default function WalletTransparency() {
                       asChild
                     >
                       <a
-                        href={`https://app.safe.global/home?safe=eth:${safeInfo.address}`}
+                        href={`https://app.safe.global/home?safe=${CHAINS[safeInfo.chainId]?.safePrefix ?? "eth"}:${safeInfo.address}`}
                         target="_blank"
                         rel="noopener noreferrer"
                         data-testid="link-safe-app"
@@ -222,7 +252,7 @@ export default function WalletTransparency() {
                         asChild
                       >
                         <a
-                          href={`https://etherscan.io/address/${owner}`}
+                          href={`${CHAINS[safeInfo.chainId]?.explorer ?? "https://etherscan.io"}/address/${owner}`}
                           target="_blank"
                           rel="noopener noreferrer"
                         >

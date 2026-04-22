@@ -12,7 +12,6 @@
 
 import {
   createPublicClient,
-  createWalletClient,
   webSocket,
   http,
   parseAbiItem,
@@ -101,7 +100,7 @@ async function readNonce(safeAddr: `0x${string}`): Promise<bigint> {
       functionName: 'nonce',
     }) as bigint;
   } catch {
-    return 0n;
+    return BigInt(0);
   }
 }
 
@@ -154,7 +153,7 @@ async function handleSafeExecution(safeAddress: string): Promise<void> {
   // ── Case 2: Nonce tăng nhưng buyer chưa là owner → bất thường ────────────
   if (!buyerIsOwner && !notifiedSuspicious.has(trade.id)) {
     const currentNonce  = await readNonce(safeAddr);
-    const snapshotNonce = trade.snapshotNonce != null ? BigInt(trade.snapshotNonce) : 0n;
+    const snapshotNonce = trade.snapshotNonce != null ? BigInt(trade.snapshotNonce) : BigInt(0);
 
     if (currentNonce > snapshotNonce) {
       notifiedSuspicious.add(trade.id);
@@ -322,10 +321,10 @@ export function startSafeWatcher(): void {
 
 export function stopSafeWatcher(): void {
   // Unwatch tất cả Safes
-  for (const [addr, unwatch] of watchedSafes) {
+  Array.from(watchedSafes.entries()).forEach(([addr, unwatch]) => {
     unwatch();
     watchedSafes.delete(addr);
-  }
+  });
 
   unwatchEscrowArmed?.();
   unwatchEscrowCompleted?.();

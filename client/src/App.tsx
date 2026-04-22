@@ -14,11 +14,11 @@ import Transfer from "@/pages/transfer/index";
 import Sell from "@/pages/transfer/sell";
 import Buy from "@/pages/transfer/buy";
 import WalletTransparency from "@/pages/wallet-transparency";
-import Evidence from "@/pages/evidence";
 import Dashboard from "@/pages/dashboard";
-import Learn from "@/pages/learn";
-import Legal from "@/pages/legal";
+import Forum from "@/pages/forum";
+import ForumPost from "@/pages/forum-post";
 import NotFound from "@/pages/not-found";
+import { UserProfileDialog } from "@/components/user-profile-dialog";
 
 function Router() {
   return (
@@ -29,10 +29,9 @@ function Router() {
         <Route path="/transfer/sell" component={Sell} />
         <Route path="/transfer/buy" component={Buy} />
         <Route path="/wallet-transparency" component={WalletTransparency} />
-        <Route path="/evidence" component={Evidence} />
         <Route path="/dashboard" component={Dashboard} />
-        <Route path="/learn" component={Learn} />
-        <Route path="/legal" component={Legal} />
+        <Route path="/forum" component={Forum} />
+        <Route path="/forum/:id" component={ForumPost} />
         <Route component={NotFound} />
       </Switch>
     </Layout>
@@ -48,6 +47,7 @@ function App() {
             <WebSocketProvider>
               <Toaster />
               <Router />
+              <UserProfileDialog />
             </WebSocketProvider>
           </TooltipProvider>
         </ThemeProvider>

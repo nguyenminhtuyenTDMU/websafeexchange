@@ -61,6 +61,10 @@ export default function Buy() {
   const [foundTrade, setFoundTrade] = useState<Trade | null>(null);
   const [suspiciousDetected, setSuspiciousDetected] = useState(false);
   const [ownershipTransferred, setOwnershipTransferred] = useState(false);
+  const [resumeTradeId, setResumeTradeId] = useState<string | null>(() => {
+    if (typeof window === "undefined") return null;
+    return new URLSearchParams(window.location.search).get("tradeId") || null;
+  });
 
   const form = useForm<SearchFormValues>({
     resolver: zodResolver(searchFormSchema),
@@ -72,6 +76,36 @@ export default function Buy() {
     enabled: !!foundTrade?.id,
     refetchInterval: 5000,
   });
+
+  // Resume: fetch trade by URL param or localStorage-saved ID
+  const { data: resumedTrade } = useQuery<Trade>({
+    queryKey: ["/api/trades", resumeTradeId],
+    enabled: !!resumeTradeId && !foundTrade,
+  });
+  useEffect(() => {
+    if (resumedTrade && !foundTrade) setFoundTrade(resumedTrade);
+  }, [resumedTrade]);
+
+  // Restore from localStorage when address connects
+  useEffect(() => {
+    if (foundTrade || !address) return;
+    const saved = localStorage.getItem(`buy_trade_${address}`);
+    if (saved) setResumeTradeId(saved);
+  }, [address]);
+
+  // Save to localStorage when foundTrade is set
+  useEffect(() => {
+    if (!address || !foundTrade?.id) return;
+    localStorage.setItem(`buy_trade_${address}`, foundTrade.id);
+  }, [foundTrade?.id, address]);
+
+  // Clear on terminal state
+  useEffect(() => {
+    if (!address || !trade) return;
+    if (trade.status === "COMPLETED" || trade.status === "CANCELLED") {
+      localStorage.removeItem(`buy_trade_${address}`);
+    }
+  }, [trade?.status, address]);
 
   // ── Listen to WebSocket events for FUNDED trades ───────────────────────────
   useEffect(() => {
@@ -628,6 +662,8 @@ export default function Buy() {
               variant="outline"
               onClick={() => {
                 setFoundTrade(null);
+                setResumeTradeId(null);
+                if (address) localStorage.removeItem(`buy_trade_${address}`);
                 form.reset();
               }}
               data-testid="button-new-search"
