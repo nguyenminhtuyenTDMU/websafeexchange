@@ -63,6 +63,8 @@ contract SafeExchangeEscrow {
     error DeadlinePassed();
     error TradeAlreadyCompleted();
     error NoSuspiciousActivity();
+    error BuyerNotOwner();
+    error SellerStillOwner();
 
     modifier nonReentrant() {
         require(!_locked, "LOCKED");
@@ -76,7 +78,8 @@ contract SafeExchangeEscrow {
     function getTradeId(address buyer, address seller, address safe)
         public pure returns (bytes32)
     {
-        return keccak256(abi.encodePacked(buyer, seller, safe));
+        // abi.encode tránh hash collision so với abi.encodePacked với address types
+        return keccak256(abi.encode(buyer, seller, safe));
     }
 
     function _isOwner(address safe, address account) internal view returns (bool) {
@@ -123,8 +126,11 @@ contract SafeExchangeEscrow {
 
         bytes32 id = getTradeId(buyer, msg.sender, safe);
         Trade storage t = trades[id];
-        if (t.status != TradeStatus.NONE) revert InvalidState();
 
+        // Cho phép tạo lại trade nếu trade cũ đã bị cancel
+        if (t.status != TradeStatus.NONE && t.status != TradeStatus.CANCELLED) revert InvalidState();
+
+        // Reset struct để tái sử dụng tradeId
         t.buyer        = buyer;
         t.seller       = msg.sender;
         t.safeAddress  = safe;
@@ -167,8 +173,8 @@ contract SafeExchangeEscrow {
         if (msg.sender != t.buyer && msg.sender != t.seller) revert NotAuthorized();
         if (!t.fundsHeld) revert InvalidState();
 
-        require(_isOwner(t.safeAddress, t.buyer),   "Buyer chua la owner cua Safe");
-        require(!_isOwner(t.safeAddress, t.seller), "Seller van con la owner cua Safe");
+        if (!_isOwner(t.safeAddress, t.buyer)) revert BuyerNotOwner();
+        if (_isOwner(t.safeAddress, t.seller)) revert SellerStillOwner();
 
         t.status    = TradeStatus.COMPLETED;
         t.fundsHeld = false;
@@ -214,6 +220,28 @@ contract SafeExchangeEscrow {
     }
 
     /**
+     * @notice Seller hủy giao dịch ở bất kỳ giai đoạn nào trước khi chuyển nhượng.
+     *         Nếu buyer đã deposit, ETH hoàn về buyer.
+     */
+    function sellerCancel(bytes32 id) external nonReentrant {
+        Trade storage t = trades[id];
+        if (t.status != TradeStatus.ARMED && t.status != TradeStatus.FUNDED) revert InvalidState();
+        if (msg.sender != t.seller) revert NotSeller();
+
+        bool held = t.fundsHeld;
+        uint256 refund = t.amount;
+        address buyer = t.buyer;
+
+        _cancel(id, "SELLER_CANCELLED");
+
+        if (held) {
+            t.fundsHeld = false;
+            (bool ok, ) = payable(buyer).call{value: refund}("");
+            if (!ok) revert TransferFailed();
+        }
+    }
+
+    /**
      * @notice Hủy giao dịch sau khi hết deadline. Ai cũng có thể gọi.
      */
     function cancelTimeout(bytes32 id) external nonReentrant {
@@ -245,5 +273,6 @@ contract SafeExchangeEscrow {
         if (!ok) revert TransferFailed();
     }
 
-    receive() external payable {}
+    // receive() bị xóa có chủ ý: ETH chỉ được nạp qua deposit().
+    // Gửi ETH trực tiếp sẽ revert, tránh mất tiền do nhầm lẫn.
 }

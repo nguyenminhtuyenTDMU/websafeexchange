@@ -1,4 +1,6 @@
 import express, { type Request, Response, NextFunction } from "express";
+import cors from "cors";
+import rateLimit from "express-rate-limit";
 import { registerRoutes } from "./routes";
 import { serveStatic } from "./static";
 import { createServer } from "http";
@@ -14,8 +16,68 @@ declare module "http" {
   }
 }
 
+// ─── CORS ──────────────────────────────────────────────────────────────────────
+// Chỉ cho phép frontend origin truy cập API.
+// Trong production, đổi ALLOWED_ORIGINS thành domain thực.
+const ALLOWED_ORIGINS = (process.env.ALLOWED_ORIGINS || "http://localhost:5000")
+  .split(",")
+  .map((o) => o.trim());
+
+app.use(
+  cors({
+    origin: (origin, callback) => {
+      // Cho phép server-to-server (không có origin) và các origin đã whitelist
+      if (!origin || ALLOWED_ORIGINS.includes(origin)) {
+        callback(null, true);
+      } else {
+        callback(new Error(`CORS: origin "${origin}" không được phép`));
+      }
+    },
+    methods: ["GET", "POST", "PATCH", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization"],
+    credentials: true,
+    maxAge: 600, // preflight cache 10 phút
+  })
+);
+
+// ─── Rate Limiting ─────────────────────────────────────────────────────────────
+
+// Giới hạn chung cho tất cả API: 200 req / 15 phút mỗi IP
+const generalLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 200,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: "Quá nhiều yêu cầu, vui lòng thử lại sau." },
+});
+
+// Giới hạn chặt cho các endpoint ghi (state-mutation): 30 req / 15 phút mỗi IP
+const writeLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 30,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: "Quá nhiều yêu cầu ghi, vui lòng thử lại sau." },
+});
+
+// Giới hạn forum để chống spam: 10 bài / 15 phút mỗi IP
+const forumWriteLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 10,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: "Đăng bài quá nhanh, vui lòng thử lại sau." },
+});
+
+app.use("/api", generalLimiter);
+app.post("/api/trades", writeLimiter);          // chỉ giới hạn tạo trade mới
+app.use("/api/forum/posts", forumWriteLimiter); // POST forum
+
+// ─── Body parsing ──────────────────────────────────────────────────────────────
+
 app.use(
   express.json({
+    limit: "50kb", // ngăn payload DoS
     verify: (req, _res, buf) => {
       req.rawBody = buf;
     },
@@ -23,6 +85,8 @@ app.use(
 );
 
 app.use(express.urlencoded({ extended: false }));
+
+// ─── Request logging ───────────────────────────────────────────────────────────
 
 export function log(message: string, source = "express") {
   const formattedTime = new Date().toLocaleTimeString("en-US", {
@@ -61,22 +125,28 @@ app.use((req, res, next) => {
   next();
 });
 
+// ─── Routes & startup ─────────────────────────────────────────────────────────
+
 (async () => {
   await registerRoutes(httpServer, app);
   startSafeWatcher();
   storage.seedForumPosts().catch((err) => console.error("[seed] forum posts error:", err));
 
+  // Lỗi chung — không lộ stack trace ra ngoài trong production
   app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
     const status = err.status || err.statusCode || 500;
-    const message = err.message || "Internal Server Error";
+    const message =
+      process.env.NODE_ENV === "production"
+        ? "Internal Server Error"
+        : err.message || "Internal Server Error";
 
     res.status(status).json({ message });
-    throw err;
+
+    if (process.env.NODE_ENV !== "production") {
+      throw err;
+    }
   });
 
-  // importantly only setup vite in development and after
-  // setting up all the other routes so the catch-all route
-  // doesn't interfere with the other routes
   if (process.env.NODE_ENV === "production") {
     serveStatic(app);
   } else {
@@ -84,10 +154,6 @@ app.use((req, res, next) => {
     await setupVite(httpServer, app);
   }
 
-  // ALWAYS serve the app on the port specified in the environment variable PORT
-  // Other ports are firewalled. Default to 5000 if not specified.
-  // this serves both the API and the client.
-  // It is the only port that is not firewalled.
   const port = parseInt(process.env.PORT || "5000", 10);
   const listenOptions: any = {
     port,
@@ -95,7 +161,7 @@ app.use((req, res, next) => {
   };
 
   if (process.platform !== "win32") {
-    listenOptions.reusePort = true; // reusePort not supported on Windows
+    listenOptions.reusePort = true;
   }
 
   httpServer.listen(listenOptions, () => {

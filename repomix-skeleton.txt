@@ -43,6 +43,7 @@ The content is organized as follows:
 <directory_structure>
 ai_skeleton_code/client/src/App.d.ts
 ai_skeleton_code/client/src/components/connect-wallet.d.ts
+ai_skeleton_code/client/src/components/deadline-display.d.ts
 ai_skeleton_code/client/src/components/footer.d.ts
 ai_skeleton_code/client/src/components/header.d.ts
 ai_skeleton_code/client/src/components/layout.d.ts
@@ -108,14 +109,13 @@ ai_skeleton_code/client/src/hooks/use-websocket.d.ts
 ai_skeleton_code/client/src/lib/contracts/addresses.d.ts
 ai_skeleton_code/client/src/lib/contracts/EscrowABI.d.ts
 ai_skeleton_code/client/src/lib/contracts/SafeExchangeABI.d.ts
-ai_skeleton_code/client/src/lib/export-pdf.d.ts
 ai_skeleton_code/client/src/lib/queryClient.d.ts
 ai_skeleton_code/client/src/lib/safe-sdk.d.ts
 ai_skeleton_code/client/src/lib/utils.d.ts
 ai_skeleton_code/client/src/lib/wagmi.d.ts
+ai_skeleton_code/client/src/lib/web3-auth.d.ts
 ai_skeleton_code/client/src/main.d.ts
 ai_skeleton_code/client/src/pages/dashboard.d.ts
-ai_skeleton_code/client/src/pages/evidence.d.ts
 ai_skeleton_code/client/src/pages/forum-post.d.ts
 ai_skeleton_code/client/src/pages/forum.d.ts
 ai_skeleton_code/client/src/pages/home.d.ts
@@ -126,6 +126,7 @@ ai_skeleton_code/client/src/pages/transfer/buy.d.ts
 ai_skeleton_code/client/src/pages/transfer/index.d.ts
 ai_skeleton_code/client/src/pages/transfer/sell.d.ts
 ai_skeleton_code/client/src/pages/wallet-transparency.d.ts
+ai_skeleton_code/server/auth.d.ts
 ai_skeleton_code/server/db.d.ts
 ai_skeleton_code/server/index.d.ts
 ai_skeleton_code/server/routes.d.ts
@@ -140,6 +141,93 @@ ai_skeleton_code/vite.config.d.ts
 
 <files>
 This section contains the contents of the repository's files.
+
+<file path="ai_skeleton_code/client/src/components/deadline-display.d.ts">
+interface DeadlineDisplayProps {
+    deadline: Date | string;
+    status: string;
+    createdAt: Date | string;
+}
+export declare function DeadlineDisplay({ deadline, status, createdAt }: DeadlineDisplayProps): import("react").JSX.Element;
+export {};
+</file>
+
+<file path="ai_skeleton_code/client/src/lib/web3-auth.d.ts">
+/**
+ * web3-auth.ts — Client-side helper để ký EIP-191 message trước khi gọi API.
+ *
+ * Pattern:
+ *   1. Gọi buildAuthPayload(signMessageAsync, action, scope)
+ *   2. Kết quả { signature, signedMessage } đưa vào body của API request
+ *   3. Server dùng recoverMessageAddress() để xác minh
+ *
+ * Message format: "SafeExchange:{action}:{scope}:{isoTimestamp}"
+ * - action:    tên operation, ví dụ "create-trade", "join-trade"
+ * - scope:     tradeId hoặc safeAddress / walletAddress, để chống reuse chữ ký sang endpoint khác
+ * - timestamp: ISO 8601, server reject nếu cách thời điểm verify > 5 phút
+ */
+type SignMessageFn = (args: {
+    message: string;
+}) => Promise<`0x${string}`>;
+export interface AuthPayload {
+    signature: `0x${string}`;
+    signedMessage: string;
+}
+/**
+ * Xây dựng và ký message xác thực.
+ * @param signMessageAsync  Hàm signMessageAsync từ wagmi useSignMessage()
+ * @param action            Tên action, phải khớp với route server
+ * @param scope             tradeId hoặc địa chỉ ví (lowercase)
+ */
+export declare function buildAuthPayload(signMessageAsync: SignMessageFn, action: string, scope: string): Promise<AuthPayload>;
+export {};
+</file>
+
+<file path="ai_skeleton_code/server/auth.d.ts">
+/**
+ * auth.ts — EIP-191 signature verification cho Web3 authentication.
+ *
+ * Pattern:
+ *  1. Client tạo message: "SafeExchange:{action}:{scope}:{isoTimestamp}"
+ *  2. Client ký bằng eth_sign / personal_sign (MetaMask, wagmi signMessage)
+ *  3. Server gọi verifySignature() → recover address → compare với expectedAddress
+ *  4. Server kiểm tra timestamp trong window 5 phút để chống replay attack
+ *
+ * Sử dụng:
+ *   const { error } = await requireSignature(req, expectedAddress, action, scope);
+ *   if (error) return res.status(401).json({ error });
+ */
+import type { Request } from 'express';
+export declare function buildSignMessage(action: string, scope: string, timestamp: string): string;
+interface VerifyResult {
+    error: string | null;
+    recoveredAddress: string | null;
+}
+/**
+ * Verify EIP-191 signature và kiểm tra timestamp freshness.
+ * @param signature  Hex signature từ client (0x...)
+ * @param message    Message gốc đã ký (chưa hash thêm — viem tự thêm prefix)
+ * @param expectedAddress  Địa chỉ ví kỳ vọng (sẽ so sánh case-insensitive)
+ */
+export declare function verifySignature(signature: string, message: string, expectedAddress: string): Promise<VerifyResult>;
+/**
+ * Validate địa chỉ Ethereum đầy đủ (42 ký tự, checksum-compatible).
+ */
+export declare function validateEthAddress(address: unknown): address is string;
+/**
+ * Middleware helper: đọc { signature, signedMessage } từ req.body,
+ * verify so với expectedAddress. Trả về { error } nếu thất bại.
+ */
+export declare function requireSignature(req: Request, expectedAddress: string, action: string, scope: string): Promise<{
+    error: string | null;
+}>;
+export {};
+</file>
+
+<file path="ai_skeleton_code/client/src/App.d.ts">
+declare function App(): import("react").JSX.Element;
+export default App;
+</file>
 
 <file path="ai_skeleton_code/client/src/components/user-profile-dialog.d.ts">
 export declare function UserProfileDialog(): import("react").JSX.Element | null;
@@ -160,6 +248,10 @@ export declare function buildAnonColorMap(anonIds: (string | null | undefined)[]
 export {};
 </file>
 
+<file path="ai_skeleton_code/client/src/main.d.ts">
+import "./index.css";
+</file>
+
 <file path="ai_skeleton_code/client/src/pages/forum-post.d.ts">
 export default function ForumPostPage(): import("react").JSX.Element;
 </file>
@@ -168,21 +260,118 @@ export default function ForumPostPage(): import("react").JSX.Element;
 export default function Forum(): import("react").JSX.Element;
 </file>
 
-<file path="ai_skeleton_code/client/src/App.d.ts">
-declare function App(): import("react").JSX.Element;
-export default App;
-</file>
-
-<file path="ai_skeleton_code/client/src/main.d.ts">
-import "./index.css";
-</file>
-
 <file path="ai_skeleton_code/client/src/pages/transfer/buy.d.ts">
 export default function Buy(): import("react").JSX.Element;
 </file>
 
 <file path="ai_skeleton_code/client/src/pages/transfer/sell.d.ts">
 export default function Sell(): import("react").JSX.Element;
+</file>
+
+<file path="ai_skeleton_code/client/src/lib/contracts/addresses.d.ts">
+/**
+ * Contract addresses theo chainId.
+ * Sau khi deploy SC, điền address vào VITE_ESCROW_CONTRACT_ADDRESS trong .env
+ */
+export declare const ESCROW_CONTRACT_ADDRESSES: Record<number, `0x${string}`>;
+/** chainId của mạng mà escrow đang được deploy */
+export declare const SUPPORTED_CHAIN_ID = 11155111;
+export declare function getEscrowAddress(chainId: number): `0x${string}`;
+</file>
+
+<file path="ai_skeleton_code/client/src/lib/contracts/EscrowABI.d.ts">
+/**
+ * ABI cho SafeExchangeEscrow
+ * Sync với contracts/SafeExchangeEscrowSoftGuard.sol
+ */
+export declare const escrowABI: ({
+    inputs: never[];
+    name: string;
+    type: string;
+    anonymous?: undefined;
+    stateMutability?: undefined;
+    outputs?: undefined;
+} | {
+    anonymous: boolean;
+    inputs: {
+        indexed: boolean;
+        internalType: string;
+        name: string;
+        type: string;
+    }[];
+    name: string;
+    type: string;
+    stateMutability?: undefined;
+    outputs?: undefined;
+} | {
+    stateMutability: string;
+    type: string;
+    inputs?: undefined;
+    name?: undefined;
+    anonymous?: undefined;
+    outputs?: undefined;
+} | {
+    inputs: {
+        internalType: string;
+        name: string;
+        type: string;
+    }[];
+    name: string;
+    outputs: {
+        internalType: string;
+        name: string;
+        type: string;
+    }[];
+    stateMutability: string;
+    type: string;
+    anonymous?: undefined;
+})[];
+</file>
+
+<file path="ai_skeleton_code/client/src/lib/contracts/SafeExchangeABI.d.ts">
+export declare const SAFE_EXCHANGE_ABI: ({
+    inputs: never[];
+    name: string;
+    type: string;
+    anonymous?: undefined;
+    stateMutability?: undefined;
+    outputs?: undefined;
+} | {
+    anonymous: boolean;
+    inputs: {
+        indexed: boolean;
+        internalType: string;
+        name: string;
+        type: string;
+    }[];
+    name: string;
+    type: string;
+    stateMutability?: undefined;
+    outputs?: undefined;
+} | {
+    stateMutability: string;
+    type: string;
+    inputs?: undefined;
+    name?: undefined;
+    anonymous?: undefined;
+    outputs?: undefined;
+} | {
+    inputs: {
+        internalType: string;
+        name: string;
+        type: string;
+    }[];
+    name: string;
+    outputs: {
+        internalType: string;
+        name: string;
+        type: string;
+    }[];
+    stateMutability: string;
+    type: string;
+    anonymous?: undefined;
+})[];
+export declare const GUARD_CONTRACT_ADDRESS = "0xeF4b477e5f24Cd260215a0E966258D534227f07e";
 </file>
 
 <file path="ai_skeleton_code/client/src/components/connect-wallet.d.ts">
@@ -508,7 +697,7 @@ declare const CommandInput: React.ForwardRefExoticComponent<Omit<Omit<Pick<Pick<
     ref?: React.Ref<HTMLInputElement>;
 } & {
     asChild?: boolean;
-}, "key" | "asChild" | keyof React.InputHTMLAttributes<HTMLInputElement>>, "type" | "value" | "onChange"> & {
+}, "key" | "asChild" | keyof React.InputHTMLAttributes<HTMLInputElement>>, "value" | "onChange" | "type"> & {
     value?: string;
     onValueChange?: (search: string) => void;
 } & React.RefAttributes<HTMLInputElement>, "ref"> & React.RefAttributes<HTMLInputElement>>;
@@ -552,7 +741,7 @@ declare const CommandItem: React.ForwardRefExoticComponent<Omit<{
     ref?: React.Ref<HTMLDivElement>;
 } & {
     asChild?: boolean;
-}, "key" | "asChild" | keyof React.HTMLAttributes<HTMLDivElement>>, "value" | "disabled" | "onSelect"> & {
+}, "key" | "asChild" | keyof React.HTMLAttributes<HTMLDivElement>>, "value" | "onSelect" | "disabled"> & {
     disabled?: boolean;
     onSelect?: (value: string) => void;
     value?: string;
@@ -863,7 +1052,7 @@ export { RadioGroup, RadioGroupItem };
 <file path="ai_skeleton_code/client/src/components/ui/resizable.d.ts">
 import * as ResizablePrimitive from "react-resizable-panels";
 declare const ResizablePanelGroup: ({ className, ...props }: React.ComponentProps<typeof ResizablePrimitive.PanelGroup>) => import("react").JSX.Element;
-declare const ResizablePanel: import("react").ForwardRefExoticComponent<Omit<import("react").HTMLAttributes<HTMLButtonElement | HTMLElement | HTMLDivElement | HTMLObjectElement | HTMLLinkElement | HTMLInputElement | HTMLAnchorElement | HTMLAreaElement | HTMLAudioElement | HTMLBaseElement | HTMLQuoteElement | HTMLBodyElement | HTMLBRElement | HTMLCanvasElement | HTMLTableColElement | HTMLDataElement | HTMLDataListElement | HTMLModElement | HTMLDetailsElement | HTMLDialogElement | HTMLDListElement | HTMLEmbedElement | HTMLFieldSetElement | HTMLFormElement | HTMLHeadingElement | HTMLHeadElement | HTMLHRElement | HTMLHtmlElement | HTMLIFrameElement | HTMLImageElement | HTMLLabelElement | HTMLLegendElement | HTMLLIElement | HTMLMapElement | HTMLMetaElement | HTMLMeterElement | HTMLOListElement | HTMLOptGroupElement | HTMLOptionElement | HTMLOutputElement | HTMLParagraphElement | HTMLPreElement | HTMLProgressElement | HTMLSlotElement | HTMLScriptElement | HTMLSelectElement | HTMLSourceElement | HTMLSpanElement | HTMLStyleElement | HTMLTableElement | HTMLTemplateElement | HTMLTableSectionElement | HTMLTableCellElement | HTMLTextAreaElement | HTMLTimeElement | HTMLTitleElement | HTMLTableRowElement | HTMLTrackElement | HTMLUListElement | HTMLVideoElement | HTMLTableCaptionElement | HTMLMenuElement | HTMLPictureElement>, "id" | "onResize"> & {
+declare const ResizablePanel: import("react").ForwardRefExoticComponent<Omit<import("react").HTMLAttributes<HTMLLIElement | HTMLElement | HTMLObjectElement | HTMLAnchorElement | HTMLButtonElement | HTMLDivElement | HTMLFormElement | HTMLHeadingElement | HTMLImageElement | HTMLInputElement | HTMLLabelElement | HTMLOListElement | HTMLParagraphElement | HTMLSpanElement | HTMLUListElement | HTMLAreaElement | HTMLAudioElement | HTMLBaseElement | HTMLQuoteElement | HTMLBodyElement | HTMLBRElement | HTMLCanvasElement | HTMLTableColElement | HTMLDataElement | HTMLDataListElement | HTMLModElement | HTMLDetailsElement | HTMLDialogElement | HTMLDListElement | HTMLEmbedElement | HTMLFieldSetElement | HTMLHeadElement | HTMLHRElement | HTMLHtmlElement | HTMLIFrameElement | HTMLLegendElement | HTMLLinkElement | HTMLMapElement | HTMLMetaElement | HTMLMeterElement | HTMLOptGroupElement | HTMLOptionElement | HTMLOutputElement | HTMLPreElement | HTMLProgressElement | HTMLSlotElement | HTMLScriptElement | HTMLSelectElement | HTMLSourceElement | HTMLStyleElement | HTMLTableElement | HTMLTemplateElement | HTMLTableSectionElement | HTMLTableCellElement | HTMLTextAreaElement | HTMLTimeElement | HTMLTitleElement | HTMLTableRowElement | HTMLTrackElement | HTMLVideoElement | HTMLTableCaptionElement | HTMLMenuElement | HTMLPictureElement>, "id" | "onResize"> & {
     className?: string | undefined;
     collapsedSize?: number | undefined;
     collapsible?: boolean | undefined;
@@ -927,7 +1116,7 @@ declare const SheetClose: React.ForwardRefExoticComponent<SheetPrimitive.DialogC
 declare const SheetPortal: React.FC<SheetPrimitive.DialogPortalProps>;
 declare const SheetOverlay: React.ForwardRefExoticComponent<Omit<SheetPrimitive.DialogOverlayProps & React.RefAttributes<HTMLDivElement>, "ref"> & React.RefAttributes<HTMLDivElement>>;
 declare const sheetVariants: (props?: ({
-    side?: "top" | "bottom" | "left" | "right" | null | undefined;
+    side?: "top" | "right" | "bottom" | "left" | null | undefined;
 } & import("class-variance-authority/types").ClassProp) | undefined) => string;
 interface SheetContentProps extends React.ComponentPropsWithoutRef<typeof SheetPrimitive.Content>, VariantProps<typeof sheetVariants> {
 }
@@ -1218,136 +1407,7 @@ export interface UseWebSocketReturn {
     subscribe: (channel: string) => void;
     unsubscribe: (channel: string) => void;
 }
-export declare function useWebSocket(): UseWebSocketReturn;
-</file>
-
-<file path="ai_skeleton_code/client/src/lib/contracts/addresses.d.ts">
-/**
- * Contract addresses theo chainId.
- * Sau khi deploy SC, điền address vào VITE_ESCROW_CONTRACT_ADDRESS trong .env
- */
-export declare const ESCROW_CONTRACT_ADDRESSES: Record<number, `0x${string}`>;
-/** chainId của mạng mà escrow đang được deploy */
-export declare const SUPPORTED_CHAIN_ID = 11155111;
-export declare function getEscrowAddress(chainId: number): `0x${string}`;
-</file>
-
-<file path="ai_skeleton_code/client/src/lib/contracts/EscrowABI.d.ts">
-/**
- * ABI cho SafeExchangeEscrow
- * Sync với contracts/SafeExchangeEscrowSoftGuard.sol
- */
-export declare const escrowABI: ({
-    inputs: never[];
-    name: string;
-    type: string;
-    anonymous?: undefined;
-    stateMutability?: undefined;
-    outputs?: undefined;
-} | {
-    anonymous: boolean;
-    inputs: {
-        indexed: boolean;
-        internalType: string;
-        name: string;
-        type: string;
-    }[];
-    name: string;
-    type: string;
-    stateMutability?: undefined;
-    outputs?: undefined;
-} | {
-    stateMutability: string;
-    type: string;
-    inputs?: undefined;
-    name?: undefined;
-    anonymous?: undefined;
-    outputs?: undefined;
-} | {
-    inputs: {
-        internalType: string;
-        name: string;
-        type: string;
-    }[];
-    name: string;
-    outputs: {
-        internalType: string;
-        name: string;
-        type: string;
-    }[];
-    stateMutability: string;
-    type: string;
-    anonymous?: undefined;
-})[];
-</file>
-
-<file path="ai_skeleton_code/client/src/lib/contracts/SafeExchangeABI.d.ts">
-export declare const SAFE_EXCHANGE_ABI: ({
-    inputs: never[];
-    name: string;
-    type: string;
-    anonymous?: undefined;
-    stateMutability?: undefined;
-    outputs?: undefined;
-} | {
-    anonymous: boolean;
-    inputs: {
-        indexed: boolean;
-        internalType: string;
-        name: string;
-        type: string;
-    }[];
-    name: string;
-    type: string;
-    stateMutability?: undefined;
-    outputs?: undefined;
-} | {
-    stateMutability: string;
-    type: string;
-    inputs?: undefined;
-    name?: undefined;
-    anonymous?: undefined;
-    outputs?: undefined;
-} | {
-    inputs: {
-        internalType: string;
-        name: string;
-        type: string;
-    }[];
-    name: string;
-    outputs: {
-        internalType: string;
-        name: string;
-        type: string;
-    }[];
-    stateMutability: string;
-    type: string;
-    anonymous?: undefined;
-})[];
-export declare const GUARD_CONTRACT_ADDRESS = "0x90ff66a4c895621fC011c7ef56Fc786FEC14d969";
-</file>
-
-<file path="ai_skeleton_code/client/src/lib/export-pdf.d.ts">
-interface EvidenceData {
-    hash: string;
-    signature: string;
-    signerAddress: string;
-    timestamp: string;
-    tradeId?: string;
-    payload?: string;
-}
-export declare function exportEvidencePDF(evidence: EvidenceData): void;
-export declare function exportTradeEvidencePDF(trade: {
-    id: string;
-    safeAddress: string;
-    sellerAddress: string;
-    buyerAddress?: string | null;
-    priceEth: string;
-    status: string;
-    createdAt: string;
-    deadline: string;
-}): void;
-export {};
+export declare function useWebSocket(walletAddress?: string): UseWebSocketReturn;
 </file>
 
 <file path="ai_skeleton_code/client/src/lib/queryClient.d.ts">
@@ -1666,10 +1726,6 @@ declare module 'wagmi' {
 export default function Dashboard(): import("react").JSX.Element;
 </file>
 
-<file path="ai_skeleton_code/client/src/pages/evidence.d.ts">
-export default function Evidence(): import("react").JSX.Element;
-</file>
-
 <file path="ai_skeleton_code/client/src/pages/home.d.ts">
 export default function Home(): import("react").JSX.Element;
 </file>
@@ -1714,7 +1770,7 @@ export declare function log(message: string, source?: string): void;
 
 <file path="ai_skeleton_code/server/routes.d.ts">
 import type { Express } from "express";
-import { type Server } from "http";
+import type { Server } from "http";
 export declare function registerRoutes(httpServer: Server, app: Express): Promise<Server>;
 </file>
 
@@ -1746,7 +1802,7 @@ export declare function serveStatic(app: Express): void;
 </file>
 
 <file path="ai_skeleton_code/server/storage.d.ts">
-import { type User, type InsertUser, type Trade, type InsertTrade, type Evidence, type InsertEvidence, type SystemLog, type InsertSystemLog, type ForumPost, type InsertForumPost, type ForumComment, type InsertForumComment, type ForumPostType } from "@shared/schema";
+import { type User, type InsertUser, type Trade, type InsertTrade, type SystemLog, type InsertSystemLog, type ForumPost, type InsertForumPost, type ForumComment, type InsertForumComment, type ForumPostType } from "@shared/schema";
 export interface IStorage {
     getUser(id: string): Promise<User | undefined>;
     getUserByWallet(walletAddress: string): Promise<User | undefined>;
@@ -1758,10 +1814,6 @@ export interface IStorage {
     getAllTrades(): Promise<Trade[]>;
     createTrade(trade: InsertTrade): Promise<Trade>;
     updateTrade(id: string, data: Partial<Trade>): Promise<Trade | undefined>;
-    getEvidence(id: string): Promise<Evidence | undefined>;
-    getEvidenceByTrade(tradeId: string): Promise<Evidence[]>;
-    getAllEvidence(): Promise<Evidence[]>;
-    createEvidence(evidence: InsertEvidence): Promise<Evidence>;
     getSystemLogs(): Promise<SystemLog[]>;
     getLogsByTrade(tradeId: string): Promise<SystemLog[]>;
     createLog(log: InsertSystemLog): Promise<SystemLog>;
@@ -1785,10 +1837,6 @@ export declare class DatabaseStorage implements IStorage {
     getAllTrades(): Promise<Trade[]>;
     createTrade(insertTrade: InsertTrade): Promise<Trade>;
     updateTrade(id: string, data: Partial<Trade>): Promise<Trade | undefined>;
-    getEvidence(id: string): Promise<Evidence | undefined>;
-    getEvidenceByTrade(tradeId: string): Promise<Evidence[]>;
-    getAllEvidence(): Promise<Evidence[]>;
-    createEvidence(insertEvidence: InsertEvidence): Promise<Evidence>;
     getSystemLogs(): Promise<SystemLog[]>;
     getLogsByTrade(tradeId: string): Promise<SystemLog[]>;
     createLog(insertLog: InsertSystemLog): Promise<SystemLog>;
@@ -1822,6 +1870,8 @@ declare class EventBroadcaster {
     broadcastNewTrade(trade: any): void;
     broadcastContractEvent(eventName: string, eventData: any): void;
     broadcastNotification(title: string, message: string, type?: 'info' | 'success' | 'warning' | 'error'): void;
+    sendToWallet(walletAddress: string, title: string, message: string, type?: 'info' | 'success' | 'warning' | 'error'): void;
+    sendToParticipants(title: string, message: string, type: 'info' | 'success' | 'warning' | 'error', ...addresses: (string | null | undefined)[]): void;
     getClientCount(): number;
 }
 export declare const eventBroadcaster: EventBroadcaster;
@@ -2057,7 +2107,7 @@ export declare const trades: import("drizzle-orm/pg-core").PgTableWithColumns<{
             tableName: "trades";
             dataType: "string";
             columnType: "PgEnumColumn";
-            data: "DRAFT" | "LISTED" | "JOINED" | "ARMED" | "FUNDED" | "COMPLETED" | "CANCELLED";
+            data: "LISTED" | "JOINED" | "ARMED" | "FUNDED" | "COMPLETED" | "CANCELLED" | "DRAFT";
             driverParam: string;
             notNull: true;
             hasDefault: true;
@@ -2089,136 +2139,6 @@ export declare const trades: import("drizzle-orm/pg-core").PgTableWithColumns<{
         updatedAt: import("drizzle-orm/pg-core").PgColumn<{
             name: "updated_at";
             tableName: "trades";
-            dataType: "date";
-            columnType: "PgTimestamp";
-            data: Date;
-            driverParam: string;
-            notNull: true;
-            hasDefault: true;
-            isPrimaryKey: false;
-            isAutoincrement: false;
-            hasRuntimeDefault: false;
-            enumValues: undefined;
-            baseColumn: never;
-            identity: undefined;
-            generated: undefined;
-        }, {}, {}>;
-    };
-    dialect: "pg";
-}>;
-export declare const evidence: import("drizzle-orm/pg-core").PgTableWithColumns<{
-    name: "evidence";
-    schema: undefined;
-    columns: {
-        id: import("drizzle-orm/pg-core").PgColumn<{
-            name: "id";
-            tableName: "evidence";
-            dataType: "string";
-            columnType: "PgVarchar";
-            data: string;
-            driverParam: string;
-            notNull: true;
-            hasDefault: true;
-            isPrimaryKey: true;
-            isAutoincrement: false;
-            hasRuntimeDefault: false;
-            enumValues: [string, ...string[]];
-            baseColumn: never;
-            identity: undefined;
-            generated: undefined;
-        }, {}, {
-            length: number | undefined;
-        }>;
-        tradeId: import("drizzle-orm/pg-core").PgColumn<{
-            name: "trade_id";
-            tableName: "evidence";
-            dataType: "string";
-            columnType: "PgVarchar";
-            data: string;
-            driverParam: string;
-            notNull: false;
-            hasDefault: false;
-            isPrimaryKey: false;
-            isAutoincrement: false;
-            hasRuntimeDefault: false;
-            enumValues: [string, ...string[]];
-            baseColumn: never;
-            identity: undefined;
-            generated: undefined;
-        }, {}, {
-            length: number | undefined;
-        }>;
-        hash: import("drizzle-orm/pg-core").PgColumn<{
-            name: "hash";
-            tableName: "evidence";
-            dataType: "string";
-            columnType: "PgText";
-            data: string;
-            driverParam: string;
-            notNull: true;
-            hasDefault: false;
-            isPrimaryKey: false;
-            isAutoincrement: false;
-            hasRuntimeDefault: false;
-            enumValues: [string, ...string[]];
-            baseColumn: never;
-            identity: undefined;
-            generated: undefined;
-        }, {}, {}>;
-        signerAddress: import("drizzle-orm/pg-core").PgColumn<{
-            name: "signer_address";
-            tableName: "evidence";
-            dataType: "string";
-            columnType: "PgText";
-            data: string;
-            driverParam: string;
-            notNull: true;
-            hasDefault: false;
-            isPrimaryKey: false;
-            isAutoincrement: false;
-            hasRuntimeDefault: false;
-            enumValues: [string, ...string[]];
-            baseColumn: never;
-            identity: undefined;
-            generated: undefined;
-        }, {}, {}>;
-        onchainTxHash: import("drizzle-orm/pg-core").PgColumn<{
-            name: "onchain_tx_hash";
-            tableName: "evidence";
-            dataType: "string";
-            columnType: "PgText";
-            data: string;
-            driverParam: string;
-            notNull: false;
-            hasDefault: false;
-            isPrimaryKey: false;
-            isAutoincrement: false;
-            hasRuntimeDefault: false;
-            enumValues: [string, ...string[]];
-            baseColumn: never;
-            identity: undefined;
-            generated: undefined;
-        }, {}, {}>;
-        payload: import("drizzle-orm/pg-core").PgColumn<{
-            name: "payload";
-            tableName: "evidence";
-            dataType: "string";
-            columnType: "PgText";
-            data: string;
-            driverParam: string;
-            notNull: false;
-            hasDefault: false;
-            isPrimaryKey: false;
-            isAutoincrement: false;
-            hasRuntimeDefault: false;
-            enumValues: [string, ...string[]];
-            baseColumn: never;
-            identity: undefined;
-            generated: undefined;
-        }, {}, {}>;
-        createdAt: import("drizzle-orm/pg-core").PgColumn<{
-            name: "created_at";
-            tableName: "evidence";
             dataType: "date";
             columnType: "PgTimestamp";
             data: Date;
@@ -2729,11 +2649,7 @@ export declare const forumComments: import("drizzle-orm/pg-core").PgTableWithCol
     dialect: "pg";
 }>;
 export declare const tradesRelations: import("drizzle-orm").Relations<"trades", {
-    evidence: import("drizzle-orm").Many<"evidence">;
     logs: import("drizzle-orm").Many<"system_logs">;
-}>;
-export declare const evidenceRelations: import("drizzle-orm").Relations<"evidence", {
-    trade: import("drizzle-orm").One<"trades", false>;
 }>;
 export declare const systemLogsRelations: import("drizzle-orm").Relations<"system_logs", {
     trade: import("drizzle-orm").One<"trades", false>;
@@ -2767,44 +2683,23 @@ export declare const insertTradeSchema: z.ZodObject<Omit<{
     createdAt: z.ZodOptional<z.ZodDate>;
     updatedAt: z.ZodOptional<z.ZodDate>;
 }, "id" | "createdAt" | "updatedAt">, "strip", z.ZodTypeAny, {
-    deadline: Date;
     safeAddress: string;
     sellerAddress: string;
     priceEth: string;
-    status?: "DRAFT" | "LISTED" | "JOINED" | "ARMED" | "FUNDED" | "COMPLETED" | "CANCELLED" | undefined;
-    snapshotNonce?: string | null | undefined;
+    deadline: Date;
+    status?: "LISTED" | "JOINED" | "ARMED" | "FUNDED" | "COMPLETED" | "CANCELLED" | "DRAFT" | undefined;
     buyerAddress?: string | null | undefined;
     onchainTradeId?: string | null | undefined;
+    snapshotNonce?: string | null | undefined;
 }, {
-    deadline: Date;
     safeAddress: string;
     sellerAddress: string;
     priceEth: string;
-    status?: "DRAFT" | "LISTED" | "JOINED" | "ARMED" | "FUNDED" | "COMPLETED" | "CANCELLED" | undefined;
-    snapshotNonce?: string | null | undefined;
+    deadline: Date;
+    status?: "LISTED" | "JOINED" | "ARMED" | "FUNDED" | "COMPLETED" | "CANCELLED" | "DRAFT" | undefined;
     buyerAddress?: string | null | undefined;
     onchainTradeId?: string | null | undefined;
-}>;
-export declare const insertEvidenceSchema: z.ZodObject<Omit<{
-    id: z.ZodOptional<z.ZodString>;
-    tradeId: z.ZodOptional<z.ZodNullable<z.ZodString>>;
-    hash: z.ZodString;
-    signerAddress: z.ZodString;
-    onchainTxHash: z.ZodOptional<z.ZodNullable<z.ZodString>>;
-    payload: z.ZodOptional<z.ZodNullable<z.ZodString>>;
-    createdAt: z.ZodOptional<z.ZodDate>;
-}, "id" | "createdAt">, "strip", z.ZodTypeAny, {
-    hash: string;
-    signerAddress: string;
-    payload?: string | null | undefined;
-    tradeId?: string | null | undefined;
-    onchainTxHash?: string | null | undefined;
-}, {
-    hash: string;
-    signerAddress: string;
-    payload?: string | null | undefined;
-    tradeId?: string | null | undefined;
-    onchainTxHash?: string | null | undefined;
+    snapshotNonce?: string | null | undefined;
 }>;
 export declare const insertSystemLogSchema: z.ZodObject<Omit<{
     id: z.ZodOptional<z.ZodString>;
@@ -2889,8 +2784,6 @@ export type InsertUser = z.infer<typeof insertUserSchema>;
 export type User = typeof users.$inferSelect;
 export type InsertTrade = z.infer<typeof insertTradeSchema>;
 export type Trade = typeof trades.$inferSelect;
-export type InsertEvidence = z.infer<typeof insertEvidenceSchema>;
-export type Evidence = typeof evidence.$inferSelect;
 export type InsertSystemLog = z.infer<typeof insertSystemLogSchema>;
 export type SystemLog = typeof systemLogs.$inferSelect;
 export type InsertForumPost = z.infer<typeof insertForumPostSchema>;

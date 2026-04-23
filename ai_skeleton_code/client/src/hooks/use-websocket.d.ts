@@ -10,4 +10,4 @@ export interface UseWebSocketReturn {
     subscribe: (channel: string) => void;
     unsubscribe: (channel: string) => void;
 }
-export declare function useWebSocket(): UseWebSocketReturn;
+export declare function useWebSocket(walletAddress?: string): UseWebSocketReturn;

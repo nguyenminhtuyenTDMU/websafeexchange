@@ -130,6 +130,22 @@ class EventBroadcaster {
     }, ['all', 'notifications']);
   }
 
+  sendToWallet(walletAddress: string, title: string, message: string, type: 'info' | 'success' | 'warning' | 'error' = 'info') {
+    const channel = `wallet:${walletAddress.toLowerCase()}`;
+    this.broadcast('notification', { title, message, type }, [channel]);
+  }
+
+  sendToParticipants(
+    title: string,
+    message: string,
+    type: 'info' | 'success' | 'warning' | 'error',
+    ...addresses: (string | null | undefined)[]
+  ) {
+    for (const addr of addresses) {
+      if (addr) this.sendToWallet(addr, title, message, type);
+    }
+  }
+
   getClientCount(): number {
     return this.clients.size;
   }

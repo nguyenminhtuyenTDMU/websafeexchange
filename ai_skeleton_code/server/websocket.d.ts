@@ -9,6 +9,8 @@ declare class EventBroadcaster {
     broadcastNewTrade(trade: any): void;
     broadcastContractEvent(eventName: string, eventData: any): void;
     broadcastNotification(title: string, message: string, type?: 'info' | 'success' | 'warning' | 'error'): void;
+    sendToWallet(walletAddress: string, title: string, message: string, type?: 'info' | 'success' | 'warning' | 'error'): void;
+    sendToParticipants(title: string, message: string, type: 'info' | 'success' | 'warning' | 'error', ...addresses: (string | null | undefined)[]): void;
     getClientCount(): number;
 }
 export declare const eventBroadcaster: EventBroadcaster;

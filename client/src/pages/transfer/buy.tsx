@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
-import { useAccount, useWriteContract, usePublicClient, useChainId, useSwitchChain } from "wagmi";
+import { useAccount, useWriteContract, usePublicClient, useChainId, useSwitchChain, useSignMessage } from "wagmi";
 import { parseEther } from "viem";
+import { buildAuthPayload } from "@/lib/web3-auth";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -20,6 +21,7 @@ import { useWebSocket } from "@/hooks/use-websocket";
 import { escrowABI } from "@/lib/contracts/EscrowABI";
 import { getEscrowAddress, SUPPORTED_CHAIN_ID } from "@/lib/contracts/addresses";
 import { Link } from "wouter";
+import { DeadlineDisplay } from "@/components/deadline-display";
 import type { Trade } from "@shared/schema";
 
 const searchFormSchema = z.object({
@@ -53,9 +55,10 @@ export default function Buy() {
   const chainId = useChainId();
   const publicClient = usePublicClient();
   const { writeContractAsync } = useWriteContract();
+  const { signMessageAsync } = useSignMessage();
   const { switchChain, isPending: isSwitchingChain } = useSwitchChain();
   const { toast } = useToast();
-  const { lastMessage } = useWebSocket();
+  const { lastMessage } = useWebSocket(address);
   const isWrongNetwork = isConnected && chainId !== SUPPORTED_CHAIN_ID;
 
   const [foundTrade, setFoundTrade] = useState<Trade | null>(null);
@@ -152,8 +155,12 @@ export default function Buy() {
 
   const joinTradeMutation = useMutation({
     mutationFn: async () => {
-      const res = await apiRequest("POST", `/api/trades/${foundTrade?.id}/join`, {
+      if (!foundTrade?.id) throw new Error("Không tìm thấy trade");
+      // Buyer ký để chứng minh quyền sở hữu ví
+      const auth = await buildAuthPayload(signMessageAsync, "join-trade", foundTrade.id);
+      const res = await apiRequest("POST", `/api/trades/${foundTrade.id}/join`, {
         buyerAddress: address,
+        ...auth,
       });
       return res.json();
     },
@@ -224,6 +231,7 @@ export default function Buy() {
       const receipt = await publicClient!.waitForTransactionReceipt({ hash: txHash });
       if (receipt.status === "reverted") throw new Error("Transaction bị revert — SC chưa xác nhận quyền sở hữu");
 
+      // Sync backend
       const res = await apiRequest("POST", `/api/trades/${currentTrade.id}/complete`, { txHash });
       return res.json();
     },
@@ -257,6 +265,7 @@ export default function Buy() {
 
       const res = await apiRequest("POST", `/api/trades/${currentTrade.id}/cancel`, {
         reason: "Buyer yêu cầu hủy do phát hiện hoạt động bất thường",
+        walletAddress: address,
       });
       return res.json();
     },
@@ -267,6 +276,26 @@ export default function Buy() {
     },
     onError: (error: Error) => {
       toast({ variant: "destructive", title: "Lỗi hủy giao dịch", description: error.message });
+    },
+  });
+
+  // ── Buyer rút khỏi giao dịch khi đang ở JOINED (chưa có on-chain state) ──────
+  const unjoinMutation = useMutation({
+    mutationFn: async () => {
+      const currentTrade = trade || foundTrade;
+      if (!currentTrade?.id) throw new Error("Không tìm thấy giao dịch");
+      const res = await apiRequest("POST", `/api/trades/${currentTrade.id}/cancel`, {
+        reason: "Người mua hủy trước khi kích hoạt",
+        walletAddress: address,
+      });
+      return res.json();
+    },
+    onSuccess: () => {
+      toast({ title: "Đã hủy tham gia", description: "Bạn đã rút khỏi giao dịch." });
+      queryClient.invalidateQueries({ queryKey: ["/api/trades", foundTrade?.id] });
+    },
+    onError: (error: Error) => {
+      toast({ variant: "destructive", title: "Lỗi hủy", description: error.message });
     },
   });
 
@@ -291,6 +320,7 @@ export default function Buy() {
 
       const res = await apiRequest("POST", `/api/trades/${currentTrade.id}/cancel`, {
         reason: "Hủy do hết thời hạn giao dịch",
+        walletAddress: address,
       });
       return res.json();
     },
@@ -453,12 +483,11 @@ export default function Buy() {
                           {currentTrade.sellerAddress}
                         </code>
                       </div>
-                      <div className="space-y-1">
-                        <p className="text-sm text-muted-foreground">Thời hạn</p>
-                        <p className="font-semibold">
-                          {new Date(currentTrade.deadline).toLocaleString("vi-VN")}
-                        </p>
-                      </div>
+                      <DeadlineDisplay
+                        deadline={currentTrade.deadline}
+                        status={currentTrade.status}
+                        createdAt={currentTrade.createdAt}
+                      />
                     </div>
 
                     <div className="pt-4 border-t">
@@ -500,13 +529,26 @@ export default function Buy() {
 
                     {/* ── JOINED: Chờ seller arm ───────────────────────────── */}
                     {currentTrade.status === "JOINED" && (
-                      <Alert>
-                        <Loader2 className="h-4 w-4 animate-spin" />
-                        <AlertTitle>Chờ người bán kích hoạt</AlertTitle>
-                        <AlertDescription>
-                          Người bán cần kích hoạt (arm) giao dịch trên blockchain. Khi hoàn tất, bạn có thể gửi ký quỹ ETH.
-                        </AlertDescription>
-                      </Alert>
+                      <div className="space-y-3">
+                        <Alert>
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                          <AlertTitle>Chờ người bán kích hoạt</AlertTitle>
+                          <AlertDescription>
+                            Người bán cần kích hoạt (arm) giao dịch trên blockchain. Khi hoàn tất, bạn có thể gửi ký quỹ ETH.
+                          </AlertDescription>
+                        </Alert>
+                        <Button
+                          variant="outline"
+                          className="w-full text-destructive hover:bg-destructive/10"
+                          onClick={() => unjoinMutation.mutate()}
+                          disabled={unjoinMutation.isPending}
+                          data-testid="button-unjoin"
+                        >
+                          {unjoinMutation.isPending
+                            ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Đang hủy...</>
+                            : "Rút khỏi giao dịch"}
+                        </Button>
+                      </div>
                     )}
 
                     {/* ── ARMED: Buyer deposit ETH on-chain ───────────────── */}

@@ -1,4 +1,4 @@
-import { type User, type InsertUser, type Trade, type InsertTrade, type Evidence, type InsertEvidence, type SystemLog, type InsertSystemLog, type ForumPost, type InsertForumPost, type ForumComment, type InsertForumComment, type ForumPostType } from "@shared/schema";
+import { type User, type InsertUser, type Trade, type InsertTrade, type SystemLog, type InsertSystemLog, type ForumPost, type InsertForumPost, type ForumComment, type InsertForumComment, type ForumPostType } from "@shared/schema";
 export interface IStorage {
     getUser(id: string): Promise<User | undefined>;
     getUserByWallet(walletAddress: string): Promise<User | undefined>;
@@ -10,10 +10,6 @@ export interface IStorage {
     getAllTrades(): Promise<Trade[]>;
     createTrade(trade: InsertTrade): Promise<Trade>;
     updateTrade(id: string, data: Partial<Trade>): Promise<Trade | undefined>;
-    getEvidence(id: string): Promise<Evidence | undefined>;
-    getEvidenceByTrade(tradeId: string): Promise<Evidence[]>;
-    getAllEvidence(): Promise<Evidence[]>;
-    createEvidence(evidence: InsertEvidence): Promise<Evidence>;
     getSystemLogs(): Promise<SystemLog[]>;
     getLogsByTrade(tradeId: string): Promise<SystemLog[]>;
     createLog(log: InsertSystemLog): Promise<SystemLog>;
@@ -37,10 +33,6 @@ export declare class DatabaseStorage implements IStorage {
     getAllTrades(): Promise<Trade[]>;
     createTrade(insertTrade: InsertTrade): Promise<Trade>;
     updateTrade(id: string, data: Partial<Trade>): Promise<Trade | undefined>;
-    getEvidence(id: string): Promise<Evidence | undefined>;
-    getEvidenceByTrade(tradeId: string): Promise<Evidence[]>;
-    getAllEvidence(): Promise<Evidence[]>;
-    createEvidence(insertEvidence: InsertEvidence): Promise<Evidence>;
     getSystemLogs(): Promise<SystemLog[]>;
     getLogsByTrade(tradeId: string): Promise<SystemLog[]>;
     createLog(insertLog: InsertSystemLog): Promise<SystemLog>;
