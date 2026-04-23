@@ -142,6 +142,11 @@ ai_skeleton_code/vite.config.d.ts
 <files>
 This section contains the contents of the repository's files.
 
+<file path="ai_skeleton_code/client/src/App.d.ts">
+declare function App(): import("react").JSX.Element;
+export default App;
+</file>
+
 <file path="ai_skeleton_code/client/src/components/deadline-display.d.ts">
 interface DeadlineDisplayProps {
     deadline: Date | string;
@@ -149,6 +154,25 @@ interface DeadlineDisplayProps {
     createdAt: Date | string;
 }
 export declare function DeadlineDisplay({ deadline, status, createdAt }: DeadlineDisplayProps): import("react").JSX.Element;
+export {};
+</file>
+
+<file path="ai_skeleton_code/client/src/components/user-profile-dialog.d.ts">
+export declare function UserProfileDialog(): import("react").JSX.Element | null;
+export declare function useDisplayName(): string;
+</file>
+
+<file path="ai_skeleton_code/client/src/hooks/use-anon-id.d.ts">
+export declare function useAnonId(): string;
+declare const ANON_COLORS: {
+    bg: string;
+    ring: string;
+    label: string;
+}[];
+export type AnonColorEntry = typeof ANON_COLORS[number] & {
+    index: number;
+};
+export declare function buildAnonColorMap(anonIds: (string | null | undefined)[]): Map<string, AnonColorEntry>;
 export {};
 </file>
 
@@ -181,6 +205,26 @@ export interface AuthPayload {
  */
 export declare function buildAuthPayload(signMessageAsync: SignMessageFn, action: string, scope: string): Promise<AuthPayload>;
 export {};
+</file>
+
+<file path="ai_skeleton_code/client/src/main.d.ts">
+import "./index.css";
+</file>
+
+<file path="ai_skeleton_code/client/src/pages/forum-post.d.ts">
+export default function ForumPostPage(): import("react").JSX.Element;
+</file>
+
+<file path="ai_skeleton_code/client/src/pages/forum.d.ts">
+export default function Forum(): import("react").JSX.Element;
+</file>
+
+<file path="ai_skeleton_code/client/src/pages/transfer/buy.d.ts">
+export default function Buy(): import("react").JSX.Element;
+</file>
+
+<file path="ai_skeleton_code/client/src/pages/transfer/sell.d.ts">
+export default function Sell(): import("react").JSX.Element;
 </file>
 
 <file path="ai_skeleton_code/server/auth.d.ts">
@@ -222,50 +266,6 @@ export declare function requireSignature(req: Request, expectedAddress: string, 
     error: string | null;
 }>;
 export {};
-</file>
-
-<file path="ai_skeleton_code/client/src/App.d.ts">
-declare function App(): import("react").JSX.Element;
-export default App;
-</file>
-
-<file path="ai_skeleton_code/client/src/components/user-profile-dialog.d.ts">
-export declare function UserProfileDialog(): import("react").JSX.Element | null;
-export declare function useDisplayName(): string;
-</file>
-
-<file path="ai_skeleton_code/client/src/hooks/use-anon-id.d.ts">
-export declare function useAnonId(): string;
-declare const ANON_COLORS: {
-    bg: string;
-    ring: string;
-    label: string;
-}[];
-export type AnonColorEntry = typeof ANON_COLORS[number] & {
-    index: number;
-};
-export declare function buildAnonColorMap(anonIds: (string | null | undefined)[]): Map<string, AnonColorEntry>;
-export {};
-</file>
-
-<file path="ai_skeleton_code/client/src/main.d.ts">
-import "./index.css";
-</file>
-
-<file path="ai_skeleton_code/client/src/pages/forum-post.d.ts">
-export default function ForumPostPage(): import("react").JSX.Element;
-</file>
-
-<file path="ai_skeleton_code/client/src/pages/forum.d.ts">
-export default function Forum(): import("react").JSX.Element;
-</file>
-
-<file path="ai_skeleton_code/client/src/pages/transfer/buy.d.ts">
-export default function Buy(): import("react").JSX.Element;
-</file>
-
-<file path="ai_skeleton_code/client/src/pages/transfer/sell.d.ts">
-export default function Sell(): import("react").JSX.Element;
 </file>
 
 <file path="ai_skeleton_code/client/src/lib/contracts/addresses.d.ts">
@@ -326,52 +326,6 @@ export declare const escrowABI: ({
     type: string;
     anonymous?: undefined;
 })[];
-</file>
-
-<file path="ai_skeleton_code/client/src/lib/contracts/SafeExchangeABI.d.ts">
-export declare const SAFE_EXCHANGE_ABI: ({
-    inputs: never[];
-    name: string;
-    type: string;
-    anonymous?: undefined;
-    stateMutability?: undefined;
-    outputs?: undefined;
-} | {
-    anonymous: boolean;
-    inputs: {
-        indexed: boolean;
-        internalType: string;
-        name: string;
-        type: string;
-    }[];
-    name: string;
-    type: string;
-    stateMutability?: undefined;
-    outputs?: undefined;
-} | {
-    stateMutability: string;
-    type: string;
-    inputs?: undefined;
-    name?: undefined;
-    anonymous?: undefined;
-    outputs?: undefined;
-} | {
-    inputs: {
-        internalType: string;
-        name: string;
-        type: string;
-    }[];
-    name: string;
-    outputs: {
-        internalType: string;
-        name: string;
-        type: string;
-    }[];
-    stateMutability: string;
-    type: string;
-    anonymous?: undefined;
-})[];
-export declare const GUARD_CONTRACT_ADDRESS = "0xeF4b477e5f24Cd260215a0E966258D534227f07e";
 </file>
 
 <file path="ai_skeleton_code/client/src/components/connect-wallet.d.ts">
@@ -672,89 +626,6 @@ declare const CollapsibleContent: import("react").ForwardRefExoticComponent<Coll
 export { Collapsible, CollapsibleTrigger, CollapsibleContent };
 </file>
 
-<file path="ai_skeleton_code/client/src/components/ui/command.d.ts">
-import * as React from "react";
-import { type DialogProps } from "@radix-ui/react-dialog";
-declare const Command: React.ForwardRefExoticComponent<Omit<{
-    children?: React.ReactNode;
-} & Pick<Pick<React.DetailedHTMLProps<React.HTMLAttributes<HTMLDivElement>, HTMLDivElement>, "key" | keyof React.HTMLAttributes<HTMLDivElement>> & {
-    ref?: React.Ref<HTMLDivElement>;
-} & {
-    asChild?: boolean;
-}, "key" | "asChild" | keyof React.HTMLAttributes<HTMLDivElement>> & {
-    label?: string;
-    shouldFilter?: boolean;
-    filter?: (value: string, search: string, keywords?: string[]) => number;
-    defaultValue?: string;
-    value?: string;
-    onValueChange?: (value: string) => void;
-    loop?: boolean;
-    disablePointerSelection?: boolean;
-    vimBindings?: boolean;
-} & React.RefAttributes<HTMLDivElement>, "ref"> & React.RefAttributes<HTMLDivElement>>;
-declare const CommandDialog: ({ children, ...props }: DialogProps) => React.JSX.Element;
-declare const CommandInput: React.ForwardRefExoticComponent<Omit<Omit<Pick<Pick<React.DetailedHTMLProps<React.InputHTMLAttributes<HTMLInputElement>, HTMLInputElement>, "key" | keyof React.InputHTMLAttributes<HTMLInputElement>> & {
-    ref?: React.Ref<HTMLInputElement>;
-} & {
-    asChild?: boolean;
-}, "key" | "asChild" | keyof React.InputHTMLAttributes<HTMLInputElement>>, "value" | "onChange" | "type"> & {
-    value?: string;
-    onValueChange?: (search: string) => void;
-} & React.RefAttributes<HTMLInputElement>, "ref"> & React.RefAttributes<HTMLInputElement>>;
-declare const CommandList: React.ForwardRefExoticComponent<Omit<{
-    children?: React.ReactNode;
-} & Pick<Pick<React.DetailedHTMLProps<React.HTMLAttributes<HTMLDivElement>, HTMLDivElement>, "key" | keyof React.HTMLAttributes<HTMLDivElement>> & {
-    ref?: React.Ref<HTMLDivElement>;
-} & {
-    asChild?: boolean;
-}, "key" | "asChild" | keyof React.HTMLAttributes<HTMLDivElement>> & {
-    label?: string;
-} & React.RefAttributes<HTMLDivElement>, "ref"> & React.RefAttributes<HTMLDivElement>>;
-declare const CommandEmpty: React.ForwardRefExoticComponent<Omit<{
-    children?: React.ReactNode;
-} & Pick<Pick<React.DetailedHTMLProps<React.HTMLAttributes<HTMLDivElement>, HTMLDivElement>, "key" | keyof React.HTMLAttributes<HTMLDivElement>> & {
-    ref?: React.Ref<HTMLDivElement>;
-} & {
-    asChild?: boolean;
-}, "key" | "asChild" | keyof React.HTMLAttributes<HTMLDivElement>> & React.RefAttributes<HTMLDivElement>, "ref"> & React.RefAttributes<HTMLDivElement>>;
-declare const CommandGroup: React.ForwardRefExoticComponent<Omit<{
-    children?: React.ReactNode;
-} & Omit<Pick<Pick<React.DetailedHTMLProps<React.HTMLAttributes<HTMLDivElement>, HTMLDivElement>, "key" | keyof React.HTMLAttributes<HTMLDivElement>> & {
-    ref?: React.Ref<HTMLDivElement>;
-} & {
-    asChild?: boolean;
-}, "key" | "asChild" | keyof React.HTMLAttributes<HTMLDivElement>>, "value" | "heading"> & {
-    heading?: React.ReactNode;
-    value?: string;
-    forceMount?: boolean;
-} & React.RefAttributes<HTMLDivElement>, "ref"> & React.RefAttributes<HTMLDivElement>>;
-declare const CommandSeparator: React.ForwardRefExoticComponent<Omit<Pick<Pick<React.DetailedHTMLProps<React.HTMLAttributes<HTMLDivElement>, HTMLDivElement>, "key" | keyof React.HTMLAttributes<HTMLDivElement>> & {
-    ref?: React.Ref<HTMLDivElement>;
-} & {
-    asChild?: boolean;
-}, "key" | "asChild" | keyof React.HTMLAttributes<HTMLDivElement>> & {
-    alwaysRender?: boolean;
-} & React.RefAttributes<HTMLDivElement>, "ref"> & React.RefAttributes<HTMLDivElement>>;
-declare const CommandItem: React.ForwardRefExoticComponent<Omit<{
-    children?: React.ReactNode;
-} & Omit<Pick<Pick<React.DetailedHTMLProps<React.HTMLAttributes<HTMLDivElement>, HTMLDivElement>, "key" | keyof React.HTMLAttributes<HTMLDivElement>> & {
-    ref?: React.Ref<HTMLDivElement>;
-} & {
-    asChild?: boolean;
-}, "key" | "asChild" | keyof React.HTMLAttributes<HTMLDivElement>>, "value" | "onSelect" | "disabled"> & {
-    disabled?: boolean;
-    onSelect?: (value: string) => void;
-    value?: string;
-    keywords?: string[];
-    forceMount?: boolean;
-} & React.RefAttributes<HTMLDivElement>, "ref"> & React.RefAttributes<HTMLDivElement>>;
-declare const CommandShortcut: {
-    ({ className, ...props }: React.HTMLAttributes<HTMLSpanElement>): React.JSX.Element;
-    displayName: string;
-};
-export { Command, CommandDialog, CommandInput, CommandList, CommandEmpty, CommandGroup, CommandItem, CommandShortcut, CommandSeparator, };
-</file>
-
 <file path="ai_skeleton_code/client/src/components/ui/context-menu.d.ts">
 import * as React from "react";
 import * as ContextMenuPrimitive from "@radix-ui/react-context-menu";
@@ -1049,32 +920,6 @@ declare const RadioGroupItem: React.ForwardRefExoticComponent<Omit<RadioGroupPri
 export { RadioGroup, RadioGroupItem };
 </file>
 
-<file path="ai_skeleton_code/client/src/components/ui/resizable.d.ts">
-import * as ResizablePrimitive from "react-resizable-panels";
-declare const ResizablePanelGroup: ({ className, ...props }: React.ComponentProps<typeof ResizablePrimitive.PanelGroup>) => import("react").JSX.Element;
-declare const ResizablePanel: import("react").ForwardRefExoticComponent<Omit<import("react").HTMLAttributes<HTMLLIElement | HTMLElement | HTMLObjectElement | HTMLAnchorElement | HTMLButtonElement | HTMLDivElement | HTMLFormElement | HTMLHeadingElement | HTMLImageElement | HTMLInputElement | HTMLLabelElement | HTMLOListElement | HTMLParagraphElement | HTMLSpanElement | HTMLUListElement | HTMLAreaElement | HTMLAudioElement | HTMLBaseElement | HTMLQuoteElement | HTMLBodyElement | HTMLBRElement | HTMLCanvasElement | HTMLTableColElement | HTMLDataElement | HTMLDataListElement | HTMLModElement | HTMLDetailsElement | HTMLDialogElement | HTMLDListElement | HTMLEmbedElement | HTMLFieldSetElement | HTMLHeadElement | HTMLHRElement | HTMLHtmlElement | HTMLIFrameElement | HTMLLegendElement | HTMLLinkElement | HTMLMapElement | HTMLMetaElement | HTMLMeterElement | HTMLOptGroupElement | HTMLOptionElement | HTMLOutputElement | HTMLPreElement | HTMLProgressElement | HTMLSlotElement | HTMLScriptElement | HTMLSelectElement | HTMLSourceElement | HTMLStyleElement | HTMLTableElement | HTMLTemplateElement | HTMLTableSectionElement | HTMLTableCellElement | HTMLTextAreaElement | HTMLTimeElement | HTMLTitleElement | HTMLTableRowElement | HTMLTrackElement | HTMLVideoElement | HTMLTableCaptionElement | HTMLMenuElement | HTMLPictureElement>, "id" | "onResize"> & {
-    className?: string | undefined;
-    collapsedSize?: number | undefined;
-    collapsible?: boolean | undefined;
-    defaultSize?: number | undefined;
-    id?: string | undefined;
-    maxSize?: number | undefined;
-    minSize?: number | undefined;
-    onCollapse?: ResizablePrimitive.PanelOnCollapse | undefined;
-    onExpand?: ResizablePrimitive.PanelOnExpand | undefined;
-    onResize?: ResizablePrimitive.PanelOnResize | undefined;
-    order?: number | undefined;
-    style?: object | undefined;
-    tagName?: keyof HTMLElementTagNameMap | undefined;
-} & {
-    children?: import("react").ReactNode;
-} & import("react").RefAttributes<ResizablePrimitive.ImperativePanelHandle>>;
-declare const ResizableHandle: ({ withHandle, className, ...props }: React.ComponentProps<typeof ResizablePrimitive.PanelResizeHandle> & {
-    withHandle?: boolean;
-}) => import("react").JSX.Element;
-export { ResizablePanelGroup, ResizablePanel, ResizableHandle };
-</file>
-
 <file path="ai_skeleton_code/client/src/components/ui/scroll-area.d.ts">
 import * as React from "react";
 import * as ScrollAreaPrimitive from "@radix-ui/react-scroll-area";
@@ -1104,34 +949,6 @@ import * as React from "react";
 import * as SeparatorPrimitive from "@radix-ui/react-separator";
 declare const Separator: React.ForwardRefExoticComponent<Omit<SeparatorPrimitive.SeparatorProps & React.RefAttributes<HTMLDivElement>, "ref"> & React.RefAttributes<HTMLDivElement>>;
 export { Separator };
-</file>
-
-<file path="ai_skeleton_code/client/src/components/ui/sheet.d.ts">
-import * as React from "react";
-import * as SheetPrimitive from "@radix-ui/react-dialog";
-import { type VariantProps } from "class-variance-authority";
-declare const Sheet: React.FC<SheetPrimitive.DialogProps>;
-declare const SheetTrigger: React.ForwardRefExoticComponent<SheetPrimitive.DialogTriggerProps & React.RefAttributes<HTMLButtonElement>>;
-declare const SheetClose: React.ForwardRefExoticComponent<SheetPrimitive.DialogCloseProps & React.RefAttributes<HTMLButtonElement>>;
-declare const SheetPortal: React.FC<SheetPrimitive.DialogPortalProps>;
-declare const SheetOverlay: React.ForwardRefExoticComponent<Omit<SheetPrimitive.DialogOverlayProps & React.RefAttributes<HTMLDivElement>, "ref"> & React.RefAttributes<HTMLDivElement>>;
-declare const sheetVariants: (props?: ({
-    side?: "top" | "right" | "bottom" | "left" | null | undefined;
-} & import("class-variance-authority/types").ClassProp) | undefined) => string;
-interface SheetContentProps extends React.ComponentPropsWithoutRef<typeof SheetPrimitive.Content>, VariantProps<typeof sheetVariants> {
-}
-declare const SheetContent: React.ForwardRefExoticComponent<SheetContentProps & React.RefAttributes<HTMLDivElement>>;
-declare const SheetHeader: {
-    ({ className, ...props }: React.HTMLAttributes<HTMLDivElement>): React.JSX.Element;
-    displayName: string;
-};
-declare const SheetFooter: {
-    ({ className, ...props }: React.HTMLAttributes<HTMLDivElement>): React.JSX.Element;
-    displayName: string;
-};
-declare const SheetTitle: React.ForwardRefExoticComponent<Omit<SheetPrimitive.DialogTitleProps & React.RefAttributes<HTMLHeadingElement>, "ref"> & React.RefAttributes<HTMLHeadingElement>>;
-declare const SheetDescription: React.ForwardRefExoticComponent<Omit<SheetPrimitive.DialogDescriptionProps & React.RefAttributes<HTMLParagraphElement>, "ref"> & React.RefAttributes<HTMLParagraphElement>>;
-export { Sheet, SheetPortal, SheetOverlay, SheetTrigger, SheetClose, SheetContent, SheetHeader, SheetFooter, SheetTitle, SheetDescription, };
 </file>
 
 <file path="ai_skeleton_code/client/src/components/ui/sidebar.d.ts">
@@ -1394,20 +1211,50 @@ declare function useToast(): {
 export { useToast, toast };
 </file>
 
-<file path="ai_skeleton_code/client/src/hooks/use-websocket.d.ts">
-export interface WSMessage {
+<file path="ai_skeleton_code/client/src/lib/contracts/SafeExchangeABI.d.ts">
+export declare const SAFE_EXCHANGE_ABI: ({
+    inputs: never[];
+    name: string;
     type: string;
-    data?: any;
-    timestamp?: string;
-    message?: string;
-}
-export interface UseWebSocketReturn {
-    isConnected: boolean;
-    lastMessage: WSMessage | null;
-    subscribe: (channel: string) => void;
-    unsubscribe: (channel: string) => void;
-}
-export declare function useWebSocket(walletAddress?: string): UseWebSocketReturn;
+    anonymous?: undefined;
+    stateMutability?: undefined;
+    outputs?: undefined;
+} | {
+    anonymous: boolean;
+    inputs: {
+        indexed: boolean;
+        internalType: string;
+        name: string;
+        type: string;
+    }[];
+    name: string;
+    type: string;
+    stateMutability?: undefined;
+    outputs?: undefined;
+} | {
+    stateMutability: string;
+    type: string;
+    inputs?: undefined;
+    name?: undefined;
+    anonymous?: undefined;
+    outputs?: undefined;
+} | {
+    inputs: {
+        internalType: string;
+        name: string;
+        type: string;
+    }[];
+    name: string;
+    outputs: {
+        internalType: string;
+        name: string;
+        type: string;
+    }[];
+    stateMutability: string;
+    type: string;
+    anonymous?: undefined;
+})[];
+export declare const GUARD_CONTRACT_ADDRESS = "0xeF4b477e5f24Cd260215a0E966258D534227f07e";
 </file>
 
 <file path="ai_skeleton_code/client/src/lib/queryClient.d.ts">
@@ -1768,12 +1615,6 @@ declare module "http" {
 export declare function log(message: string, source?: string): void;
 </file>
 
-<file path="ai_skeleton_code/server/routes.d.ts">
-import type { Express } from "express";
-import type { Server } from "http";
-export declare function registerRoutes(httpServer: Server, app: Express): Promise<Server>;
-</file>
-
 <file path="ai_skeleton_code/server/safe-watcher.d.ts">
 /**
  * safe-watcher.ts — Event-driven (thay thế polling)
@@ -1799,6 +1640,176 @@ export declare function onTradeArmed(safeAddress: string): void;
 <file path="ai_skeleton_code/server/static.d.ts">
 import { type Express } from "express";
 export declare function serveStatic(app: Express): void;
+</file>
+
+<file path="ai_skeleton_code/server/vite.d.ts">
+import { type Express } from "express";
+import { type Server } from "http";
+export declare function setupVite(server: Server, app: Express): Promise<void>;
+</file>
+
+<file path="ai_skeleton_code/vite.config.d.ts">
+declare const _default: import("vite").UserConfig;
+export default _default;
+</file>
+
+<file path="ai_skeleton_code/client/src/components/ui/command.d.ts">
+import * as React from "react";
+import { type DialogProps } from "@radix-ui/react-dialog";
+declare const Command: React.ForwardRefExoticComponent<Omit<{
+    children?: React.ReactNode;
+} & Pick<Pick<React.DetailedHTMLProps<React.HTMLAttributes<HTMLDivElement>, HTMLDivElement>, "key" | keyof React.HTMLAttributes<HTMLDivElement>> & {
+    ref?: React.Ref<HTMLDivElement>;
+} & {
+    asChild?: boolean;
+}, "key" | "asChild" | keyof React.HTMLAttributes<HTMLDivElement>> & {
+    label?: string;
+    shouldFilter?: boolean;
+    filter?: (value: string, search: string, keywords?: string[]) => number;
+    defaultValue?: string;
+    value?: string;
+    onValueChange?: (value: string) => void;
+    loop?: boolean;
+    disablePointerSelection?: boolean;
+    vimBindings?: boolean;
+} & React.RefAttributes<HTMLDivElement>, "ref"> & React.RefAttributes<HTMLDivElement>>;
+declare const CommandDialog: ({ children, ...props }: DialogProps) => React.JSX.Element;
+declare const CommandInput: React.ForwardRefExoticComponent<Omit<Omit<Pick<Pick<React.DetailedHTMLProps<React.InputHTMLAttributes<HTMLInputElement>, HTMLInputElement>, "key" | keyof React.InputHTMLAttributes<HTMLInputElement>> & {
+    ref?: React.Ref<HTMLInputElement>;
+} & {
+    asChild?: boolean;
+}, "key" | "asChild" | keyof React.InputHTMLAttributes<HTMLInputElement>>, "value" | "onChange" | "type"> & {
+    value?: string;
+    onValueChange?: (search: string) => void;
+} & React.RefAttributes<HTMLInputElement>, "ref"> & React.RefAttributes<HTMLInputElement>>;
+declare const CommandList: React.ForwardRefExoticComponent<Omit<{
+    children?: React.ReactNode;
+} & Pick<Pick<React.DetailedHTMLProps<React.HTMLAttributes<HTMLDivElement>, HTMLDivElement>, "key" | keyof React.HTMLAttributes<HTMLDivElement>> & {
+    ref?: React.Ref<HTMLDivElement>;
+} & {
+    asChild?: boolean;
+}, "key" | "asChild" | keyof React.HTMLAttributes<HTMLDivElement>> & {
+    label?: string;
+} & React.RefAttributes<HTMLDivElement>, "ref"> & React.RefAttributes<HTMLDivElement>>;
+declare const CommandEmpty: React.ForwardRefExoticComponent<Omit<{
+    children?: React.ReactNode;
+} & Pick<Pick<React.DetailedHTMLProps<React.HTMLAttributes<HTMLDivElement>, HTMLDivElement>, "key" | keyof React.HTMLAttributes<HTMLDivElement>> & {
+    ref?: React.Ref<HTMLDivElement>;
+} & {
+    asChild?: boolean;
+}, "key" | "asChild" | keyof React.HTMLAttributes<HTMLDivElement>> & React.RefAttributes<HTMLDivElement>, "ref"> & React.RefAttributes<HTMLDivElement>>;
+declare const CommandGroup: React.ForwardRefExoticComponent<Omit<{
+    children?: React.ReactNode;
+} & Omit<Pick<Pick<React.DetailedHTMLProps<React.HTMLAttributes<HTMLDivElement>, HTMLDivElement>, "key" | keyof React.HTMLAttributes<HTMLDivElement>> & {
+    ref?: React.Ref<HTMLDivElement>;
+} & {
+    asChild?: boolean;
+}, "key" | "asChild" | keyof React.HTMLAttributes<HTMLDivElement>>, "value" | "heading"> & {
+    heading?: React.ReactNode;
+    value?: string;
+    forceMount?: boolean;
+} & React.RefAttributes<HTMLDivElement>, "ref"> & React.RefAttributes<HTMLDivElement>>;
+declare const CommandSeparator: React.ForwardRefExoticComponent<Omit<Pick<Pick<React.DetailedHTMLProps<React.HTMLAttributes<HTMLDivElement>, HTMLDivElement>, "key" | keyof React.HTMLAttributes<HTMLDivElement>> & {
+    ref?: React.Ref<HTMLDivElement>;
+} & {
+    asChild?: boolean;
+}, "key" | "asChild" | keyof React.HTMLAttributes<HTMLDivElement>> & {
+    alwaysRender?: boolean;
+} & React.RefAttributes<HTMLDivElement>, "ref"> & React.RefAttributes<HTMLDivElement>>;
+declare const CommandItem: React.ForwardRefExoticComponent<Omit<{
+    children?: React.ReactNode;
+} & Omit<Pick<Pick<React.DetailedHTMLProps<React.HTMLAttributes<HTMLDivElement>, HTMLDivElement>, "key" | keyof React.HTMLAttributes<HTMLDivElement>> & {
+    ref?: React.Ref<HTMLDivElement>;
+} & {
+    asChild?: boolean;
+}, "key" | "asChild" | keyof React.HTMLAttributes<HTMLDivElement>>, "value" | "onSelect" | "disabled"> & {
+    disabled?: boolean;
+    onSelect?: (value: string) => void;
+    value?: string;
+    keywords?: string[];
+    forceMount?: boolean;
+} & React.RefAttributes<HTMLDivElement>, "ref"> & React.RefAttributes<HTMLDivElement>>;
+declare const CommandShortcut: {
+    ({ className, ...props }: React.HTMLAttributes<HTMLSpanElement>): React.JSX.Element;
+    displayName: string;
+};
+export { Command, CommandDialog, CommandInput, CommandList, CommandEmpty, CommandGroup, CommandItem, CommandShortcut, CommandSeparator, };
+</file>
+
+<file path="ai_skeleton_code/client/src/components/ui/resizable.d.ts">
+import * as ResizablePrimitive from "react-resizable-panels";
+declare const ResizablePanelGroup: ({ className, ...props }: React.ComponentProps<typeof ResizablePrimitive.PanelGroup>) => import("react").JSX.Element;
+declare const ResizablePanel: import("react").ForwardRefExoticComponent<Omit<import("react").HTMLAttributes<HTMLLIElement | HTMLElement | HTMLObjectElement | HTMLAnchorElement | HTMLButtonElement | HTMLDivElement | HTMLFormElement | HTMLHeadingElement | HTMLImageElement | HTMLInputElement | HTMLLabelElement | HTMLOListElement | HTMLParagraphElement | HTMLSpanElement | HTMLUListElement | HTMLAreaElement | HTMLAudioElement | HTMLBaseElement | HTMLQuoteElement | HTMLBodyElement | HTMLBRElement | HTMLCanvasElement | HTMLTableColElement | HTMLDataElement | HTMLDataListElement | HTMLModElement | HTMLDetailsElement | HTMLDialogElement | HTMLDListElement | HTMLEmbedElement | HTMLFieldSetElement | HTMLHeadElement | HTMLHRElement | HTMLHtmlElement | HTMLIFrameElement | HTMLLegendElement | HTMLLinkElement | HTMLMapElement | HTMLMetaElement | HTMLMeterElement | HTMLOptGroupElement | HTMLOptionElement | HTMLOutputElement | HTMLPreElement | HTMLProgressElement | HTMLSlotElement | HTMLScriptElement | HTMLSelectElement | HTMLSourceElement | HTMLStyleElement | HTMLTableElement | HTMLTemplateElement | HTMLTableSectionElement | HTMLTableCellElement | HTMLTextAreaElement | HTMLTimeElement | HTMLTitleElement | HTMLTableRowElement | HTMLTrackElement | HTMLVideoElement | HTMLTableCaptionElement | HTMLMenuElement | HTMLPictureElement>, "id" | "onResize"> & {
+    className?: string | undefined;
+    collapsedSize?: number | undefined;
+    collapsible?: boolean | undefined;
+    defaultSize?: number | undefined;
+    id?: string | undefined;
+    maxSize?: number | undefined;
+    minSize?: number | undefined;
+    onCollapse?: ResizablePrimitive.PanelOnCollapse | undefined;
+    onExpand?: ResizablePrimitive.PanelOnExpand | undefined;
+    onResize?: ResizablePrimitive.PanelOnResize | undefined;
+    order?: number | undefined;
+    style?: object | undefined;
+    tagName?: keyof HTMLElementTagNameMap | undefined;
+} & {
+    children?: import("react").ReactNode;
+} & import("react").RefAttributes<ResizablePrimitive.ImperativePanelHandle>>;
+declare const ResizableHandle: ({ withHandle, className, ...props }: React.ComponentProps<typeof ResizablePrimitive.PanelResizeHandle> & {
+    withHandle?: boolean;
+}) => import("react").JSX.Element;
+export { ResizablePanelGroup, ResizablePanel, ResizableHandle };
+</file>
+
+<file path="ai_skeleton_code/client/src/components/ui/sheet.d.ts">
+import * as React from "react";
+import * as SheetPrimitive from "@radix-ui/react-dialog";
+import { type VariantProps } from "class-variance-authority";
+declare const Sheet: React.FC<SheetPrimitive.DialogProps>;
+declare const SheetTrigger: React.ForwardRefExoticComponent<SheetPrimitive.DialogTriggerProps & React.RefAttributes<HTMLButtonElement>>;
+declare const SheetClose: React.ForwardRefExoticComponent<SheetPrimitive.DialogCloseProps & React.RefAttributes<HTMLButtonElement>>;
+declare const SheetPortal: React.FC<SheetPrimitive.DialogPortalProps>;
+declare const SheetOverlay: React.ForwardRefExoticComponent<Omit<SheetPrimitive.DialogOverlayProps & React.RefAttributes<HTMLDivElement>, "ref"> & React.RefAttributes<HTMLDivElement>>;
+declare const sheetVariants: (props?: ({
+    side?: "top" | "right" | "bottom" | "left" | null | undefined;
+} & import("class-variance-authority/types").ClassProp) | undefined) => string;
+interface SheetContentProps extends React.ComponentPropsWithoutRef<typeof SheetPrimitive.Content>, VariantProps<typeof sheetVariants> {
+}
+declare const SheetContent: React.ForwardRefExoticComponent<SheetContentProps & React.RefAttributes<HTMLDivElement>>;
+declare const SheetHeader: {
+    ({ className, ...props }: React.HTMLAttributes<HTMLDivElement>): React.JSX.Element;
+    displayName: string;
+};
+declare const SheetFooter: {
+    ({ className, ...props }: React.HTMLAttributes<HTMLDivElement>): React.JSX.Element;
+    displayName: string;
+};
+declare const SheetTitle: React.ForwardRefExoticComponent<Omit<SheetPrimitive.DialogTitleProps & React.RefAttributes<HTMLHeadingElement>, "ref"> & React.RefAttributes<HTMLHeadingElement>>;
+declare const SheetDescription: React.ForwardRefExoticComponent<Omit<SheetPrimitive.DialogDescriptionProps & React.RefAttributes<HTMLParagraphElement>, "ref"> & React.RefAttributes<HTMLParagraphElement>>;
+export { Sheet, SheetPortal, SheetOverlay, SheetTrigger, SheetClose, SheetContent, SheetHeader, SheetFooter, SheetTitle, SheetDescription, };
+</file>
+
+<file path="ai_skeleton_code/client/src/hooks/use-websocket.d.ts">
+export interface WSMessage {
+    type: string;
+    data?: any;
+    timestamp?: string;
+    message?: string;
+}
+export interface UseWebSocketReturn {
+    isConnected: boolean;
+    lastMessage: WSMessage | null;
+    subscribe: (channel: string) => void;
+    unsubscribe: (channel: string) => void;
+}
+export declare function useWebSocket(walletAddress?: string): UseWebSocketReturn;
+</file>
+
+<file path="ai_skeleton_code/server/routes.d.ts">
+import type { Express } from "express";
+import type { Server } from "http";
+export declare function registerRoutes(httpServer: Server, app: Express): Promise<Server>;
 </file>
 
 <file path="ai_skeleton_code/server/storage.d.ts">
@@ -1850,12 +1861,6 @@ export declare class DatabaseStorage implements IStorage {
     seedForumPosts(): Promise<void>;
 }
 export declare const storage: DatabaseStorage;
-</file>
-
-<file path="ai_skeleton_code/server/vite.d.ts">
-import { type Express } from "express";
-import { type Server } from "http";
-export declare function setupVite(server: Server, app: Express): Promise<void>;
 </file>
 
 <file path="ai_skeleton_code/server/websocket.d.ts">
@@ -2793,11 +2798,6 @@ export type ForumComment = typeof forumComments.$inferSelect;
 export type TradeStatus = "DRAFT" | "LISTED" | "JOINED" | "ARMED" | "FUNDED" | "COMPLETED" | "CANCELLED";
 export type LogType = "TRADE_EVENT" | "SECURITY" | "SYSTEM";
 export type ForumPostType = "SELL" | "BUY_REQUEST" | "DISCUSSION" | "QA" | "PINNED";
-</file>
-
-<file path="ai_skeleton_code/vite.config.d.ts">
-declare const _default: import("vite").UserConfig;
-export default _default;
 </file>
 
 </files>
