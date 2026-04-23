@@ -18,10 +18,18 @@ declare module "http" {
 
 // ─── CORS ──────────────────────────────────────────────────────────────────────
 // Chỉ cho phép frontend origin truy cập API.
-// Trong production, đổi ALLOWED_ORIGINS thành domain thực.
-const ALLOWED_ORIGINS = (process.env.ALLOWED_ORIGINS || "http://localhost:5000")
-  .split(",")
-  .map((o) => o.trim());
+// Railway tự inject RAILWAY_PUBLIC_DOMAIN; fallback về localhost khi dev.
+const railwayDomain = process.env.RAILWAY_PUBLIC_DOMAIN;
+const defaultOrigin = railwayDomain
+  ? `https://${railwayDomain}`
+  : "http://localhost:5000";
+const ALLOWED_ORIGINS = [
+  defaultOrigin,
+  ...(process.env.ALLOWED_ORIGINS || "")
+    .split(",")
+    .map((o) => o.trim())
+    .filter(Boolean),
+];
 
 app.use(
   cors({
@@ -30,7 +38,9 @@ app.use(
       if (!origin || ALLOWED_ORIGINS.includes(origin)) {
         callback(null, true);
       } else {
-        callback(new Error(`CORS: origin "${origin}" không được phép`));
+        const err = new Error(`CORS: origin "${origin}" không được phép`) as any;
+        err.status = 403;
+        callback(err);
       }
     },
     methods: ["GET", "POST", "PATCH", "DELETE", "OPTIONS"],
