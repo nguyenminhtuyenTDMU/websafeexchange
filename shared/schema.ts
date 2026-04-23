@@ -49,16 +49,6 @@ export const trades = pgTable("trades", {
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
-export const evidence = pgTable("evidence", {
-  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  tradeId: varchar("trade_id").references(() => trades.id),
-  hash: text("hash").notNull(),
-  signerAddress: text("signer_address").notNull(),
-  onchainTxHash: text("onchain_tx_hash"),
-  payload: text("payload"),
-  createdAt: timestamp("created_at").defaultNow().notNull(),
-});
-
 export const systemLogs = pgTable("system_logs", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   type: logTypeEnum("type").notNull(),
@@ -98,12 +88,7 @@ export const forumComments = pgTable("forum_comments", {
 // ─── Relations ────────────────────────────────────────────────────────────────
 
 export const tradesRelations = relations(trades, ({ many }) => ({
-  evidence: many(evidence),
   logs: many(systemLogs),
-}));
-
-export const evidenceRelations = relations(evidence, ({ one }) => ({
-  trade: one(trades, { fields: [evidence.tradeId], references: [trades.id] }),
 }));
 
 export const systemLogsRelations = relations(systemLogs, ({ one }) => ({
@@ -130,11 +115,6 @@ export const insertTradeSchema = createInsertSchema(trades).omit({
   updatedAt: true,
 });
 
-export const insertEvidenceSchema = createInsertSchema(evidence).omit({
-  id: true,
-  createdAt: true,
-});
-
 export const insertSystemLogSchema = createInsertSchema(systemLogs).omit({
   id: true,
   createdAt: true,
@@ -156,9 +136,6 @@ export type User = typeof users.$inferSelect;
 
 export type InsertTrade = z.infer<typeof insertTradeSchema>;
 export type Trade = typeof trades.$inferSelect;
-
-export type InsertEvidence = z.infer<typeof insertEvidenceSchema>;
-export type Evidence = typeof evidence.$inferSelect;
 
 export type InsertSystemLog = z.infer<typeof insertSystemLogSchema>;
 export type SystemLog = typeof systemLogs.$inferSelect;

@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
-import { useAccount, useWriteContract, usePublicClient, useChainId, useSwitchChain } from "wagmi";
-import { parseEther, keccak256, encodePacked } from "viem";
+import { useAccount, useWriteContract, usePublicClient, useChainId, useSwitchChain, useSignMessage } from "wagmi";
+import { parseEther, keccak256, encodeAbiParameters, parseAbiParameters } from "viem";
+import { buildAuthPayload } from "@/lib/web3-auth";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -19,6 +20,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useSafeSdk } from "@/hooks/use-safe-sdk";
 import { escrowABI } from "@/lib/contracts/EscrowABI";
 import { getEscrowAddress, SUPPORTED_CHAIN_ID } from "@/lib/contracts/addresses";
+import { DeadlineDisplay } from "@/components/deadline-display";
 import type { Trade } from "@shared/schema";
 import type { SafeInfo } from "@/lib/safe-sdk";
 
@@ -60,6 +62,7 @@ export default function Sell() {
   const chainId = useChainId();
   const publicClient = usePublicClient();
   const { writeContractAsync } = useWriteContract();
+  const { signMessageAsync } = useSignMessage();
   const { switchChain, isPending: isSwitchingChain } = useSwitchChain();
   const { toast } = useToast();
   const isWrongNetwork = isConnected && chainId !== SUPPORTED_CHAIN_ID;
@@ -112,12 +115,15 @@ export default function Sell() {
     mutationFn: async (values: SellFormValues) => {
       const deadline = new Date();
       deadline.setMinutes(deadline.getMinutes() + parseInt(values.deadlineMinutes));
+      // Ký để chứng minh là owner của ví sellerAddress
+      const auth = await buildAuthPayload(signMessageAsync, "create-trade", values.safeAddress.toLowerCase());
       const res = await apiRequest("POST", "/api/trades", {
         safeAddress: values.safeAddress,
         sellerAddress: address,
         priceEth: values.priceEth,
         deadline: deadline.toISOString(),
         status: "LISTED",
+        ...auth,
       });
       return res.json();
     },
@@ -148,9 +154,12 @@ export default function Sell() {
         throw new Error("Thời hạn giao dịch đã hết. Vui lòng tạo giao dịch mới với thời hạn dài hơn.");
       }
 
-      // Compute onchain tradeId up-front (buyer + seller + safe)
+      // Compute onchain tradeId: khớp với contract dùng abi.encode (padded 32 bytes mỗi address)
       const onchainTradeId = keccak256(
-        encodePacked(["address", "address", "address"], [buyerAddr, address as `0x${string}`, safeAddr])
+        encodeAbiParameters(
+          parseAbiParameters("address, address, address"),
+          [buyerAddr, address as `0x${string}`, safeAddr]
+        )
       );
 
       // 1. Simulate để decode lỗi revert rõ ràng trước khi gửi TX
@@ -273,6 +282,50 @@ export default function Sell() {
     }
   };
 
+  // ── Seller cancel: hủy ở mọi giai đoạn trước khi chuyển nhượng ──────────────
+  const sellerCancelMutation = useMutation({
+    mutationFn: async () => {
+      if (!trade) throw new Error("Không tìm thấy giao dịch");
+
+      // LISTED/JOINED: chưa có on-chain state → chỉ cần hủy trên server
+      if (trade.status === "LISTED" || trade.status === "JOINED") {
+        const res = await apiRequest("POST", `/api/trades/${trade.id}/cancel`, {
+          reason: "Người bán hủy đơn",
+          walletAddress: address,
+        });
+        return res.json();
+      }
+
+      // ARMED/FUNDED: cần hủy on-chain trước, sau đó sync server
+      const contractAddress = getEscrowAddress(chainId);
+      const onchainTradeId = trade.onchainTradeId as `0x${string}`;
+      if (!onchainTradeId) throw new Error("Chưa có trade ID trên blockchain");
+
+      const txHash = await writeContractAsync({
+        address: contractAddress,
+        abi: escrowABI,
+        functionName: "sellerCancel",
+        args: [onchainTradeId],
+      });
+
+      const receipt = await publicClient!.waitForTransactionReceipt({ hash: txHash });
+      if (receipt.status === "reverted") throw new Error("Transaction bị revert");
+
+      const res = await apiRequest("POST", `/api/trades/${trade.id}/cancel`, {
+        reason: "Người bán hủy đơn",
+        walletAddress: address,
+      });
+      return res.json();
+    },
+    onSuccess: () => {
+      toast({ title: "Đã hủy giao dịch", description: "Giao dịch đã được hủy thành công." });
+      queryClient.invalidateQueries({ queryKey: ["/api/trades", createdTradeId] });
+    },
+    onError: (error: Error) => {
+      toast({ variant: "destructive", title: "Lỗi hủy giao dịch", description: error.message });
+    },
+  });
+
   // ── cancelTimeout: ai cũng có thể gọi sau khi deadline qua ──────────────────
   const cancelTimeoutMutation = useMutation({
     mutationFn: async () => {
@@ -290,8 +343,10 @@ export default function Sell() {
       const receipt = await publicClient!.waitForTransactionReceipt({ hash: txHash });
       if (receipt.status === "reverted") throw new Error("Transaction bị revert — deadline chưa qua");
 
+      // Sync backend
       const res = await apiRequest("POST", `/api/trades/${createdTradeId}/cancel`, {
         reason: "Hủy do hết thời hạn giao dịch",
+        walletAddress: address,
       });
       return res.json();
     },
@@ -529,10 +584,11 @@ export default function Sell() {
                         <p className="text-sm text-muted-foreground">Giá bán</p>
                         <p className="font-semibold">{trade.priceEth} ETH</p>
                       </div>
-                      <div className="space-y-1">
-                        <p className="text-sm text-muted-foreground">Thời hạn</p>
-                        <p className="font-semibold">{new Date(trade.deadline).toLocaleString("vi-VN")}</p>
-                      </div>
+                      <DeadlineDisplay
+                        deadline={trade.deadline}
+                        status={trade.status}
+                        createdAt={trade.createdAt}
+                      />
                       {trade.buyerAddress && (
                         <div className="space-y-1 md:col-span-2">
                           <p className="text-sm text-muted-foreground">Người mua</p>
@@ -549,11 +605,24 @@ export default function Sell() {
 
                     {/* LISTED: chờ buyer */}
                     {trade.status === "LISTED" && (
-                      <Alert>
-                        <Loader2 className="h-4 w-4 animate-spin" />
-                        <AlertTitle>Chờ người mua tham gia</AlertTitle>
-                        <AlertDescription>Chia sẻ mã giao dịch cho người muốn mua Safe của bạn.</AlertDescription>
-                      </Alert>
+                      <div className="space-y-3">
+                        <Alert>
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                          <AlertTitle>Chờ người mua tham gia</AlertTitle>
+                          <AlertDescription>Chia sẻ mã giao dịch cho người muốn mua Safe của bạn.</AlertDescription>
+                        </Alert>
+                        <Button
+                          variant="outline"
+                          className="w-full text-destructive hover:bg-destructive/10"
+                          onClick={() => sellerCancelMutation.mutate()}
+                          disabled={sellerCancelMutation.isPending}
+                          data-testid="button-unlist"
+                        >
+                          {sellerCancelMutation.isPending
+                            ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Đang hủy...</>
+                            : "Hủy đơn bán"}
+                        </Button>
+                      </div>
                     )}
 
                     {/* JOINED: arm on-chain */}
@@ -576,19 +645,43 @@ export default function Sell() {
                             ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Đang arm on-chain...</>
                             : "Kích hoạt giao dịch (on-chain)"}
                         </Button>
+                        <Button
+                          variant="outline"
+                          className="w-full text-destructive hover:bg-destructive/10"
+                          onClick={() => sellerCancelMutation.mutate()}
+                          disabled={sellerCancelMutation.isPending}
+                          data-testid="button-seller-cancel-joined"
+                        >
+                          {sellerCancelMutation.isPending
+                            ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Đang hủy...</>
+                            : "Hủy giao dịch"}
+                        </Button>
                       </div>
                     )}
 
                     {/* ARMED: chờ deposit */}
                     {trade.status === "ARMED" && (
-                      <Alert>
-                        <Loader2 className="h-4 w-4 animate-spin" />
-                        <AlertTitle>Chờ người mua gửi ký quỹ ETH</AlertTitle>
-                        <AlertDescription>
-                          Giao dịch đã được arm. Safe đang trong trạng thái "đóng băng".
-                          Không thực hiện bất kỳ transaction nào trên Safe cho đến khi chuyển quyền.
-                        </AlertDescription>
-                      </Alert>
+                      <div className="space-y-3">
+                        <Alert>
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                          <AlertTitle>Chờ người mua gửi ký quỹ ETH</AlertTitle>
+                          <AlertDescription>
+                            Giao dịch đã được arm. Safe đang trong trạng thái "đóng băng".
+                            Không thực hiện bất kỳ transaction nào trên Safe cho đến khi chuyển quyền.
+                          </AlertDescription>
+                        </Alert>
+                        <Button
+                          variant="outline"
+                          className="w-full text-destructive hover:bg-destructive/10"
+                          onClick={() => sellerCancelMutation.mutate()}
+                          disabled={sellerCancelMutation.isPending}
+                          data-testid="button-seller-cancel-armed"
+                        >
+                          {sellerCancelMutation.isPending
+                            ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Đang hủy on-chain...</>
+                            : "Hủy giao dịch"}
+                        </Button>
+                      </div>
                     )}
 
                     {/* FUNDED: chuyển owner + release */}
@@ -611,6 +704,17 @@ export default function Sell() {
                           {isSwappingOwner
                             ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Đang xử lý...</>
                             : "Chuyển quyền sở hữu & nhận ETH"}
+                        </Button>
+                        <Button
+                          variant="outline"
+                          className="w-full text-destructive hover:bg-destructive/10"
+                          onClick={() => sellerCancelMutation.mutate()}
+                          disabled={sellerCancelMutation.isPending || isSwappingOwner}
+                          data-testid="button-seller-cancel-funded"
+                        >
+                          {sellerCancelMutation.isPending
+                            ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Đang hủy on-chain...</>
+                            : "Hủy giao dịch (hoàn ETH cho người mua)"}
                         </Button>
                       </div>
                     )}

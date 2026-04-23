@@ -226,7 +226,7 @@ export declare const trades: import("drizzle-orm/pg-core").PgTableWithColumns<{
             tableName: "trades";
             dataType: "string";
             columnType: "PgEnumColumn";
-            data: "DRAFT" | "LISTED" | "JOINED" | "ARMED" | "FUNDED" | "COMPLETED" | "CANCELLED";
+            data: "LISTED" | "JOINED" | "ARMED" | "FUNDED" | "COMPLETED" | "CANCELLED" | "DRAFT";
             driverParam: string;
             notNull: true;
             hasDefault: true;
@@ -258,136 +258,6 @@ export declare const trades: import("drizzle-orm/pg-core").PgTableWithColumns<{
         updatedAt: import("drizzle-orm/pg-core").PgColumn<{
             name: "updated_at";
             tableName: "trades";
-            dataType: "date";
-            columnType: "PgTimestamp";
-            data: Date;
-            driverParam: string;
-            notNull: true;
-            hasDefault: true;
-            isPrimaryKey: false;
-            isAutoincrement: false;
-            hasRuntimeDefault: false;
-            enumValues: undefined;
-            baseColumn: never;
-            identity: undefined;
-            generated: undefined;
-        }, {}, {}>;
-    };
-    dialect: "pg";
-}>;
-export declare const evidence: import("drizzle-orm/pg-core").PgTableWithColumns<{
-    name: "evidence";
-    schema: undefined;
-    columns: {
-        id: import("drizzle-orm/pg-core").PgColumn<{
-            name: "id";
-            tableName: "evidence";
-            dataType: "string";
-            columnType: "PgVarchar";
-            data: string;
-            driverParam: string;
-            notNull: true;
-            hasDefault: true;
-            isPrimaryKey: true;
-            isAutoincrement: false;
-            hasRuntimeDefault: false;
-            enumValues: [string, ...string[]];
-            baseColumn: never;
-            identity: undefined;
-            generated: undefined;
-        }, {}, {
-            length: number | undefined;
-        }>;
-        tradeId: import("drizzle-orm/pg-core").PgColumn<{
-            name: "trade_id";
-            tableName: "evidence";
-            dataType: "string";
-            columnType: "PgVarchar";
-            data: string;
-            driverParam: string;
-            notNull: false;
-            hasDefault: false;
-            isPrimaryKey: false;
-            isAutoincrement: false;
-            hasRuntimeDefault: false;
-            enumValues: [string, ...string[]];
-            baseColumn: never;
-            identity: undefined;
-            generated: undefined;
-        }, {}, {
-            length: number | undefined;
-        }>;
-        hash: import("drizzle-orm/pg-core").PgColumn<{
-            name: "hash";
-            tableName: "evidence";
-            dataType: "string";
-            columnType: "PgText";
-            data: string;
-            driverParam: string;
-            notNull: true;
-            hasDefault: false;
-            isPrimaryKey: false;
-            isAutoincrement: false;
-            hasRuntimeDefault: false;
-            enumValues: [string, ...string[]];
-            baseColumn: never;
-            identity: undefined;
-            generated: undefined;
-        }, {}, {}>;
-        signerAddress: import("drizzle-orm/pg-core").PgColumn<{
-            name: "signer_address";
-            tableName: "evidence";
-            dataType: "string";
-            columnType: "PgText";
-            data: string;
-            driverParam: string;
-            notNull: true;
-            hasDefault: false;
-            isPrimaryKey: false;
-            isAutoincrement: false;
-            hasRuntimeDefault: false;
-            enumValues: [string, ...string[]];
-            baseColumn: never;
-            identity: undefined;
-            generated: undefined;
-        }, {}, {}>;
-        onchainTxHash: import("drizzle-orm/pg-core").PgColumn<{
-            name: "onchain_tx_hash";
-            tableName: "evidence";
-            dataType: "string";
-            columnType: "PgText";
-            data: string;
-            driverParam: string;
-            notNull: false;
-            hasDefault: false;
-            isPrimaryKey: false;
-            isAutoincrement: false;
-            hasRuntimeDefault: false;
-            enumValues: [string, ...string[]];
-            baseColumn: never;
-            identity: undefined;
-            generated: undefined;
-        }, {}, {}>;
-        payload: import("drizzle-orm/pg-core").PgColumn<{
-            name: "payload";
-            tableName: "evidence";
-            dataType: "string";
-            columnType: "PgText";
-            data: string;
-            driverParam: string;
-            notNull: false;
-            hasDefault: false;
-            isPrimaryKey: false;
-            isAutoincrement: false;
-            hasRuntimeDefault: false;
-            enumValues: [string, ...string[]];
-            baseColumn: never;
-            identity: undefined;
-            generated: undefined;
-        }, {}, {}>;
-        createdAt: import("drizzle-orm/pg-core").PgColumn<{
-            name: "created_at";
-            tableName: "evidence";
             dataType: "date";
             columnType: "PgTimestamp";
             data: Date;
@@ -898,11 +768,7 @@ export declare const forumComments: import("drizzle-orm/pg-core").PgTableWithCol
     dialect: "pg";
 }>;
 export declare const tradesRelations: import("drizzle-orm").Relations<"trades", {
-    evidence: import("drizzle-orm").Many<"evidence">;
     logs: import("drizzle-orm").Many<"system_logs">;
-}>;
-export declare const evidenceRelations: import("drizzle-orm").Relations<"evidence", {
-    trade: import("drizzle-orm").One<"trades", false>;
 }>;
 export declare const systemLogsRelations: import("drizzle-orm").Relations<"system_logs", {
     trade: import("drizzle-orm").One<"trades", false>;
@@ -936,44 +802,23 @@ export declare const insertTradeSchema: z.ZodObject<Omit<{
     createdAt: z.ZodOptional<z.ZodDate>;
     updatedAt: z.ZodOptional<z.ZodDate>;
 }, "id" | "createdAt" | "updatedAt">, "strip", z.ZodTypeAny, {
-    deadline: Date;
     safeAddress: string;
     sellerAddress: string;
     priceEth: string;
-    status?: "DRAFT" | "LISTED" | "JOINED" | "ARMED" | "FUNDED" | "COMPLETED" | "CANCELLED" | undefined;
-    snapshotNonce?: string | null | undefined;
+    deadline: Date;
+    status?: "LISTED" | "JOINED" | "ARMED" | "FUNDED" | "COMPLETED" | "CANCELLED" | "DRAFT" | undefined;
     buyerAddress?: string | null | undefined;
     onchainTradeId?: string | null | undefined;
+    snapshotNonce?: string | null | undefined;
 }, {
-    deadline: Date;
     safeAddress: string;
     sellerAddress: string;
     priceEth: string;
-    status?: "DRAFT" | "LISTED" | "JOINED" | "ARMED" | "FUNDED" | "COMPLETED" | "CANCELLED" | undefined;
-    snapshotNonce?: string | null | undefined;
+    deadline: Date;
+    status?: "LISTED" | "JOINED" | "ARMED" | "FUNDED" | "COMPLETED" | "CANCELLED" | "DRAFT" | undefined;
     buyerAddress?: string | null | undefined;
     onchainTradeId?: string | null | undefined;
-}>;
-export declare const insertEvidenceSchema: z.ZodObject<Omit<{
-    id: z.ZodOptional<z.ZodString>;
-    tradeId: z.ZodOptional<z.ZodNullable<z.ZodString>>;
-    hash: z.ZodString;
-    signerAddress: z.ZodString;
-    onchainTxHash: z.ZodOptional<z.ZodNullable<z.ZodString>>;
-    payload: z.ZodOptional<z.ZodNullable<z.ZodString>>;
-    createdAt: z.ZodOptional<z.ZodDate>;
-}, "id" | "createdAt">, "strip", z.ZodTypeAny, {
-    hash: string;
-    signerAddress: string;
-    payload?: string | null | undefined;
-    tradeId?: string | null | undefined;
-    onchainTxHash?: string | null | undefined;
-}, {
-    hash: string;
-    signerAddress: string;
-    payload?: string | null | undefined;
-    tradeId?: string | null | undefined;
-    onchainTxHash?: string | null | undefined;
+    snapshotNonce?: string | null | undefined;
 }>;
 export declare const insertSystemLogSchema: z.ZodObject<Omit<{
     id: z.ZodOptional<z.ZodString>;
@@ -1058,8 +903,6 @@ export type InsertUser = z.infer<typeof insertUserSchema>;
 export type User = typeof users.$inferSelect;
 export type InsertTrade = z.infer<typeof insertTradeSchema>;
 export type Trade = typeof trades.$inferSelect;
-export type InsertEvidence = z.infer<typeof insertEvidenceSchema>;
-export type Evidence = typeof evidence.$inferSelect;
 export type InsertSystemLog = z.infer<typeof insertSystemLogSchema>;
 export type SystemLog = typeof systemLogs.$inferSelect;
 export type InsertForumPost = z.infer<typeof insertForumPostSchema>;

@@ -1,10 +1,9 @@
 import { db } from "./db";
 import { eq, desc, and, not, inArray } from "drizzle-orm";
 import {
-  users, trades, evidence, systemLogs, forumPosts, forumComments,
+  users, trades, systemLogs, forumPosts, forumComments,
   type User, type InsertUser,
   type Trade, type InsertTrade,
-  type Evidence, type InsertEvidence,
   type SystemLog, type InsertSystemLog,
   type ForumPost, type InsertForumPost,
   type ForumComment, type InsertForumComment,
@@ -24,11 +23,6 @@ export interface IStorage {
   createTrade(trade: InsertTrade): Promise<Trade>;
   updateTrade(id: string, data: Partial<Trade>): Promise<Trade | undefined>;
   
-  getEvidence(id: string): Promise<Evidence | undefined>;
-  getEvidenceByTrade(tradeId: string): Promise<Evidence[]>;
-  getAllEvidence(): Promise<Evidence[]>;
-  createEvidence(evidence: InsertEvidence): Promise<Evidence>;
-
   getSystemLogs(): Promise<SystemLog[]>;
   getLogsByTrade(tradeId: string): Promise<SystemLog[]>;
   createLog(log: InsertSystemLog): Promise<SystemLog>;
@@ -120,31 +114,6 @@ export class DatabaseStorage implements IStorage {
       .where(eq(trades.id, id))
       .returning();
     return trade;
-  }
-
-  async getEvidence(id: string): Promise<Evidence | undefined> {
-    const [ev] = await db.select().from(evidence).where(eq(evidence.id, id)).limit(1);
-    return ev;
-  }
-
-  async getEvidenceByTrade(tradeId: string): Promise<Evidence[]> {
-    return db.select().from(evidence)
-      .where(eq(evidence.tradeId, tradeId))
-      .orderBy(desc(evidence.createdAt));
-  }
-
-  async getAllEvidence(): Promise<Evidence[]> {
-    return db.select().from(evidence).orderBy(desc(evidence.createdAt));
-  }
-
-  async createEvidence(insertEvidence: InsertEvidence): Promise<Evidence> {
-    const [ev] = await db.insert(evidence)
-      .values({
-        ...insertEvidence,
-        signerAddress: insertEvidence.signerAddress.toLowerCase(),
-      })
-      .returning();
-    return ev;
   }
 
   async getSystemLogs(): Promise<SystemLog[]> {

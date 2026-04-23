@@ -12,8 +12,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { TradeStatusBadge } from "@/components/trade-status-badge";
-import { Activity, BarChart3, FileText, Clock, CheckCircle2, XCircle, Search, Filter, X, Download, Shield, PlayCircle } from "lucide-react";
-import { exportTradeEvidencePDF } from "@/lib/export-pdf";
+import { Activity, BarChart3, FileText, Clock, CheckCircle2, XCircle, Search, Filter, X, Shield, PlayCircle } from "lucide-react";
 import type { Trade, SystemLog } from "@shared/schema";
 
 function formatAddress(address: string): string {
@@ -54,14 +53,24 @@ export default function Dashboard() {
   const [statusFilter, setStatusFilter] = useState("ALL");
   const [logTypeFilter, setLogTypeFilter] = useState("ALL");
   const [dateSort, setDateSort] = useState<"asc" | "desc">("desc");
+  // Logs được lấy theo từng trade để bảo vệ thông tin nội bộ
+  const [selectedTradeIdForLogs, setSelectedTradeIdForLogs] = useState<string | null>(null);
   const { address } = useAccount();
 
   const { data: trades, isLoading: isLoadingTrades } = useQuery<Trade[]>({
     queryKey: ["/api/trades"],
   });
 
+  // Chỉ fetch logs khi có tradeId được chọn — không lấy toàn bộ logs hệ thống
   const { data: logs, isLoading: isLoadingLogs } = useQuery<SystemLog[]>({
-    queryKey: ["/api/logs"],
+    queryKey: ["/api/logs", selectedTradeIdForLogs],
+    queryFn: async () => {
+      if (!selectedTradeIdForLogs) return [];
+      const res = await fetch(`/api/logs?tradeId=${encodeURIComponent(selectedTradeIdForLogs)}`);
+      if (!res.ok) return [];
+      return res.json();
+    },
+    enabled: !!selectedTradeIdForLogs,
   });
 
   const filteredTrades = useMemo(() => {
@@ -134,6 +143,7 @@ export default function Dashboard() {
     setStatusFilter("ALL");
     setLogTypeFilter("ALL");
     setDateSort("desc");
+    setSelectedTradeIdForLogs(null);
   };
 
   const hasActiveFilters = searchQuery || statusFilter !== "ALL" || logTypeFilter !== "ALL" || dateSort !== "desc";
@@ -366,23 +376,6 @@ export default function Dashboard() {
                                   </Button>
                                 </Link>
                               )}
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                onClick={() => exportTradeEvidencePDF({
-                                  id: trade.id,
-                                  safeAddress: trade.safeAddress,
-                                  sellerAddress: trade.sellerAddress,
-                                  buyerAddress: trade.buyerAddress,
-                                  priceEth: String(trade.priceEth),
-                                  status: trade.status,
-                                  createdAt: String(trade.createdAt),
-                                  deadline: String(trade.deadline),
-                                })}
-                                data-testid={`button-export-trade-${trade.id}`}
-                              >
-                                <Download className="h-4 w-4" />
-                              </Button>
                             </TableCell>
                           </TableRow>
                         ))}
@@ -408,15 +401,17 @@ export default function Dashboard() {
               <CardHeader>
                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                   <div>
-                    <CardTitle>Nhật ký hệ thống</CardTitle>
+                    <CardTitle>Nhật ký giao dịch</CardTitle>
                     <CardDescription>
-                      {filteredLogs.length} / {logs?.length || 0} bản ghi
+                      {selectedTradeIdForLogs
+                        ? `${filteredLogs.length} bản ghi — ${formatAddress(selectedTradeIdForLogs)}`
+                        : "Chọn giao dịch để xem nhật ký"}
                     </CardDescription>
                   </div>
                   {hasActiveFilters && (
-                    <Button 
-                      variant="ghost" 
-                      size="sm" 
+                    <Button
+                      variant="ghost"
+                      size="sm"
                       onClick={clearFilters}
                       data-testid="button-clear-log-filters"
                     >
@@ -427,16 +422,20 @@ export default function Dashboard() {
                 </div>
 
                 <div className="flex flex-col sm:flex-row gap-3 mt-4">
-                  <Select value={logTypeFilter} onValueChange={setLogTypeFilter}>
-                    <SelectTrigger className="w-full sm:w-[200px]" data-testid="select-log-type-filter">
-                      <Filter className="mr-2 h-4 w-4" />
-                      <SelectValue placeholder="Loại nhật ký" />
+                  {/* Dropdown chọn trade để xem logs — bảo vệ privacy */}
+                  <Select
+                    value={selectedTradeIdForLogs ?? ""}
+                    onValueChange={(v) => setSelectedTradeIdForLogs(v || null)}
+                  >
+                    <SelectTrigger className="w-full sm:flex-1" data-testid="select-trade-for-logs">
+                      <SelectValue placeholder="Chọn giao dịch..." />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="ALL">Tất cả loại</SelectItem>
-                      <SelectItem value="TRADE_EVENT">Sự kiện giao dịch</SelectItem>
-                      <SelectItem value="SECURITY">Bảo mật</SelectItem>
-                      <SelectItem value="SYSTEM">Hệ thống</SelectItem>
+                      {trades?.map((t) => (
+                        <SelectItem key={t.id} value={t.id}>
+                          {formatAddress(t.id)} · {formatAddress(t.safeAddress)} · {t.status}
+                        </SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
 
@@ -452,7 +451,12 @@ export default function Dashboard() {
                 </div>
               </CardHeader>
               <CardContent>
-                {isLoadingLogs ? (
+                {!selectedTradeIdForLogs ? (
+                  <div className="flex flex-col items-center justify-center py-12 text-center text-muted-foreground gap-3">
+                    <FileText className="h-10 w-10 opacity-40" />
+                    <p className="text-sm">Chọn một giao dịch ở trên để xem nhật ký</p>
+                  </div>
+                ) : isLoadingLogs ? (
                   <div className="space-y-3">
                     {[1, 2, 3].map((i) => (
                       <Skeleton key={i} className="h-16 w-full" />

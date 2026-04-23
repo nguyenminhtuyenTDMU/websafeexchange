@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
-import { useAccount } from "wagmi";
+import { useAccount, useSignMessage } from "wagmi";
+import { buildAuthPayload } from "@/lib/web3-auth";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   Dialog,
@@ -18,6 +19,7 @@ import type { User } from "@shared/schema";
 
 export function UserProfileDialog() {
   const { address, isConnected } = useAccount();
+  const { signMessageAsync } = useSignMessage();
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [open, setOpen] = useState(false);
@@ -38,11 +40,16 @@ export function UserProfileDialog() {
   }, [isConnected, profile]);
 
   const mutation = useMutation({
-    mutationFn: () =>
-      apiRequest("PATCH", "/api/users/profile", {
+    mutationFn: async () => {
+      if (!address) throw new Error("Ví chưa được kết nối");
+      // Ký để chứng minh quyền sở hữu địa chỉ ví trước khi update tên
+      const auth = await buildAuthPayload(signMessageAsync, "update-profile", address.toLowerCase());
+      return apiRequest("PATCH", "/api/users/profile", {
         address,
         displayName: name.trim(),
-      }).then((r) => r.json()),
+        ...auth,
+      }).then((r) => r.json());
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/users/profile", address] });
       toast({ title: "Đã lưu tên hiển thị!" });

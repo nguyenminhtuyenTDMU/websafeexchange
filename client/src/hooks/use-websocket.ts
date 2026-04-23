@@ -15,7 +15,7 @@ export interface UseWebSocketReturn {
   unsubscribe: (channel: string) => void;
 }
 
-export function useWebSocket(): UseWebSocketReturn {
+export function useWebSocket(walletAddress?: string): UseWebSocketReturn {
   const [isConnected, setIsConnected] = useState(false);
   const [lastMessage, setLastMessage] = useState<WSMessage | null>(null);
   const wsRef = useRef<WebSocket | null>(null);
@@ -32,6 +32,12 @@ export function useWebSocket(): UseWebSocketReturn {
       wsRef.current.onopen = () => {
         setIsConnected(true);
         console.log('WebSocket kết nối thành công');
+        if (walletAddress) {
+          wsRef.current?.send(JSON.stringify({
+            type: 'subscribe',
+            channel: `wallet:${walletAddress.toLowerCase()}`,
+          }));
+        }
       };
 
       wsRef.current.onmessage = (event) => {
@@ -87,6 +93,14 @@ export function useWebSocket(): UseWebSocketReturn {
       }
     };
   }, [connect]);
+
+  useEffect(() => {
+    if (!walletAddress || !isConnected || !wsRef.current) return;
+    wsRef.current.send(JSON.stringify({
+      type: 'subscribe',
+      channel: `wallet:${walletAddress.toLowerCase()}`,
+    }));
+  }, [walletAddress, isConnected]);
 
   const subscribe = useCallback((channel: string) => {
     if (wsRef.current?.readyState === WebSocket.OPEN) {

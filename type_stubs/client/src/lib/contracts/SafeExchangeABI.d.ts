@@ -40,4 +40,4 @@ export declare const SAFE_EXCHANGE_ABI: ({
     type: string;
     anonymous?: undefined;
 })[];
-export declare const GUARD_CONTRACT_ADDRESS = "0x90ff66a4c895621fC011c7ef56Fc786FEC14d969";
+export declare const GUARD_CONTRACT_ADDRESS = "0xeF4b477e5f24Cd260215a0E966258D534227f07e";
