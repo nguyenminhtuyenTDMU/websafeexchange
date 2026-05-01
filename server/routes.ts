@@ -603,5 +603,160 @@ export async function registerRoutes(
     }
   });
 
+  // ─── Chatbot proxy → Langflow ───────────────────────────────────────────────
+
+  /**
+   * POST /api/chat
+   * Body: { message: string, sessionId: string, walletAddress?: string }
+   * Proxies to Langflow and normalises the response into:
+   *   { message: string, ui_action?: { type, params } }
+   */
+  app.post("/api/chat", async (req, res) => {
+    const { message, sessionId, walletAddress } = req.body ?? {};
+    if (!message || typeof message !== "string") {
+      return res.status(400).json({ error: "message là bắt buộc" });
+    }
+
+    const langflowUrl = process.env.LANGFLOW_API_URL;
+    const flowId = process.env.LANGFLOW_FLOW_ID;
+
+    if (!langflowUrl || !flowId) {
+      return res.status(503).json({
+        message: "Trợ lý chưa được cấu hình. Vui lòng liên hệ quản trị viên.",
+      });
+    }
+
+    try {
+      const endpoint = `${langflowUrl}/api/v1/run/${flowId}`;
+      const payload = {
+        input_value: message,
+        session_id: sessionId ?? "default",
+        input_type: "chat",
+        output_type: "chat",
+        tweaks: walletAddress
+          ? { "ChatInput-0": { wallet_address: walletAddress } }
+          : undefined,
+      };
+
+      const upstream = await fetch(endpoint, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          ...(process.env.LANGFLOW_API_KEY
+            ? { Authorization: `Bearer ${process.env.LANGFLOW_API_KEY}` }
+            : {}),
+        },
+        body: JSON.stringify(payload),
+        signal: AbortSignal.timeout(30_000),
+      });
+
+      if (!upstream.ok) {
+        const text = await upstream.text().catch(() => "");
+        console.error("[chat] Langflow error:", upstream.status, text);
+        return res.status(502).json({ message: "Trợ lý tạm thời không khả dụng." });
+      }
+
+      const raw = await upstream.json() as {
+        outputs?: Array<{
+          outputs?: Array<{
+            results?: { message?: { text?: string; data?: { text?: string } } };
+            messages?: Array<{ message?: string; text?: string }>;
+          }>;
+        }>;
+      };
+
+      // Extract text from Langflow's nested response
+      const out = raw?.outputs?.[0]?.outputs?.[0];
+      const rawText =
+        out?.results?.message?.text ||
+        out?.results?.message?.data?.text ||
+        out?.messages?.[0]?.message ||
+        out?.messages?.[0]?.text ||
+        "";
+
+      // Try to parse structured JSON the agent might emit
+      let message_text = rawText;
+      let ui_action: object | undefined;
+      try {
+        const jsonMatch = rawText.match(/```json\s*([\s\S]*?)```/);
+        const parsed = JSON.parse(jsonMatch ? jsonMatch[1] : rawText);
+        if (parsed.message) message_text = parsed.message;
+        if (parsed.ui_action) ui_action = parsed.ui_action;
+      } catch {
+        // plain text — fine
+      }
+
+      res.json({ message: message_text || "Tôi không hiểu câu hỏi này.", ui_action });
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err);
+      if (msg.includes("TimeoutError") || msg.includes("abort")) {
+        return res.status(504).json({ message: "Trợ lý phản hồi quá chậm. Thử lại sau." });
+      }
+      console.error("[chat] unexpected error:", err);
+      res.status(500).json({ message: "Lỗi kết nối tới trợ lý." });
+    }
+  });
+
+  // ─── Webhook: Safe Watcher alert → Langflow ──────────────────────────────────
+
+  /**
+   * POST /api/webhook/alert
+   * Called by Safe Watcher when nonce drift is detected.
+   * Forwards to Langflow alert flow and pushes a WS notification to buyer.
+   * Body: { tradeId, snapshot, current, type: "NONCE_DRIFT" | string }
+   */
+  app.post("/api/webhook/alert", async (req, res) => {
+    const { tradeId, snapshot, current, type = "NONCE_DRIFT" } = req.body ?? {};
+    if (!tradeId) return res.status(400).json({ error: "tradeId là bắt buộc" });
+
+    try {
+      const trade = await storage.getTrade(String(tradeId));
+      if (!trade) return res.status(404).json({ error: "Không tìm thấy trade" });
+
+      // Log evidence
+      await storage.createLog({
+        type: "SECURITY",
+        message: `[${type}] Trade #${tradeId}: snapshot=${snapshot}, current=${current}`,
+        relatedTradeId: trade.id,
+        metadata: JSON.stringify({ snapshot, current, alertType: type }),
+      });
+
+      // Notify buyer via WebSocket
+      if (trade.buyerAddress) {
+        eventBroadcaster.sendToWallet(
+          trade.buyerAddress,
+          "⚠️ Cảnh báo bảo mật",
+          `Trade #${tradeId}: phát hiện nonce Safe thay đổi bất thường (${snapshot} → ${current}). Cân nhắc HỦY giao dịch.`,
+          "warning",
+        );
+      }
+
+      // Forward to Langflow alert flow (fire-and-forget)
+      const alertFlowId = process.env.LANGFLOW_ALERT_FLOW_ID;
+      const langflowUrl = process.env.LANGFLOW_API_URL;
+      if (langflowUrl && alertFlowId) {
+        fetch(`${langflowUrl}/api/v1/run/${alertFlowId}`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            ...(process.env.LANGFLOW_API_KEY
+              ? { Authorization: `Bearer ${process.env.LANGFLOW_API_KEY}` }
+              : {}),
+          },
+          body: JSON.stringify({
+            input_value: JSON.stringify({ tradeId, snapshot, current, type, buyerAddress: trade.buyerAddress }),
+            input_type: "chat",
+            output_type: "chat",
+          }),
+        }).catch((e) => console.error("[alert-webhook] Langflow forward failed:", e));
+      }
+
+      res.json({ ok: true });
+    } catch (err) {
+      console.error("[alert-webhook] error:", err);
+      res.status(500).json({ error: "Lỗi xử lý alert" });
+    }
+  });
+
   return httpServer;
 }

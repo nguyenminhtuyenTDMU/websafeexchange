@@ -1,0 +1,88 @@
+%% Sơ đồ Use Case Tổng quát – Chatbot Langflow cho SafeExchange
+%% Mermaid không hỗ trợ UML use case gốc, nên dùng flowchart mô phỏng.
+%% Hình oval = use case, hình actor biểu diễn bằng node stadium.
+
+flowchart LR
+    %% Actors
+    Guest((Guest))
+    Buyer((Buyer))
+    Seller((Seller))
+
+    %% External systems
+    LLM[[LLM Service<br/>OpenAI / Ollama]]
+    SafeAPI[[SafeExchange API<br/>Express.js]]
+    Watcher[[Safe Watcher<br/>Service]]
+    Chain[[Ethereum Sepolia<br/>Smart Contract]]
+
+    %% System boundary
+    subgraph System[Hệ thống Chatbot Langflow]
+        UC01(["UC01<br/>Tra cứu thông tin<br/>SafeExchange"])
+        UC02(["UC02<br/>Giải thích quy trình<br/>ký quỹ Escrow"])
+        UC03(["UC03<br/>Hướng dẫn kết nối ví<br/>Wallet Connect"])
+        UC04(["UC04<br/>Niêm yết ví Safe<br/>List trade"])
+        UC05(["UC05<br/>Kích hoạt trade<br/>Arm trade"])
+        UC06(["UC06<br/>Ký quỹ ETH<br/>Deposit"])
+        UC07(["UC07<br/>Chuyển quyền sở hữu<br/>Safe"])
+        UC08(["UC08<br/>Giải ngân ký quỹ<br/>Release"])
+        UC09(["UC09<br/>Yêu cầu hủy<br/>Cancel / Refund"])
+        UC10(["UC10<br/>Tra cứu trạng thái<br/>giao dịch"])
+        UC11(["UC11<br/>Theo dõi cảnh báo<br/>nonce bất thường"])
+        UC12(["UC12<br/>Quản lý phiên<br/>hội thoại"])
+    end
+
+    %% Guest associations
+    Guest --- UC01
+    Guest --- UC02
+    Guest --- UC12
+
+    %% Buyer associations
+    Buyer --- UC01
+    Buyer --- UC02
+    Buyer --- UC06
+    Buyer --- UC08
+    Buyer --- UC09
+    Buyer --- UC10
+    Buyer --- UC11
+    Buyer --- UC12
+
+    %% Seller associations
+    Seller --- UC01
+    Seller --- UC02
+    Seller --- UC04
+    Seller --- UC05
+    Seller --- UC07
+    Seller --- UC09
+    Seller --- UC10
+    Seller --- UC11
+    Seller --- UC12
+
+    %% include / extend
+    UC04 -.->|include| UC03
+    UC05 -.->|include| UC03
+    UC06 -.->|include| UC03
+    UC07 -.->|include| UC03
+    UC08 -.->|include| UC03
+    UC09 -.->|include| UC03
+    UC11 -.->|extend| UC10
+
+    %% External system links
+    UC01 -.-> LLM
+    UC02 -.-> LLM
+    UC04 -.-> SafeAPI
+    UC05 -.-> Chain
+    UC06 -.-> Chain
+    UC07 -.-> Chain
+    UC08 -.-> Chain
+    UC09 -.-> SafeAPI
+    UC10 -.-> SafeAPI
+    UC10 -.-> Chain
+    UC11 -.-> Watcher
+    UC11 -.-> Chain
+
+    %% Styling
+    classDef actor fill:#FFE699,stroke:#BF8F00,stroke-width:2px
+    classDef usecase fill:#D5E8F0,stroke:#2E75B6,stroke-width:1.5px
+    classDef external fill:#EDEDED,stroke:#555,stroke-width:1.5px
+    class Guest,Buyer,Seller actor
+    class UC01,UC02,UC03,UC04,UC05,UC06,UC07,UC08,UC09,UC10,UC11,UC12 usecase
+    class LLM,SafeAPI,Watcher,Chain external
