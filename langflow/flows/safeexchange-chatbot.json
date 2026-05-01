@@ -1,0 +1,214 @@
+{
+  "id": "safeexchange-chatbot-v1",
+  "name": "SafeExchange Chatbot",
+  "description": "Trợ lý AI cho SafeExchange: tra cứu trade, hướng dẫn deposit/arm/release, cảnh báo nonce",
+  "data": {
+    "nodes": [
+      {
+        "id": "ChatInput-0",
+        "type": "genericNode",
+        "position": { "x": 50, "y": 300 },
+        "data": {
+          "type": "ChatInput",
+          "node": {
+            "template": {
+              "input_value": { "value": "", "type": "str", "show": true },
+              "session_id": { "value": "", "type": "str", "show": true },
+              "wallet_address": { "value": "", "type": "str", "show": true, "info": "Ethereum address of the connected wallet" }
+            },
+            "description": "Nhận tin nhắn từ chat widget",
+            "display_name": "Chat Input",
+            "base_classes": ["Message"]
+          }
+        }
+      },
+      {
+        "id": "Memory-0",
+        "type": "genericNode",
+        "position": { "x": 300, "y": 150 },
+        "data": {
+          "type": "ConversationBufferMemory",
+          "node": {
+            "template": {
+              "memory_key": { "value": "chat_history", "type": "str" },
+              "return_messages": { "value": true, "type": "bool" },
+              "session_id": { "value": "{session_id}", "type": "str" }
+            },
+            "description": "Lưu lịch sử hội thoại theo session",
+            "display_name": "Buffer Memory",
+            "base_classes": ["BaseChatMemory"]
+          }
+        }
+      },
+      {
+        "id": "SystemPrompt-0",
+        "type": "genericNode",
+        "position": { "x": 300, "y": 350 },
+        "data": {
+          "type": "SystemMessage",
+          "node": {
+            "template": {
+              "template": {
+                "value": "Bạn là trợ lý AI của SafeExchange — sàn giao dịch P2P an toàn sử dụng Gnosis Safe multisig wallet làm escrow.\n\nNgười dùng hiện tại:\n- Wallet: {wallet_address}\n- Session: {session_id}\n\n## Vai trò của bạn\nGiúp người dùng:\n1. Hiểu quy trình giao dịch (DRAFT → LISTED → JOINED → ARMED → FUNDED → COMPLETED)\n2. Tra cứu trạng thái trade qua công cụ `get_trade_status`\n3. Hướng dẫn từng bước: niêm yết, kích hoạt, ký quỹ, giải ngân, hủy\n4. Giải thích cảnh báo nonce bất thường\n5. Trả lời câu hỏi về Gnosis Safe, escrow, EIP-1193\n\n## Cách trả lời khi cần UI action\nNếu người dùng cần thực hiện một hành động on-chain, PHẢI trả về JSON:\n```json\n{\n  \"message\": \"[giải thích bằng tiếng Việt]\",\n  \"ui_action\": {\n    \"type\": \"sign_deposit\" | \"sign_arm\" | \"sign_release\" | \"sign_cancel\" | \"connect_wallet\" | \"view_trade\",\n    \"params\": {\n      \"tradeId\": \"<id>\",\n      \"amount\": \"<ETH>\",\n      \"contract\": \"<address>\"\n    }\n  }\n}\n```\n\n## Quy tắc\n- Luôn trả lời bằng tiếng Việt\n- Chỉ tạo ui_action khi người dùng rõ ràng muốn thực hiện giao dịch\n- Không bao giờ yêu cầu private key hoặc seed phrase\n- Nếu trade chưa đủ điều kiện, giải thích rõ lý do\n- Khi không chắc, dùng công cụ để kiểm tra on-chain",
+                "type": "str"
+              }
+            },
+            "display_name": "System Prompt",
+            "base_classes": ["SystemMessage"]
+          }
+        }
+      },
+      {
+        "id": "Tool-GetTradeStatus",
+        "type": "genericNode",
+        "position": { "x": 550, "y": 100 },
+        "data": {
+          "type": "PythonFunction",
+          "node": {
+            "template": {
+              "code": {
+                "value": "import httpx\nimport os\n\ndef get_trade_status(trade_id: str) -> dict:\n    \"\"\"\n    Tra cứu trạng thái trade từ SafeExchange API.\n    Args:\n        trade_id: ID hoặc địa chỉ Safe của trade\n    Returns:\n        dict chứa thông tin trade: status, safeAddress, priceEth, buyerAddress, sellerAddress\n    \"\"\"\n    api_url = os.getenv('SAFEEXCHANGE_API_URL', 'http://localhost:5000')\n    try:\n        resp = httpx.get(f'{api_url}/api/trades/{trade_id}', timeout=10)\n        if resp.status_code == 200:\n            t = resp.json()\n            return {\n                'id': t.get('id'),\n                'status': t.get('status'),\n                'safeAddress': t.get('safeAddress'),\n                'sellerAddress': t.get('sellerAddress'),\n                'buyerAddress': t.get('buyerAddress'),\n                'priceEth': t.get('priceEth'),\n                'onchainTradeId': t.get('onchainTradeId'),\n                'snapshotNonce': t.get('snapshotNonce'),\n                'deadline': str(t.get('deadline', '')),\n            }\n        elif resp.status_code == 404:\n            return {'error': f'Không tìm thấy trade #{trade_id}'}\n        else:\n            return {'error': f'Lỗi API: {resp.status_code}'}\n    except Exception as e:\n        return {'error': str(e)}\n",
+                "type": "code"
+              },
+              "name": { "value": "get_trade_status", "type": "str" },
+              "description": { "value": "Tra cứu trạng thái trade từ SafeExchange API theo ID hoặc địa chỉ Safe", "type": "str" }
+            },
+            "display_name": "Tool: Get Trade Status",
+            "base_classes": ["Tool"]
+          }
+        }
+      },
+      {
+        "id": "Tool-GetAllTrades",
+        "type": "genericNode",
+        "position": { "x": 550, "y": 250 },
+        "data": {
+          "type": "PythonFunction",
+          "node": {
+            "template": {
+              "code": {
+                "value": "import httpx\nimport os\n\ndef get_all_trades(status_filter: str = '') -> list:\n    \"\"\"\n    Lấy danh sách tất cả trade, có thể lọc theo status.\n    Args:\n        status_filter: DRAFT | LISTED | JOINED | ARMED | FUNDED | COMPLETED | CANCELLED (tuỳ chọn)\n    Returns:\n        Danh sách trade (tối đa 20)\n    \"\"\"\n    api_url = os.getenv('SAFEEXCHANGE_API_URL', 'http://localhost:5000')\n    try:\n        resp = httpx.get(f'{api_url}/api/trades', timeout=10)\n        trades = resp.json() if resp.status_code == 200 else []\n        if status_filter:\n            trades = [t for t in trades if t.get('status') == status_filter.upper()]\n        return [{\n            'id': t['id'],\n            'status': t['status'],\n            'safeAddress': t['safeAddress'],\n            'priceEth': t['priceEth'],\n        } for t in trades[:20]]\n    except Exception as e:\n        return [{'error': str(e)}]\n",
+                "type": "code"
+              },
+              "name": { "value": "get_all_trades", "type": "str" },
+              "description": { "value": "Lấy danh sách trade, lọc theo status nếu cần (LISTED, ARMED, FUNDED...)", "type": "str" }
+            },
+            "display_name": "Tool: Get All Trades",
+            "base_classes": ["Tool"]
+          }
+        }
+      },
+      {
+        "id": "Tool-CheckNonce",
+        "type": "genericNode",
+        "position": { "x": 550, "y": 400 },
+        "data": {
+          "type": "PythonFunction",
+          "node": {
+            "template": {
+              "code": {
+                "value": "import httpx\nimport os\n\ndef check_nonce_status(trade_id: str) -> dict:\n    \"\"\"\n    Kiểm tra xem nonce của Safe có bị drift không cho một trade.\n    Args:\n        trade_id: ID của trade\n    Returns:\n        dict với snapshot_nonce, current_nonce, is_drifted\n    \"\"\"\n    api_url = os.getenv('SAFEEXCHANGE_API_URL', 'http://localhost:5000')\n    try:\n        # Get trade info\n        resp = httpx.get(f'{api_url}/api/trades/{trade_id}', timeout=10)\n        if resp.status_code != 200:\n            return {'error': 'Không tìm thấy trade'}\n        trade = resp.json()\n\n        # Get security logs for this trade\n        logs_resp = httpx.get(f'{api_url}/api/logs?tradeId={trade_id}', timeout=10)\n        logs = logs_resp.json() if logs_resp.status_code == 200 else []\n        nonce_alerts = [l for l in logs if 'NONCE' in l.get('message', '')]\n\n        return {\n            'tradeId': trade_id,\n            'status': trade.get('status'),\n            'snapshotNonce': trade.get('snapshotNonce'),\n            'safeAddress': trade.get('safeAddress'),\n            'recentAlerts': len(nonce_alerts),\n            'lastAlert': nonce_alerts[0].get('message') if nonce_alerts else None,\n        }\n    except Exception as e:\n        return {'error': str(e)}\n",
+                "type": "code"
+              },
+              "name": { "value": "check_nonce_status", "type": "str" },
+              "description": { "value": "Kiểm tra trạng thái nonce của Safe cho một trade — phát hiện drift bất thường", "type": "str" }
+            },
+            "display_name": "Tool: Check Nonce",
+            "base_classes": ["Tool"]
+          }
+        }
+      },
+      {
+        "id": "Tool-GetTradeLogs",
+        "type": "genericNode",
+        "position": { "x": 550, "y": 550 },
+        "data": {
+          "type": "PythonFunction",
+          "node": {
+            "template": {
+              "code": {
+                "value": "import httpx\nimport os\n\ndef get_trade_logs(trade_id: str) -> list:\n    \"\"\"\n    Lấy lịch sử sự kiện của một trade.\n    Args:\n        trade_id: ID của trade\n    Returns:\n        Danh sách log sự kiện\n    \"\"\"\n    api_url = os.getenv('SAFEEXCHANGE_API_URL', 'http://localhost:5000')\n    try:\n        resp = httpx.get(f'{api_url}/api/logs?tradeId={trade_id}', timeout=10)\n        logs = resp.json() if resp.status_code == 200 else []\n        return [{'time': l.get('createdAt', ''), 'event': l.get('message', '')} for l in logs[:15]]\n    except Exception as e:\n        return [{'error': str(e)}]\n",
+                "type": "code"
+              },
+              "name": { "value": "get_trade_logs", "type": "str" },
+              "description": { "value": "Lấy lịch sử sự kiện (log) của một trade cụ thể", "type": "str" }
+            },
+            "display_name": "Tool: Get Trade Logs",
+            "base_classes": ["Tool"]
+          }
+        }
+      },
+      {
+        "id": "Agent-0",
+        "type": "genericNode",
+        "position": { "x": 850, "y": 300 },
+        "data": {
+          "type": "AgentExecutor",
+          "node": {
+            "template": {
+              "agent_type": { "value": "openai-tools", "type": "str", "options": ["openai-tools", "openai-functions", "structured-chat-zero-shot-react-description"] },
+              "handle_parsing_errors": { "value": true, "type": "bool" },
+              "max_iterations": { "value": 5, "type": "int" },
+              "verbose": { "value": false, "type": "bool" },
+              "llm": { "type": "BaseChatModel" },
+              "tools": { "type": "Tool", "list": true },
+              "memory": { "type": "BaseChatMemory" },
+              "system_message": { "type": "SystemMessage" }
+            },
+            "description": "Agent điều phối intent và gọi tools",
+            "display_name": "SafeExchange Agent",
+            "base_classes": ["Chain"]
+          }
+        }
+      },
+      {
+        "id": "OpenAI-0",
+        "type": "genericNode",
+        "position": { "x": 650, "y": 700 },
+        "data": {
+          "type": "ChatOpenAI",
+          "node": {
+            "template": {
+              "model_name": { "value": "gpt-4o-mini", "type": "str", "options": ["gpt-4o", "gpt-4o-mini", "gpt-4-turbo", "gpt-3.5-turbo"] },
+              "temperature": { "value": 0.3, "type": "float" },
+              "max_tokens": { "value": 1000, "type": "int" },
+              "openai_api_key": { "value": "", "type": "str", "password": true, "info": "Nhập OpenAI API key hoặc set OPENAI_API_KEY env" }
+            },
+            "description": "LLM chính (OpenAI)",
+            "display_name": "OpenAI GPT",
+            "base_classes": ["BaseChatModel"]
+          }
+        }
+      },
+      {
+        "id": "ChatOutput-0",
+        "type": "genericNode",
+        "position": { "x": 1100, "y": 300 },
+        "data": {
+          "type": "ChatOutput",
+          "node": {
+            "template": {
+              "input_value": { "type": "str" },
+              "session_id": { "value": "{session_id}", "type": "str" }
+            },
+            "description": "Trả kết quả về chat widget",
+            "display_name": "Chat Output",
+            "base_classes": ["Message"]
+          }
+        }
+      }
+    ],
+    "edges": [
+      { "id": "e1", "source": "ChatInput-0", "target": "Agent-0", "sourceHandle": "Message", "targetHandle": "input" },
+      { "id": "e2", "source": "Memory-0", "target": "Agent-0", "sourceHandle": "BaseChatMemory", "targetHandle": "memory" },
+      { "id": "e3", "source": "SystemPrompt-0", "target": "Agent-0", "sourceHandle": "SystemMessage", "targetHandle": "system_message" },
+      { "id": "e4", "source": "Tool-GetTradeStatus", "target": "Agent-0", "sourceHandle": "Tool", "targetHandle": "tools" },
+      { "id": "e5", "source": "Tool-GetAllTrades", "target": "Agent-0", "sourceHandle": "Tool", "targetHandle": "tools" },
+      { "id": "e6", "source": "Tool-CheckNonce", "target": "Agent-0", "sourceHandle": "Tool", "targetHandle": "tools" },
+      { "id": "e7", "source": "Tool-GetTradeLogs", "target": "Agent-0", "sourceHandle": "Tool", "targetHandle": "tools" },
+      { "id": "e8", "source": "OpenAI-0", "target": "Agent-0", "sourceHandle": "BaseChatModel", "targetHandle": "llm" },
+      { "id": "e9", "source": "Agent-0", "target": "ChatOutput-0", "sourceHandle": "output", "targetHandle": "input_value" }
+    ],
+    "viewport": { "x": 0, "y": 0, "zoom": 0.8 }
+  }
+}

@@ -1,0 +1,38 @@
+sequenceDiagram
+    autonumber
+    participant Watcher as Safe Watcher<br/>Service
+    participant SC as Smart Contract<br/>(Sepolia)
+    participant API as SafeExchange<br/>API
+    participant DB as PostgreSQL<br/>(trades, evidence)
+    participant LF as Langflow<br/>(Alert Flow)
+    participant Agent as Agent Node
+    participant LLM as LLM Service
+    actor Buyer as Buyer
+
+    loop Mỗi 15s (polling)
+        Watcher->>SC: getSafeNonce(safeAddr)
+        SC-->>Watcher: currentNonce = N+1
+    end
+
+    Watcher->>DB: SELECT nonceSnapshot<br/>FROM trades WHERE armed
+    DB-->>Watcher: snapshot = N
+
+    alt currentNonce > snapshot<br/>(và trade chưa COMPLETED)
+        Watcher->>API: POST /alerts/nonce-mismatch<br/>{tradeId, snapshot, current}
+        API->>DB: INSERT evidence<br/>(tradeId, type=NONCE_DRIFT)
+        API->>LF: Trigger webhook<br/>POST /webhook/alert
+
+        LF->>Agent: alert payload
+        Agent->>LLM: Soạn cảnh báo<br/>(trade_id, buyer_addr)
+        LLM-->>Agent: NL message
+
+        Agent->>API: GET /trades/{id}<br/>→ lấy buyer info
+        API-->>Agent: {buyerAddr, sessionId}
+
+        Agent-->>Buyer: Push notification<br/>"⚠ Trade #42: phát hiện nonce<br/>của Safe thay đổi bất thường.<br/>Đề xuất CANCEL để bảo vệ tiền."
+
+        Buyer->>Agent: "Lý do là gì?"
+        Agent->>LLM: Giải thích bằng NL<br/>(dùng context evidence)
+        LLM-->>Agent: Giải thích
+        Agent-->>Buyer: "Seller có thể đã<br/>thực hiện giao dịch khác<br/>trên Safe sau khi ARM..."
+    end

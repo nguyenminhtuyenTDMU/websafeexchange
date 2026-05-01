@@ -1,0 +1,39 @@
+flowchart TD
+    Start([User gửi câu hỏi qua chat]) --> P1[Chat Input<br/>nhận message]
+    P1 --> P2[Load session memory<br/>theo session_id]
+    P2 --> P3[Ghép history + message<br/>thành prompt context]
+    P3 --> P4[Agent Node<br/>gọi LLM để phân loại intent]
+
+    P4 --> D1{Intent loại nào?}
+
+    D1 -->|Tra cứu<br/>thông tin tĩnh| R1[RAG: Vector Search<br/>trong SafeExchange docs]
+    R1 --> R2[Lấy top-k chunks<br/>có điểm tương đồng cao]
+    R2 --> M1[Ghép context + query<br/>→ LLM tổng hợp]
+
+    D1 -->|Tra cứu<br/>trạng thái trade| T1[Gọi SafeExchange API<br/>GET /trades/id]
+    T1 --> T2[Gọi smart contract<br/>read trades struct]
+    T2 --> M1
+
+    D1 -->|Thao tác<br/>on-chain<br/>deposit/arm/release| O1[Xác minh điều kiện:<br/>wallet connected?<br/>đúng role?]
+    O1 --> O2{Điều kiện<br/>đủ?}
+    O2 -->|Không| O3[Trả lỗi + hướng dẫn<br/>sửa]
+    O3 --> END
+    O2 -->|Có| O4[Tạo tx payload<br/>trả về UI]
+    O4 --> O5[User ký tx<br/>bằng MetaMask]
+    O5 --> O6[Polling tx receipt]
+    O6 --> O7[Cập nhật trạng thái<br/>qua API]
+    O7 --> M1
+
+    D1 -->|Cảnh báo<br/>bảo mật| S1[Truy Safe Watcher<br/>lấy alert history]
+    S1 --> M1
+
+    M1 --> M2[LLM sinh câu trả lời NL]
+    M2 --> M3[Lưu turn vào memory]
+    M3 --> M4[Chat Output<br/>trả về UI]
+    M4 --> END([Kết thúc turn])
+
+    style Start fill:#D5E8F0
+    style END fill:#C6E0B4
+    style O3 fill:#F8CBAD
+    style D1 fill:#FFE699
+    style O2 fill:#FFE699

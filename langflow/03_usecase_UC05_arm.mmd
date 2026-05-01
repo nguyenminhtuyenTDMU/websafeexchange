@@ -1,0 +1,38 @@
+%% Phân rã Use Case UC05 – Kích hoạt trade (Arm)
+
+flowchart LR
+    Seller((Seller))
+
+    subgraph System[Chatbot Langflow – Arming Flow]
+        UC05(["UC05<br/>Kích hoạt trade"])
+        A1(["UC05.1<br/>Xác minh quyền sở hữu<br/>Safe (isOwner)"])
+        A2(["UC05.2<br/>Chụp nonce snapshot<br/>của Safe hiện tại"])
+        A3(["UC05.3<br/>Hướng dẫn gọi hàm<br/>armTrade() on-chain"])
+        A4(["UC05.4<br/>Lưu snapshot<br/>vào off-chain DB"])
+        A5(["UC05.5<br/>Cập nhật trạng thái<br/>LISTED → ARMED"])
+        UC03(["UC03<br/>Kết nối ví"])
+
+        EX4(["UC-EX4<br/>Không phải owner<br/>của Safe"])
+        EX5(["UC-EX5<br/>Nonce thay đổi<br/>giữa verify và ký"])
+    end
+
+    Seller --- UC05
+
+    UC05 -.->|include| UC03
+    UC05 -.->|include| A1
+    UC05 -.->|include| A2
+    UC05 -.->|include| A3
+    UC05 -.->|include| A4
+    UC05 -.->|include| A5
+
+    EX4 -.->|extend| A1
+    EX5 -.->|extend| A3
+
+    classDef actor fill:#FFE699,stroke:#BF8F00,stroke-width:2px
+    classDef usecase fill:#D5E8F0,stroke:#2E75B6,stroke-width:1.5px
+    classDef uc_include fill:#FFE699,stroke:#BF8F00,stroke-width:1.5px
+    classDef uc_ex fill:#F8CBAD,stroke:#C00000,stroke-width:1.5px
+    class Seller actor
+    class UC05,A1,A2,A3,A4,A5 usecase
+    class UC03 uc_include
+    class EX4,EX5 uc_ex

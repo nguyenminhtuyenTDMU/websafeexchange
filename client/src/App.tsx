@@ -18,7 +18,9 @@ import Dashboard from "@/pages/dashboard";
 import Forum from "@/pages/forum";
 import ForumPost from "@/pages/forum-post";
 import NotFound from "@/pages/not-found";
+import Assistant from "@/pages/assistant";
 import { UserProfileDialog } from "@/components/user-profile-dialog";
+import { ChatWidget } from "@/components/chat-widget";
 
 function Router() {
   return (
@@ -32,6 +34,7 @@ function Router() {
         <Route path="/dashboard" component={Dashboard} />
         <Route path="/forum" component={Forum} />
         <Route path="/forum/:id" component={ForumPost} />
+        <Route path="/assistant" component={Assistant} />
         <Route component={NotFound} />
       </Switch>
     </Layout>
@@ -48,6 +51,7 @@ function App() {
               <Toaster />
               <Router />
               <UserProfileDialog />
+              <ChatWidget />
             </WebSocketProvider>
           </TooltipProvider>
         </ThemeProvider>
