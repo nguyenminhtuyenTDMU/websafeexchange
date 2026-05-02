@@ -6,7 +6,9 @@ export type UiActionType =
   | "sign_release"
   | "sign_cancel"
   | "connect_wallet"
-  | "view_trade";
+  | "view_trade"
+  | "create_trade"
+  | "join_trade";
 
 export interface UiAction {
   type: UiActionType;

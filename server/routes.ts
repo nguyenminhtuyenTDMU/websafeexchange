@@ -627,27 +627,38 @@ export async function registerRoutes(
     }
 
     try {
-      const endpoint = `${langflowUrl}/api/v1/run/${flowId}`;
+      const langflowBaseUrl = langflowUrl.replace(/\/+$/, "").replace(/\/api$/, "");
+      const endpoint = `${langflowBaseUrl}/api/v1/run/${encodeURIComponent(flowId)}`;
+      const chatInputId = process.env.LANGFLOW_CHAT_INPUT_ID || "ChatInput-X7ksH";
+      const promptTemplateId = process.env.LANGFLOW_PROMPT_TEMPLATE_ID || "Prompt Template-qQZvx";
+      const runSessionId = typeof sessionId === "string" && sessionId.trim()
+        ? sessionId.trim()
+        : "default";
       const payload = {
         input_value: message,
-        session_id: sessionId ?? "default",
+        session_id: runSessionId,
         input_type: "chat",
         output_type: "chat",
-        tweaks: walletAddress
-          ? { "ChatInput-0": { wallet_address: walletAddress } }
-          : undefined,
+        tweaks: {
+          [chatInputId]: {
+            session_id: runSessionId,
+          },
+          [promptTemplateId]: {
+            wallet_address: walletAddress || "not_connected",
+            session_id: runSessionId,
+          },
+        },
       };
 
       const upstream = await fetch(endpoint, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          ...(process.env.LANGFLOW_API_KEY
-            ? { Authorization: `Bearer ${process.env.LANGFLOW_API_KEY}` }
-            : {}),
+          Accept: "application/json",
+          ...(process.env.LANGFLOW_API_KEY ? { "x-api-key": process.env.LANGFLOW_API_KEY } : {}),
         },
         body: JSON.stringify(payload),
-        signal: AbortSignal.timeout(30_000),
+        signal: AbortSignal.timeout(90_000),
       });
 
       if (!upstream.ok) {
@@ -667,12 +678,13 @@ export async function registerRoutes(
 
       // Extract text from Langflow's nested response
       const out = raw?.outputs?.[0]?.outputs?.[0];
-      const rawText =
+      const rawText = (
         out?.results?.message?.text ||
         out?.results?.message?.data?.text ||
         out?.messages?.[0]?.message ||
         out?.messages?.[0]?.text ||
-        "";
+        ""
+      ).replace(/<think>[\s\S]*?<\/think>/gi, "").trim();
 
       // Try to parse structured JSON the agent might emit
       let message_text = rawText;
@@ -690,7 +702,7 @@ export async function registerRoutes(
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : String(err);
       if (msg.includes("TimeoutError") || msg.includes("abort")) {
-        return res.status(504).json({ message: "Trợ lý phản hồi quá chậm. Thử lại sau." });
+        return res.status(504).json({ message: "Trợ lý phản hồi quá chậm (>90s). Vui lòng thử lại." });
       }
       console.error("[chat] unexpected error:", err);
       res.status(500).json({ message: "Lỗi kết nối tới trợ lý." });
@@ -735,13 +747,13 @@ export async function registerRoutes(
       const alertFlowId = process.env.LANGFLOW_ALERT_FLOW_ID;
       const langflowUrl = process.env.LANGFLOW_API_URL;
       if (langflowUrl && alertFlowId) {
-        fetch(`${langflowUrl}/api/v1/run/${alertFlowId}`, {
+        const langflowBaseUrl = langflowUrl.replace(/\/+$/, "").replace(/\/api$/, "");
+        fetch(`${langflowBaseUrl}/api/v1/run/${encodeURIComponent(alertFlowId)}`, {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
-            ...(process.env.LANGFLOW_API_KEY
-              ? { Authorization: `Bearer ${process.env.LANGFLOW_API_KEY}` }
-              : {}),
+            Accept: "application/json",
+            ...(process.env.LANGFLOW_API_KEY ? { "x-api-key": process.env.LANGFLOW_API_KEY } : {}),
           },
           body: JSON.stringify({
             input_value: JSON.stringify({ tradeId, snapshot, current, type, buyerAddress: trade.buyerAddress }),

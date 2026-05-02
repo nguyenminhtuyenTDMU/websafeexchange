@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useAccount, useWriteContract, usePublicClient, useChainId, useSwitchChain, useSignMessage } from "wagmi";
 import { parseEther } from "viem";
 import { buildAuthPayload } from "@/lib/web3-auth";
@@ -68,6 +68,9 @@ export default function Buy() {
     if (typeof window === "undefined") return null;
     return new URLSearchParams(window.location.search).get("tradeId") || null;
   });
+  const pendingUiActionRef = useRef<string | null>(
+    typeof window === "undefined" ? null : new URLSearchParams(window.location.search).get("action")
+  );
 
   const form = useForm<SearchFormValues>({
     resolver: zodResolver(searchFormSchema),
@@ -332,6 +335,55 @@ export default function Buy() {
       toast({ variant: "destructive", title: "Lỗi hủy timeout", description: error.message });
     },
   });
+
+  useEffect(() => {
+    const action = pendingUiActionRef.current;
+    const currentTrade = trade || foundTrade;
+    if (!action || !currentTrade || isWrongNetwork) return;
+
+    if (action === "join_trade" && currentTrade.status === "LISTED" && !joinTradeMutation.isPending) {
+      pendingUiActionRef.current = null;
+      joinTradeMutation.mutate();
+    }
+
+    if (action === "sign_deposit" && currentTrade.status === "ARMED" && !depositMutation.isPending) {
+      pendingUiActionRef.current = null;
+      depositMutation.mutate();
+    }
+
+    if (action === "sign_release" && currentTrade.status === "FUNDED" && !releaseFundsMutation.isPending) {
+      pendingUiActionRef.current = null;
+      releaseFundsMutation.mutate();
+    }
+
+    if (
+      action === "sign_cancel" &&
+      !buyerCancelMutation.isPending &&
+      !unjoinMutation.isPending &&
+      !cancelTimeoutMutation.isPending
+    ) {
+      pendingUiActionRef.current = null;
+      if (currentTrade.status === "JOINED") {
+        unjoinMutation.mutate();
+      } else if (currentTrade.status === "ARMED" || currentTrade.status === "FUNDED") {
+        if (new Date(currentTrade.deadline) < new Date()) {
+          cancelTimeoutMutation.mutate();
+        } else {
+          buyerCancelMutation.mutate();
+        }
+      }
+    }
+  }, [
+    trade,
+    foundTrade,
+    isWrongNetwork,
+    joinTradeMutation,
+    depositMutation,
+    releaseFundsMutation,
+    buyerCancelMutation,
+    unjoinMutation,
+    cancelTimeoutMutation,
+  ]);
 
   if (!isConnected) {
     return (
