@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from "react";
-import { useAccount } from "wagmi";
+import { useAccount, useConnect } from "wagmi";
 import { MessageCircle, X, Send, Loader2, Bot, RotateCcw, ExternalLink } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -18,6 +18,8 @@ const ACTION_LABELS: Record<string, string> = {
   sign_cancel: "❌ Hủy trade",
   connect_wallet: "🔗 Kết nối ví",
   view_trade: "🔍 Xem trade",
+  create_trade: "🆕 Tạo trade bán",
+  join_trade: "🛒 Tham gia mua",
 };
 
 const ACTION_VARIANTS: Record<string, "default" | "destructive" | "outline" | "secondary"> = {
@@ -27,6 +29,8 @@ const ACTION_VARIANTS: Record<string, "default" | "destructive" | "outline" | "s
   sign_cancel: "destructive",
   connect_wallet: "outline",
   view_trade: "secondary",
+  create_trade: "default",
+  join_trade: "default",
 };
 
 interface UiActionRendererProps {
@@ -36,39 +40,86 @@ interface UiActionRendererProps {
 
 function UiActionRenderer({ action, onDone }: UiActionRendererProps) {
   const [, navigate] = useLocation();
+  const { isConnected } = useAccount();
+  const { connectAsync, connectors } = useConnect();
   const [pending, setPending] = useState(false);
 
   const handleClick = async () => {
     setPending(true);
     try {
-      switch (action.type) {
-        case "connect_wallet":
-          navigate("/transfer");
-          onDone("Đã chuyển đến trang kết nối ví.");
-          break;
+      const tradeId = action.params?.tradeId;
+      const actor = String(action.params?.actor ?? action.params?.role ?? "").toLowerCase();
+      const openTrade = (side: "buy" | "sell", withAction = false) => {
+        const query = new URLSearchParams();
+        if (tradeId != null) query.set("tradeId", String(tradeId));
+        if (withAction) query.set("action", action.type);
+        navigate(`/transfer/${side}${query.toString() ? `?${query.toString()}` : ""}`);
+      };
 
-        case "view_trade":
-          if (action.params?.tradeId) {
-            navigate(`/transfer/buy?trade=${action.params.tradeId}`);
-            onDone(`Đã mở trade #${action.params.tradeId}.`);
-          }
-          break;
-
-        case "sign_deposit":
-        case "sign_arm":
-        case "sign_release":
-        case "sign_cancel": {
-          // Trigger MetaMask via window.ethereum — actual tx construction
-          // is handled by the respective page. Here we navigate + pass params.
-          const tradeId = action.params?.tradeId;
-          const targetPath = action.type === "sign_deposit" || action.type === "sign_release"
-            ? `/transfer/buy?trade=${tradeId}&action=${action.type}`
-            : `/transfer/sell?trade=${tradeId}&action=${action.type}`;
-          navigate(targetPath);
-          onDone(`Đã chuyển đến trang giao dịch cho trade #${tradeId}.`);
-          break;
+      if (action.type === "connect_wallet") {
+        if (!isConnected) {
+          const connector = connectors[0];
+          if (!connector) throw new Error("No wallet connector is available");
+          await connectAsync({ connector });
         }
+        onDone("Wallet connected.");
+        return;
       }
+
+      if (action.type === "view_trade") {
+        openTrade(actor === "seller" ? "sell" : "buy");
+        onDone(tradeId ? `Opened trade #${tradeId}.` : "Opened trade page.");
+        return;
+      }
+
+      if (action.type === "sign_deposit") {
+        openTrade("buy", true);
+        onDone(tradeId ? `Opened MetaMask action for trade #${tradeId}.` : "Opened MetaMask action.");
+        return;
+      }
+
+      if (action.type === "sign_arm") {
+        openTrade("sell", true);
+        onDone(tradeId ? `Opened MetaMask action for trade #${tradeId}.` : "Opened MetaMask action.");
+        return;
+      }
+
+      if (action.type === "sign_release") {
+        openTrade(actor === "buyer" ? "buy" : "sell", true);
+        onDone(tradeId ? `Opened MetaMask action for trade #${tradeId}.` : "Opened MetaMask action.");
+        return;
+      }
+
+      if (action.type === "sign_cancel") {
+        openTrade(actor === "buyer" ? "buy" : "sell", true);
+        onDone(tradeId ? `Opened cancel action for trade #${tradeId}.` : "Opened cancel action.");
+        return;
+      }
+
+      if (action.type === "create_trade") {
+        const query = new URLSearchParams();
+        if (action.params?.safeAddress) query.set("safeAddress", String(action.params.safeAddress));
+        if (action.params?.priceEth) query.set("priceEth", String(action.params.priceEth));
+        // Auto-trigger MetaMask signing when bot has all required params
+        if (action.params?.safeAddress && action.params?.priceEth) {
+          query.set("action", "create_trade");
+        }
+        navigate(`/transfer/sell${query.toString() ? `?${query.toString()}` : ""}`);
+        onDone("Opened create trade page.");
+        return;
+      }
+
+      if (action.type === "join_trade") {
+        const query = new URLSearchParams();
+        if (tradeId != null) query.set("tradeId", String(tradeId));
+        query.set("action", "join_trade");
+        navigate(`/transfer/buy${query.toString() ? `?${query.toString()}` : ""}`);
+        onDone(tradeId ? `Opened trade #${tradeId} to join.` : "Opened buy page.");
+        return;
+      }
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Action failed.";
+      onDone(message);
     } finally {
       setPending(false);
     }
@@ -156,9 +207,10 @@ export function ChatPanel({ onClose }: ChatPanelProps) {
   };
 
   const SUGGESTIONS = [
-    "SafeExchange hoạt động như thế nào?",
-    "Xem trạng thái trade của tôi",
-    "Cách ký quỹ ETH?",
+    "Trade nào đang mở bán?",
+    "Trade của tôi đang ở bước nào?",
+    "Tôi muốn bán Safe của tôi",
+    "Tôi muốn mua một Safe",
   ];
 
   return (
@@ -230,8 +282,9 @@ export function ChatPanel({ onClose }: ChatPanelProps) {
                 <div className="w-7 h-7 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
                   <Bot className="h-4 w-4 text-primary" />
                 </div>
-                <div className="bg-muted rounded-2xl rounded-tl-sm px-4 py-3">
+                <div className="bg-muted rounded-2xl rounded-tl-sm px-4 py-3 flex flex-col gap-1">
                   <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+                  <span className="text-xs text-muted-foreground">Đang tra cứu dữ liệu...</span>
                 </div>
               </div>
             )}

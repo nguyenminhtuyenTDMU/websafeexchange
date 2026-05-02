@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useAccount, useWriteContract, usePublicClient, useChainId, useSwitchChain, useSignMessage } from "wagmi";
 import { parseEther, keccak256, encodeAbiParameters, parseAbiParameters } from "viem";
 import { buildAuthPayload } from "@/lib/web3-auth";
@@ -71,6 +71,9 @@ export default function Sell() {
     if (typeof window === "undefined") return null;
     return new URLSearchParams(window.location.search).get("tradeId") || null;
   });
+  const pendingUiActionRef = useRef<string | null>(
+    typeof window === "undefined" ? null : new URLSearchParams(window.location.search).get("action")
+  );
   const [safeInfo, setSafeInfo] = useState<SafeInfo | null>(null);
   const [isCheckingSafe, setIsCheckingSafe] = useState(false);
   const [isSwappingOwner, setIsSwappingOwner] = useState(false);
@@ -91,9 +94,17 @@ export default function Sell() {
     localStorage.setItem(`sel_trade_${address}`, createdTradeId);
   }, [createdTradeId, address]);
 
+  const searchParams = typeof window !== "undefined"
+    ? new URLSearchParams(window.location.search)
+    : new URLSearchParams();
+
   const form = useForm<SellFormValues>({
     resolver: zodResolver(sellFormSchema),
-    defaultValues: { safeAddress: "", priceEth: "", deadlineMinutes: "1440" },
+    defaultValues: {
+      safeAddress: searchParams.get("safeAddress") ?? "",
+      priceEth: searchParams.get("priceEth") ?? "",
+      deadlineMinutes: "1440",
+    },
   });
 
   const { data: trade, isLoading: isLoadingTrade } = useQuery<Trade>({
@@ -101,6 +112,16 @@ export default function Sell() {
     enabled: !!createdTradeId,
     refetchInterval: 5000,
   });
+
+  // Auto-submit when navigated from chat with action=create_trade and pre-filled params
+  useEffect(() => {
+    if (pendingUiActionRef.current !== "create_trade" || createdTradeId) return;
+    const { safeAddress: sa, priceEth: pe } = form.getValues();
+    if (!sa || !pe) return;
+    pendingUiActionRef.current = null;
+    form.handleSubmit((v) => createTradeMutation.mutate(v))();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // Clear localStorage on terminal state (after trade is declared)
   useEffect(() => {
@@ -360,6 +381,40 @@ export default function Sell() {
   });
 
   // ── Safe info auto-check ───────────────────────────────────────────────────
+  useEffect(() => {
+    const action = pendingUiActionRef.current;
+    if (!action || !trade || isWrongNetwork) return;
+
+    if (action === "sign_arm" && trade.status === "JOINED" && !armTradeMutation.isPending) {
+      pendingUiActionRef.current = null;
+      armTradeMutation.mutate();
+    }
+
+    if (action === "sign_release" && trade.status === "FUNDED" && !isSwappingOwner) {
+      pendingUiActionRef.current = null;
+      void handleTransferAndRelease();
+    }
+
+    if (action === "sign_cancel" && !sellerCancelMutation.isPending && !cancelTimeoutMutation.isPending) {
+      pendingUiActionRef.current = null;
+      if (
+        (trade.status === "ARMED" || trade.status === "FUNDED") &&
+        new Date(trade.deadline) < new Date()
+      ) {
+        cancelTimeoutMutation.mutate();
+      } else {
+        sellerCancelMutation.mutate();
+      }
+    }
+  }, [
+    trade,
+    isWrongNetwork,
+    armTradeMutation,
+    sellerCancelMutation,
+    cancelTimeoutMutation,
+    isSwappingOwner,
+  ]);
+
   const checkSafeInfo = async (safeAddress: string) => {
     if (!safeAddress || !/^0x[a-fA-F0-9]{40}$/.test(safeAddress)) return;
     setIsCheckingSafe(true);
