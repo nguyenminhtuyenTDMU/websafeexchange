@@ -1,0 +1,90 @@
+%% WebSafeExchange - Sequence diagram rieng cho Seller
+sequenceDiagram
+    autonumber
+    actor Seller
+    participant SellUI as Sell Page
+    participant Wallet as Web3 Wallet
+    participant API as Express API
+    participant Auth as Auth Service
+    participant DB as PostgreSQL/Drizzle
+    participant Escrow as Escrow Contract
+    participant Safe as Gnosis Safe
+    participant WS as EventBroadcaster
+    participant Watcher as Safe Watcher
+
+    Seller->>SellUI: Ket noi vi va mo trang Ban Safe
+    SellUI->>Safe: Lay Safe info(owner, threshold, nonce)
+    Safe-->>SellUI: Thong tin Safe
+    Seller->>SellUI: Nhap safeAddress, priceEth, deadline
+    SellUI->>Wallet: Ky message create-trade
+    Wallet-->>SellUI: signature, signedMessage
+
+    SellUI->>API: POST /api/trades
+    API->>Auth: requireSignature(sellerAddress, create-trade, safeAddress)
+    Auth-->>API: hop le
+    API->>DB: getTradeBySafeAddress(safeAddress)
+    DB-->>API: khong co trade active
+    API->>DB: createTrade(status=LISTED)
+    API->>DB: createLog(TRADE_EVENT)
+    API->>WS: broadcastNewTrade(trade)
+    API-->>SellUI: trade LISTED
+
+    WS-->>SellUI: trade_update JOINED khi buyer tham gia
+    SellUI->>API: GET /api/trades/:id
+    API->>DB: getTrade(id)
+    DB-->>API: trade JOINED + buyerAddress
+    API-->>SellUI: trade
+
+    Seller->>SellUI: Bam kich hoat giao dich
+    SellUI->>Escrow: simulate armTrade(safe,buyer,amount,deadline)
+    Escrow-->>SellUI: simulation ok
+    SellUI->>Escrow: armTrade(safe,buyer,amount,deadline)
+    Escrow->>Safe: isOwner(seller)
+    Safe-->>Escrow: true
+    Escrow->>Safe: nonce()
+    Safe-->>Escrow: snapshotNonce
+    Escrow-->>SellUI: tx receipt + TradeArmed
+
+    SellUI->>Escrow: read trades(onchainTradeId)
+    Escrow-->>SellUI: snapshotNonce
+    SellUI->>API: POST /api/trades/:id/arm
+    API->>DB: updateTrade(status=ARMED,onchainTradeId,snapshotNonce)
+    API->>DB: createLog(TRADE_EVENT)
+    API->>WS: broadcastTradeUpdate(ARMED)
+    API->>Watcher: onTradeArmed(safeAddress)
+    Watcher->>Safe: subscribe ExecutionSuccess
+    API-->>SellUI: trade ARMED
+
+    WS-->>SellUI: trade_update FUNDED khi buyer deposit
+    Seller->>SellUI: Chuyen owner va nhan ETH
+    SellUI->>Safe: swapOwner(seller,buyer)
+    Safe-->>SellUI: owner da chuyen
+    SellUI->>Escrow: releaseFunds(onchainTradeId)
+    Escrow->>Safe: isOwner(buyer)
+    Safe-->>Escrow: true
+    Escrow->>Safe: isOwner(seller)
+    Safe-->>Escrow: false
+    Escrow-->>Seller: transfer ETH
+    Escrow-->>SellUI: TradeCompleted
+
+    SellUI->>API: POST /api/trades/:id/complete
+    API->>DB: updateTrade(status=COMPLETED)
+    API->>DB: createLog(TRADE_EVENT)
+    API->>WS: broadcastTradeUpdate(COMPLETED)
+    API->>WS: sendToParticipants
+    API->>Watcher: clearTradeNotifyCache(tradeId)
+    API-->>SellUI: trade COMPLETED
+
+    opt Seller huy giao dich
+        Seller->>SellUI: Chon huy
+        alt LISTED hoac JOINED
+            SellUI->>API: POST /api/trades/:id/cancel
+        else ARMED hoac FUNDED
+            SellUI->>Escrow: sellerCancel(onchainTradeId)
+            Escrow-->>SellUI: TradeCancelled
+            SellUI->>API: POST /api/trades/:id/cancel
+        end
+        API->>DB: updateTrade(status=CANCELLED)
+        API->>WS: broadcastTradeUpdate(CANCELLED)
+        API-->>SellUI: trade CANCELLED
+    end

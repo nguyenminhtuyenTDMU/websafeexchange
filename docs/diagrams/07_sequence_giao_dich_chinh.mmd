@@ -1,0 +1,69 @@
+%% WebSafeExchange - Sequence diagram tao, join, arm, deposit, complete
+sequenceDiagram
+    autonumber
+    actor Seller
+    actor Buyer
+    participant SellUI as Sell Page
+    participant BuyUI as Buy Page
+    participant API as Express API
+    participant DB as PostgreSQL/Drizzle
+    participant Escrow as SafeExchangeEscrow
+    participant Safe as Gnosis Safe
+    participant WS as EventBroadcaster
+    participant Watcher as Safe Watcher
+
+    Seller->>SellUI: Nhap Safe, gia, deadline
+    SellUI->>Seller: Yeu cau ky create-trade
+    Seller-->>SellUI: signature, signedMessage
+    SellUI->>API: POST /api/trades
+    API->>API: validateEthAddress + requireSignature
+    API->>DB: createTrade(status=LISTED)
+    API->>DB: createLog(TRADE_EVENT)
+    API->>WS: broadcastNewTrade
+    API-->>SellUI: trade
+
+    Buyer->>BuyUI: Tim tradeId/safeAddress
+    BuyUI->>API: GET /api/trades/search?q=...
+    API->>DB: getTrade/getTradeBySafeAddress
+    API-->>BuyUI: trade LISTED
+    Buyer->>BuyUI: Xac nhan tham gia
+    BuyUI->>Buyer: Yeu cau ky join-trade
+    Buyer-->>BuyUI: signature, signedMessage
+    BuyUI->>API: POST /api/trades/:id/join
+    API->>API: requireSignature va check seller != buyer
+    API->>DB: updateTrade(buyerAddress,status=JOINED)
+    API->>DB: createLog(TRADE_EVENT)
+    API->>WS: broadcastTradeUpdate(JOINED)
+    API->>WS: sendToWallet(seller)
+    API-->>BuyUI: updated trade
+
+    Seller->>SellUI: Kich hoat
+    SellUI->>Escrow: simulate armTrade
+    SellUI->>Escrow: armTrade(safe,buyer,amount,deadline)
+    Escrow->>Safe: nonce()
+    Escrow-->>SellUI: TradeArmed(onchainTradeId,snapshotNonce)
+    SellUI->>API: POST /api/trades/:id/arm
+    API->>DB: updateTrade(status=ARMED,onchainTradeId,snapshotNonce)
+    API->>WS: broadcastTradeUpdate(ARMED)
+    API->>Watcher: onTradeArmed(safeAddress)
+    Watcher->>Safe: subscribe ExecutionSuccess
+
+    Buyer->>BuyUI: Gui ky quy
+    BuyUI->>Escrow: deposit(onchainTradeId) + ETH
+    Escrow-->>BuyUI: TradeFunded
+    BuyUI->>API: POST /api/trades/:id/deposit
+    API->>DB: updateTrade(status=FUNDED)
+    API->>WS: broadcastTradeUpdate(FUNDED)
+
+    Seller->>SellUI: Chuyen owner va nhan ETH
+    SellUI->>Safe: swapOwner(seller,buyer)
+    SellUI->>Escrow: releaseFunds(onchainTradeId)
+    Escrow->>Safe: isOwner(buyer)
+    Escrow->>Safe: isOwner(seller)
+    Escrow-->>Seller: transfer ETH
+    Escrow-->>SellUI: TradeCompleted
+    SellUI->>API: POST /api/trades/:id/complete
+    API->>DB: updateTrade(status=COMPLETED)
+    API->>DB: createLog(TRADE_EVENT)
+    API->>WS: broadcastTradeUpdate(COMPLETED)
+    API->>WS: sendToParticipants

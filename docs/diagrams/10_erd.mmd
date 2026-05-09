@@ -1,0 +1,65 @@
+%% WebSafeExchange - ERD logic tu shared/schema.ts
+erDiagram
+    USERS {
+        varchar id PK
+        text wallet_address UK
+        text display_name
+        timestamp created_at
+    }
+
+    TRADES {
+        varchar id PK
+        text safe_address
+        text seller_address
+        text buyer_address
+        decimal price_eth
+        timestamp deadline
+        text onchain_trade_id
+        text snapshot_nonce
+        trade_status status
+        timestamp created_at
+        timestamp updated_at
+    }
+
+    SYSTEM_LOGS {
+        varchar id PK
+        log_type type
+        text message
+        varchar related_trade_id FK
+        text metadata
+        timestamp created_at
+    }
+
+    FORUM_POSTS {
+        varchar id PK
+        forum_post_type type
+        text title
+        text question
+        text content
+        text tags
+        text author_alias
+        text author_address
+        text contact
+        decimal budget_eth
+        boolean is_pinned
+        timestamp created_at
+        timestamp updated_at
+    }
+
+    FORUM_COMMENTS {
+        varchar id PK
+        varchar post_id FK
+        varchar parent_id
+        text content
+        text author_alias
+        text author_address
+        text anon_id
+        timestamp created_at
+    }
+
+    TRADES ||--o{ SYSTEM_LOGS : "related_trade_id"
+    FORUM_POSTS ||--o{ FORUM_COMMENTS : "post_id"
+    USERS ||--o{ TRADES : "logical seller wallet"
+    USERS ||--o{ TRADES : "logical buyer wallet"
+    USERS ||--o{ FORUM_POSTS : "logical author wallet"
+    USERS ||--o{ FORUM_COMMENTS : "logical author wallet"

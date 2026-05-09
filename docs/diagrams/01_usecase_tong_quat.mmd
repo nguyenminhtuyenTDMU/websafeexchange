@@ -1,0 +1,46 @@
+%% WebSafeExchange - Use case tong quat
+%% Actor tong quat theo yeu cau: khong tach Seller/Buyer, chi ve User.
+flowchart LR
+    User((User))
+
+    subgraph System["WebSafeExchange"]
+        UC1["Ket noi vi Web3"]
+        UC2["Quan ly ho so vi"]
+        UC3["Dang ban Safe wallet"]
+        UC4["Tim va tham gia giao dich"]
+        UC5["Thuc hien ky quy escrow"]
+        UC6["Chuyen quyen so huu Safe"]
+        UC7["Hoan tat va giai ngan"]
+        UC8["Huy giao dich / hoan tien"]
+        UC9["Theo doi trang thai real-time"]
+        UC10["Kiem tra minh bach Safe"]
+        UC11["Xem lich su giao dich"]
+        UC12["Trao doi tren dien dan"]
+        UC13["Xem huong dan / phap ly"]
+    end
+
+    User --> UC1
+    User --> UC2
+    User --> UC3
+    User --> UC4
+    User --> UC5
+    User --> UC6
+    User --> UC7
+    User --> UC8
+    User --> UC9
+    User --> UC10
+    User --> UC11
+    User --> UC12
+    User --> UC13
+
+    UC3 -. include .-> UC1
+    UC4 -. include .-> UC1
+    UC5 -. include .-> UC1
+    UC6 -. include .-> UC1
+    UC7 -. include .-> UC1
+    UC2 -. include .-> UC1
+
+    UC3 -. include .-> UC9
+    UC4 -. include .-> UC10
+    UC7 -. include .-> UC9
+    UC8 -. extend .-> UC7
