@@ -1,0 +1,68 @@
+%% WebSafeExchange - Use case phan ra cho minh bach, dien dan, ho so, realtime
+flowchart LR
+    Seller((Seller))
+    Buyer((Buyer))
+    Guest((Guest))
+    Wallet((Web3 Wallet))
+    SafeApi((Safe Transaction API))
+    WSS((WebSocket))
+
+    subgraph Transparency["Minh bach Safe"]
+        T1["Nhap dia chi Safe va chainId"]
+        T2["Validate Ethereum address"]
+        T3["Lay owners, threshold, nonce, modules, guard"]
+        T4["Hien thi canh bao rui ro"]
+    end
+
+    subgraph Profile["Ho so nguoi dung"]
+        P1["Lay profile theo wallet"]
+        P2["Tu tao user neu chua co"]
+        P3["Cap nhat displayName"]
+        P4["Ky message update-profile"]
+    end
+
+    subgraph Forum["Dien dan cong dong"]
+        F1["Xem danh sach bai viet"]
+        F2["Loc theo SELL / BUY_REQUEST / DISCUSSION / QA / PINNED"]
+        F3["Dang bai viet"]
+        F4["Xem chi tiet bai viet"]
+        F5["Dang binh luan / phan hoi"]
+        F6["Validate dia chi tac gia va gioi han spam"]
+    end
+
+    subgraph Notify["Thong bao real-time"]
+        N1["Dang ky WebSocket theo wallet"]
+        N2["Nhan trade_update"]
+        N3["Nhan notification ca nhan"]
+        N4["Nhan canh bao suspicious activity"]
+        N5["Nhan thong bao ownership transferred"]
+    end
+
+    Seller --> T1
+    Buyer --> T1
+    T1 --> T2 --> T3 --> T4
+    SafeApi --> T3
+
+    Seller --> P1
+    Buyer --> P1
+    P1 --> P2
+    Seller --> P3
+    Buyer --> P3
+    P3 -. include .-> P4
+    Wallet --> P4
+
+    Guest --> F1
+    Seller --> F3
+    Buyer --> F3
+    F1 --> F2
+    F1 --> F4
+    F4 --> F5
+    F3 -. include .-> F6
+    F5 -. include .-> F6
+
+    Seller --> N1
+    Buyer --> N1
+    WSS --> N2
+    WSS --> N3
+    N2 --> N4
+    N2 --> N5

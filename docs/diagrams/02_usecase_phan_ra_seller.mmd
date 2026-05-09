@@ -1,0 +1,105 @@
+%% WebSafeExchange - Use case phan ra giao dich cho Seller
+flowchart LR
+    Seller((Seller))
+    Wallet((Web3 Wallet))
+    API((Express API))
+    DB[(PostgreSQL)]
+    Chain((Escrow Contract))
+    Safe((Gnosis Safe))
+    WS((WebSocket))
+
+    subgraph SellerTrade["Seller - Quan ly ban Safe wallet"]
+        S1["Tao don ban Safe"]
+        S1_1["Nhap safeAddress"]
+        S1_2["Nhap gia ban ETH"]
+        S1_3["Nhap deadline"]
+        S1_4["Kiem tra thong tin Safe"]
+        S1_5["Ky message create-trade"]
+        S1_6["Luu trade LISTED"]
+        S1_7["Ghi log va broadcast listing moi"]
+
+        S2["Theo doi buyer tham gia"]
+        S2_1["Nhan thong bao JOINED"]
+        S2_2["Xem buyerAddress"]
+
+        S3["Kich hoat giao dich"]
+        S3_1["Simulate armTrade"]
+        S3_2["Goi armTrade tren escrow"]
+        S3_3["Doc onchainTradeId va snapshotNonce"]
+        S3_4["Sync backend sang ARMED"]
+        S3_5["Bat watcher theo doi Safe"]
+
+        S4["Cho buyer ky quy"]
+        S4_1["Nhan thong bao FUNDED"]
+        S4_2["Xem so ETH da ky quy"]
+
+        S5["Chuyen quyen so huu Safe"]
+        S5_1["Swap owner seller sang buyer bang Safe SDK"]
+        S5_2["Goi releaseFunds"]
+        S5_3["Contract verify buyer la owner"]
+        S5_4["Nhan ETH tu escrow"]
+        S5_5["Sync backend COMPLETED"]
+
+        S6["Huy giao dich"]
+        S6_1["Huy listing LISTED/JOINED tren server"]
+        S6_2["Goi sellerCancel khi ARMED/FUNDED"]
+        S6_3["Goi cancelTimeout khi qua deadline"]
+        S6_4["Sync backend CANCELLED"]
+    end
+
+    Seller --> S1
+    S1 -. include .-> S1_1
+    S1 -. include .-> S1_2
+    S1 -. include .-> S1_3
+    S1 -. include .-> S1_4
+    S1 -. include .-> S1_5
+    S1 -. include .-> S1_6
+    S1 -. include .-> S1_7
+    Wallet --> S1_5
+    Safe --> S1_4
+    API --> S1_6
+    DB --> S1_6
+    WS --> S1_7
+
+    Seller --> S2
+    S2 -. include .-> S2_1
+    S2 -. include .-> S2_2
+    WS --> S2_1
+
+    Seller --> S3
+    S3 -. include .-> S3_1
+    S3 -. include .-> S3_2
+    S3 -. include .-> S3_3
+    S3 -. include .-> S3_4
+    S3 -. include .-> S3_5
+    Chain --> S3_1
+    Chain --> S3_2
+    Chain --> S3_3
+    API --> S3_4
+    DB --> S3_4
+
+    Seller --> S4
+    S4 -. include .-> S4_1
+    S4 -. include .-> S4_2
+    WS --> S4_1
+
+    Seller --> S5
+    S5 -. include .-> S5_1
+    S5 -. include .-> S5_2
+    S5 -. include .-> S5_3
+    S5 -. include .-> S5_4
+    S5 -. include .-> S5_5
+    Safe --> S5_1
+    Chain --> S5_2
+    Chain --> S5_3
+    Chain --> S5_4
+    API --> S5_5
+
+    Seller --> S6
+    S6_1 -. extend .-> S6
+    S6_2 -. extend .-> S6
+    S6_3 -. extend .-> S6
+    S6 -. include .-> S6_4
+    Chain --> S6_2
+    Chain --> S6_3
+    API --> S6_4
