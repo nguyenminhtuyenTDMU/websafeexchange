@@ -81,7 +81,7 @@ const forumWriteLimiter = rateLimit({
 
 app.use("/api", generalLimiter);
 app.post("/api/trades", writeLimiter);          // chỉ giới hạn tạo trade mới
-app.use("/api/forum/posts", forumWriteLimiter); // POST forum
+app.post("/api/forum/posts", forumWriteLimiter); // chỉ POST, không áp cho GET
 
 // ─── Body parsing ──────────────────────────────────────────────────────────────
 

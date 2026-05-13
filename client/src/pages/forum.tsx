@@ -29,11 +29,15 @@ import {
   ChevronUp,
   X,
   MessageCircle,
+  ShieldCheck,
+  Loader2,
+  Wallet,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { useAccount } from "wagmi";
+import { useAccount, useSignMessage } from "wagmi";
 import { apiRequest } from "@/lib/queryClient";
 import { useDisplayName } from "@/components/user-profile-dialog";
+import { buildAuthPayload } from "@/lib/web3-auth";
 import type { ForumPost } from "@shared/schema";
 
 // ─── Config ───────────────────────────────────────────────────────────────────
@@ -82,19 +86,52 @@ function TagChip({ tag }: { tag: string }) {
   );
 }
 
+interface SafeSnapshot {
+  address: string;
+  owners: string[];
+  threshold: number;
+  nonce: number;
+  version?: string;
+  chainId?: number;
+  verifiedAt?: string;
+}
+
+function parseSafeSnapshot(raw: string | null | undefined): SafeSnapshot | null {
+  if (!raw) return null;
+  try { return JSON.parse(raw) as SafeSnapshot; }
+  catch { return null; }
+}
+
+function SafeVerifiedBadge({ snapshot }: { snapshot: SafeSnapshot }) {
+  return (
+    <span className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-semibold bg-emerald-500/15 text-emerald-700 dark:text-emerald-400">
+      <ShieldCheck className="h-3 w-3" />
+      Đã xác minh on-chain · {snapshot.threshold}/{snapshot.owners.length}
+    </span>
+  );
+}
+
 // ─── New-post dialog ──────────────────────────────────────────────────────────
 
 function NewPostDialog({ open, onClose }: { open: boolean; onClose: () => void }) {
   const { toast } = useToast();
   const { address } = useAccount();
+  const { signMessageAsync } = useSignMessage();
   const defaultName = useDisplayName();
   const queryClient = useQueryClient();
+
+  const REQUIRES_WALLET: PostType[] = ["SELL", "BUY_REQUEST"];
 
   const [type, setType] = useState<PostType>("DISCUSSION");
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
   const [tagInput, setTagInput] = useState("");
   const [tags, setTags] = useState<string[]>([]);
+  const [safeAddress, setSafeAddress] = useState("");
+  const [safeVerifying, setSafeVerifying] = useState(false);
+  const [safePreview, setSafePreview] = useState<SafeSnapshot | null>(null);
+  const [safeError, setSafeError] = useState("");
+  const [isSigning, setIsSigning] = useState(false);
 
   function reset() {
     setType("DISCUSSION");
@@ -102,6 +139,35 @@ function NewPostDialog({ open, onClose }: { open: boolean; onClose: () => void }
     setContent("");
     setTagInput("");
     setTags([]);
+    setSafeAddress("");
+    setSafePreview(null);
+    setSafeError("");
+    setIsSigning(false);
+  }
+
+  async function verifySafe() {
+    if (!safeAddress.trim()) return;
+    setSafeVerifying(true);
+    setSafePreview(null);
+    setSafeError("");
+    try {
+      const res = await fetch(`/api/safe-info?address=${encodeURIComponent(safeAddress.trim())}&chainId=11155111`);
+      if (!res.ok) { setSafeError("Không tìm thấy Safe này trên Sepolia"); return; }
+      const data = await res.json();
+      setSafePreview({
+        address: data.address,
+        owners: data.owners,
+        threshold: data.threshold,
+        nonce: data.nonce,
+        version: data.version,
+        chainId: 11155111,
+        verifiedAt: new Date().toISOString(),
+      });
+    } catch {
+      setSafeError("Lỗi khi xác minh, thử lại sau");
+    } finally {
+      setSafeVerifying(false);
+    }
   }
 
   function addTag() {
@@ -122,12 +188,36 @@ function NewPostDialog({ open, onClose }: { open: boolean; onClose: () => void }
     onError: () => toast({ title: "Đăng thất bại", variant: "destructive" }),
   });
 
-  function submit(e: React.FormEvent) {
+  async function submit(e: React.FormEvent) {
     e.preventDefault();
     if (!title.trim() || !content.trim()) {
       toast({ title: "Vui lòng điền tiêu đề và nội dung", variant: "destructive" });
       return;
     }
+    if (REQUIRES_WALLET.includes(type) && !address) {
+      toast({ title: "Kết nối ví để đăng bài SELL / BUY", variant: "destructive" });
+      return;
+    }
+
+    let auth = {};
+    if (REQUIRES_WALLET.includes(type) && address) {
+      try {
+        setIsSigning(true);
+        auth = await buildAuthPayload(signMessageAsync, "create-forum-post", type.toLowerCase());
+      } catch (err: any) {
+        setIsSigning(false);
+        const msg = err?.message || "";
+        if (msg.toLowerCase().includes("user rejected") || msg.toLowerCase().includes("denied")) {
+          toast({ title: "Bạn đã từ chối ký — bài chưa được đăng", variant: "destructive" });
+        } else {
+          toast({ title: `Lỗi ký: ${msg || "Không thể mở ví"}`, variant: "destructive" });
+        }
+        return;
+      } finally {
+        setIsSigning(false);
+      }
+    }
+
     mutation.mutate({
       type,
       title: title.trim(),
@@ -136,6 +226,8 @@ function NewPostDialog({ open, onClose }: { open: boolean; onClose: () => void }
       authorAlias: defaultName || "Ẩn danh",
       authorAddress: address ?? null,
       tags: tags.length ? JSON.stringify(tags) : null,
+      safeAddress: type === "SELL" && safeAddress.trim() ? safeAddress.trim() : null,
+      ...auth,
     });
   }
 
@@ -168,6 +260,20 @@ function NewPostDialog({ open, onClose }: { open: boolean; onClose: () => void }
               </SelectContent>
             </Select>
           </div>
+
+          {/* Wallet required notice */}
+          {REQUIRES_WALLET.includes(type) && (
+            <div className={`flex items-center gap-2 rounded-md px-3 py-2 text-xs ${
+              address
+                ? "bg-emerald-500/10 text-emerald-700 dark:text-emerald-400"
+                : "bg-amber-500/10 text-amber-700 dark:text-amber-400"
+            }`}>
+              <Wallet className="h-3.5 w-3.5 shrink-0" />
+              {address
+                ? <>Đăng với ví <span className="font-mono">{address.slice(0, 8)}…</span> — sẽ yêu cầu ký xác nhận</>
+                : "Loại bài này yêu cầu kết nối ví để xác minh danh tính"}
+            </div>
+          )}
 
           <div className="space-y-1">
             <Label htmlFor="pf-title">Tiêu đề *</Label>
@@ -225,12 +331,51 @@ function NewPostDialog({ open, onClose }: { open: boolean; onClose: () => void }
             )}
           </div>
 
+          {/* Safe address — only for SELL */}
+          {type === "SELL" && (
+            <div className="space-y-1">
+              <Label>Địa chỉ Safe <span className="text-muted-foreground font-normal">(tùy chọn — để xác minh on-chain)</span></Label>
+              <div className="flex gap-2">
+                <Input
+                  placeholder="0x..."
+                  value={safeAddress}
+                  onChange={(e) => { setSafeAddress(e.target.value); setSafePreview(null); setSafeError(""); }}
+                  className="font-mono text-sm"
+                />
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={verifySafe}
+                  disabled={safeVerifying || !safeAddress.trim()}
+                >
+                  {safeVerifying ? <Loader2 className="h-4 w-4 animate-spin" /> : "Xác minh"}
+                </Button>
+              </div>
+              {safeError && <p className="text-xs text-destructive">{safeError}</p>}
+              {safePreview && (
+                <div className="rounded-md border border-emerald-500/30 bg-emerald-500/5 px-3 py-2 space-y-1">
+                  <div className="flex items-center gap-1.5 text-xs font-semibold text-emerald-700 dark:text-emerald-400">
+                    <ShieldCheck className="h-3.5 w-3.5" /> Đã xác minh on-chain
+                  </div>
+                  <p className="text-xs text-muted-foreground font-mono">{safePreview.address}</p>
+                  <p className="text-xs text-muted-foreground">
+                    {safePreview.threshold}/{safePreview.owners.length} owners · nonce {safePreview.nonce}
+                    {safePreview.version && ` · v${safePreview.version}`}
+                  </p>
+                </div>
+              )}
+            </div>
+          )}
+
           <div className="flex justify-end gap-2 pt-1">
             <Button type="button" variant="outline" onClick={() => { reset(); onClose(); }}>
               Huỷ
             </Button>
-            <Button type="submit" disabled={mutation.isPending}>
-              {mutation.isPending ? "Đang đăng..." : "Đăng bài"}
+            <Button type="submit" disabled={mutation.isPending || isSigning}>
+              {isSigning
+                ? <><Loader2 className="h-4 w-4 mr-1 animate-spin" />Đang ký ví...</>
+                : mutation.isPending ? "Đang đăng..." : "Đăng bài"}
             </Button>
           </div>
         </form>
@@ -243,6 +388,7 @@ function NewPostDialog({ open, onClose }: { open: boolean; onClose: () => void }
 
 function PostCard({ post }: { post: ForumPost }) {
   const tags = parseTags(post.tags);
+  const safeSnap = parseSafeSnapshot(post.safeSnapshot);
   return (
     <Link href={`/forum/${post.id}`}>
       <Card className="hover:border-primary/50 transition-colors cursor-pointer">
@@ -256,6 +402,7 @@ function PostCard({ post }: { post: ForumPost }) {
                     <Pin className="h-3 w-3" /> Ghim
                   </span>
                 )}
+                {safeSnap && <SafeVerifiedBadge snapshot={safeSnap} />}
               </div>
               <p className="font-medium text-sm leading-snug line-clamp-2">
                 {post.title ?? post.question}

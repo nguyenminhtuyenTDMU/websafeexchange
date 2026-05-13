@@ -14,6 +14,7 @@ import Transfer from "@/pages/transfer/index";
 import Sell from "@/pages/transfer/sell";
 import Buy from "@/pages/transfer/buy";
 import WalletTransparency from "@/pages/wallet-transparency";
+import SafeControl from "@/pages/safe-control";
 import Dashboard from "@/pages/dashboard";
 import Forum from "@/pages/forum";
 import ForumPost from "@/pages/forum-post";
@@ -29,6 +30,7 @@ function Router() {
         <Route path="/transfer/sell" component={Sell} />
         <Route path="/transfer/buy" component={Buy} />
         <Route path="/wallet-transparency" component={WalletTransparency} />
+        <Route path="/safe-control" component={SafeControl} />
         <Route path="/dashboard" component={Dashboard} />
         <Route path="/forum" component={Forum} />
         <Route path="/forum/:id" component={ForumPost} />

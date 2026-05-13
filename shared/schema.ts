@@ -70,6 +70,8 @@ export const forumPosts = pgTable("forum_posts", {
   contact: text("contact"),
   budgetEth: decimal("budget_eth", { precision: 18, scale: 8 }),
   isPinned: boolean("is_pinned").default(false).notNull(),
+  safeAddress: text("safe_address"),           // for SELL posts: the Safe being listed
+  safeSnapshot: text("safe_snapshot"),         // JSON snapshot of on-chain Safe state at post time
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });

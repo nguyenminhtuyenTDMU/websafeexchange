@@ -30,6 +30,7 @@ export interface IStorage {
   getForumPosts(type?: ForumPostType): Promise<ForumPost[]>;
   getForumPost(id: string): Promise<ForumPost | undefined>;
   createForumPost(post: InsertForumPost): Promise<ForumPost>;
+  deleteForumPost(id: string): Promise<boolean>;
   seedForumPosts(): Promise<void>;
 
   getCommentsByPost(postId: string): Promise<ForumComment[]>;
@@ -165,6 +166,11 @@ export class DatabaseStorage implements IStorage {
   async createForumPost(post: InsertForumPost): Promise<ForumPost> {
     const [created] = await db.insert(forumPosts).values(post).returning();
     return created;
+  }
+
+  async deleteForumPost(id: string): Promise<boolean> {
+    const result = await db.delete(forumPosts).where(eq(forumPosts.id, id)).returning();
+    return result.length > 0;
   }
 
   async getCommentsByPost(postId: string): Promise<ForumComment[]> {
