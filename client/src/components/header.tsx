@@ -8,6 +8,7 @@ import { Menu, Shield } from "lucide-react";
 import { useState } from "react";
 
 const navItems = [
+  { href: "/safe-control", label: "Safe Control" },
   { href: "/transfer", label: "Chuyển nhượng" },
   { href: "/wallet-transparency", label: "Thông tin ví" },
   { href: "/forum", label: "Diễn đàn" },

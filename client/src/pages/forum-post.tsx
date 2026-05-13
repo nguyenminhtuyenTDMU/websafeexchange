@@ -1,20 +1,86 @@
 import { useState, useMemo } from "react";
 import { useRoute, Link } from "wouter";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { useAccount } from "wagmi";
+import { useAccount, useSignMessage } from "wagmi";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, Pin, MessageSquare, Clock, Send, CornerDownRight } from "lucide-react";
+import { ArrowLeft, Pin, MessageSquare, Clock, Send, CornerDownRight, ShieldCheck, Users, Key, Trash2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
+import { buildAuthPayload } from "@/lib/web3-auth";
 import { useAnonId, buildAnonColorMap, type AnonColorEntry } from "@/hooks/use-anon-id";
 import type { ForumPost, ForumComment } from "@shared/schema";
 
 type PostWithComments = ForumPost & { comments: ForumComment[] };
+
+interface SafeSnapshot {
+  address: string;
+  owners: string[];
+  threshold: number;
+  nonce: number;
+  version?: string;
+  chainId?: number;
+  verifiedAt?: string;
+}
+
+function SafeSnapshotPanel({ raw }: { raw: string }) {
+  let snap: SafeSnapshot | null = null;
+  try { snap = JSON.parse(raw); } catch { return null; }
+  if (!snap) return null;
+
+  return (
+    <Card className="border-emerald-500/40 bg-emerald-500/5">
+      <CardContent className="pt-4 pb-4 space-y-3">
+        <div className="flex items-center gap-2">
+          <ShieldCheck className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
+          <span className="text-sm font-semibold text-emerald-700 dark:text-emerald-400">
+            Đã xác minh on-chain
+          </span>
+          {snap.version && (
+            <Badge variant="outline" className="text-xs ml-auto">Safe v{snap.version}</Badge>
+          )}
+        </div>
+
+        <div className="grid grid-cols-2 gap-3 text-xs">
+          <div className="space-y-0.5">
+            <p className="text-muted-foreground flex items-center gap-1">
+              <Key className="h-3 w-3" /> Threshold
+            </p>
+            <p className="font-semibold text-base">{snap.threshold} / {snap.owners.length}</p>
+          </div>
+          <div className="space-y-0.5">
+            <p className="text-muted-foreground">Nonce</p>
+            <p className="font-mono">{snap.nonce}</p>
+          </div>
+        </div>
+
+        <div className="space-y-1">
+          <p className="text-xs text-muted-foreground flex items-center gap-1">
+            <Users className="h-3 w-3" /> Owners ({snap.owners.length})
+          </p>
+          <div className="space-y-1">
+            {snap.owners.map((o) => (
+              <p key={o} className="text-xs font-mono bg-background/60 rounded px-2 py-0.5 break-all">
+                {o}
+              </p>
+            ))}
+          </div>
+        </div>
+
+        {snap.verifiedAt && (
+          <p className="text-xs text-muted-foreground">
+            Snapshot lúc {new Date(snap.verifiedAt).toLocaleString("vi-VN")}
+            {snap.chainId === 11155111 && " · Sepolia"}
+          </p>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -392,6 +458,10 @@ export default function ForumPostPage() {
   const [, params] = useRoute("/forum/:id");
   const postId = params?.id ?? "";
   const queryClient = useQueryClient();
+  const { address } = useAccount();
+  const { signMessageAsync } = useSignMessage();
+  const { toast } = useToast();
+  const [deleting, setDeleting] = useState(false);
 
   const { data: post, isLoading, isError } = useQuery<PostWithComments>({
     queryKey: ["/api/forum/posts", postId],
@@ -403,6 +473,31 @@ export default function ForumPostPage() {
 
   function refresh() {
     queryClient.invalidateQueries({ queryKey: ["/api/forum/posts", postId] });
+  }
+
+  async function handleDelete() {
+    if (!address || !post) return;
+    if (!confirm("Xoá bài này? Hành động không thể hoàn tác.")) return;
+    try {
+      setDeleting(true);
+      const auth = await buildAuthPayload(signMessageAsync, "delete-forum-post", post.id);
+      await apiRequest("DELETE", `/api/forum/posts/${post.id}`, {
+        authorAddress: address,
+        ...auth,
+      });
+      toast({ title: "Đã xoá bài đăng" });
+      queryClient.invalidateQueries({ queryKey: ["/api/forum/posts"] });
+      window.location.href = "/forum";
+    } catch (err: any) {
+      const msg = err?.message || "";
+      if (msg.includes("user rejected") || msg.includes("denied")) {
+        toast({ title: "Đã huỷ xoá", variant: "destructive" });
+      } else {
+        toast({ title: `Xoá thất bại: ${msg}`, variant: "destructive" });
+      }
+    } finally {
+      setDeleting(false);
+    }
   }
 
   if (isLoading) {
@@ -430,13 +525,27 @@ export default function ForumPostPage() {
 
   return (
     <div className="container px-4 md:px-8 py-8 max-w-3xl mx-auto space-y-6">
-      {/* Back */}
-      <Button asChild variant="ghost" size="sm" className="-ml-2">
-        <Link href="/forum">
-          <ArrowLeft className="h-4 w-4 mr-1" />
-          Diễn đàn
-        </Link>
-      </Button>
+      {/* Back + delete */}
+      <div className="flex items-center justify-between">
+        <Button asChild variant="ghost" size="sm" className="-ml-2">
+          <Link href="/forum">
+            <ArrowLeft className="h-4 w-4 mr-1" />
+            Diễn đàn
+          </Link>
+        </Button>
+        {address && post.authorAddress?.toLowerCase() === address.toLowerCase() && !post.isPinned && (
+          <Button
+            variant="ghost"
+            size="sm"
+            className="text-destructive hover:text-destructive hover:bg-destructive/10"
+            onClick={handleDelete}
+            disabled={deleting}
+          >
+            <Trash2 className="h-4 w-4 mr-1" />
+            {deleting ? "Đang xoá..." : "Xoá bài"}
+          </Button>
+        )}
+      </div>
 
       {/* Post */}
       <Card>
@@ -474,6 +583,11 @@ export default function ForumPostPage() {
           <p className="text-sm leading-relaxed whitespace-pre-wrap">{post.content}</p>
         </CardContent>
       </Card>
+
+      {/* Safe on-chain snapshot (SELL posts only) */}
+      {post.type === "SELL" && post.safeSnapshot && (
+        <SafeSnapshotPanel raw={post.safeSnapshot} />
+      )}
 
       {/* Comments */}
       <CommentSection
