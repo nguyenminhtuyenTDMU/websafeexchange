@@ -17,7 +17,7 @@ import {
   parseAbiItem,
   type PublicClient,
 } from 'viem';
-import { sepolia, mainnet, hardhat } from 'viem/chains';
+import { sepolia, mainnet} from 'viem/chains';
 import { storage } from './storage';
 import { eventBroadcaster } from './websocket';
 import { log } from './index';
@@ -31,8 +31,7 @@ const ESCROW_ADDRESS  = (process.env.VITE_ESCROW_CONTRACT_ADDRESS || '') as `0x$
 
 const CHAIN_MAP: Record<number, typeof sepolia> = {
   1:        mainnet  as any,
-  11155111: sepolia,
-  31337:    hardhat  as any,
+  11155111: sepolia
 };
 
 // ─── ABI fragments ────────────────────────────────────────────────────────────
