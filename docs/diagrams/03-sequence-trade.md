@@ -1,106 +1,132 @@
-# Sơ Đồ Sequence — Luồng Giao Dịch
+# Sequence Diagram — Phân hệ Giao dịch Safe
 
-Trả lời câu hỏi: **Frontend, Backend, DB, Blockchain tương tác theo thứ tự nào trong một giao dịch hoàn chỉnh?**
+> Tương ứng với **Use Case Phân rã 2: Phân hệ Giao dịch Safe**
+
+Mô tả toàn bộ vòng đời giao dịch từ khi Seller tạo trade cho đến khi hoàn tất hoặc hủy.
+
+---
 
 ```mermaid
 sequenceDiagram
-    actor Seller as Seller (Frontend)
-    actor Buyer as Buyer (Frontend)
-    participant BE as Backend API
-    participant DB as PostgreSQL
-    participant Esc as Escrow Contract
-    participant Safe as Gnosis Safe
+    actor Seller as Seller
+    actor Buyer as Buyer
+    participant BE as Backend (Express)
+    participant DB as Database
+    participant WS as WebSocket
+    participant SC as Smart Contract
+    participant SW as Safe Watcher
 
-    rect rgb(235, 245, 255)
-        Note over Seller, DB: Phase 1 — Đăng bán Safe (LISTED)
+    rect rgb(210, 235, 255)
+        Note over Seller,SW: Giai đoạn 1 — Tạo giao dịch (LISTED)
 
-        Seller ->> BE: GET /api/safe-info?address=0x...
-        BE -->> Seller: owners, threshold, nonce
-
-        Seller ->> Seller: Ký EIP-191<br/>"SafeExchange:create-trade:{safe}:{ts}"
-        Seller ->> BE: POST /api/trades<br/>{safeAddress, priceEth, deadline, signature}
-        BE ->> BE: Xác minh chữ ký (requireSignature)
-        BE ->> DB: INSERT trades (status: LISTED)
-        DB -->> BE: trade
-        BE ->> BE: broadcastNewTrade via WebSocket
-        BE -->> Seller: 201 {trade}
+        Seller->>Seller: Ký message\n"SafeExchange:create-trade:{safeAddress}:{ts}"
+        Seller->>+BE: POST /api/trades\n{ safeAddress, priceEth, deadline, signature, signedMessage }
+        BE->>BE: Verify EIP-191 — recover address == sellerAddress
+        BE->>BE: Kiểm tra timestamp trong window 5 phút
+        BE->>DB: getTradeBySafeAddress(safeAddress)
+        DB-->>BE: null — không trùng
+        BE->>DB: createTrade(status: LISTED)
+        DB-->>BE: trade { id }
+        BE->>DB: createLog(TRADE_EVENT, "Đã tạo trade mới")
+        BE->>WS: broadcastNewTrade(trade)
+        WS-->>Buyer: event: new_trade (kênh "all")
+        BE-->>-Seller: 201 { trade }
     end
 
-    rect rgb(240, 255, 240)
-        Note over Seller, DB: Phase 2 — Buyer tham gia (JOINED)
+    rect rgb(210, 255, 215)
+        Note over Seller,SW: Giai đoạn 2 — Buyer tham gia (JOINED)
 
-        Buyer ->> BE: GET /api/trades
-        BE -->> Buyer: danh sách trades LISTED
-
-        Buyer ->> Buyer: Ký EIP-191<br/>"SafeExchange:join-trade:{id}:{ts}"
-        Buyer ->> BE: POST /api/trades/:id/join<br/>{buyerAddress, signature}
-        BE ->> BE: Xác minh chữ ký
-        BE ->> DB: UPDATE trades SET status=JOINED, buyerAddress
-        DB -->> BE: updated trade
-        BE ->> Seller: WS sendToWallet: "Người mua tham gia"
-        BE -->> Buyer: trade (JOINED)
+        Buyer->>Buyer: Ký message\n"SafeExchange:join-trade:{tradeId}:{ts}"
+        Buyer->>+BE: POST /api/trades/:id/join\n{ buyerAddress, signature, signedMessage }
+        BE->>BE: Verify EIP-191 — recover address == buyerAddress
+        BE->>DB: getTrade(id) — kiểm tra status == LISTED
+        DB-->>BE: trade
+        BE->>BE: Kiểm tra buyer ≠ seller
+        BE->>DB: updateTrade(status: JOINED, buyerAddress)
+        BE->>DB: createLog(TRADE_EVENT, "Buyer đã tham gia")
+        BE->>WS: broadcastTradeUpdate(JOINED)
+        WS-->>Seller: notification "Người mua tham gia giao dịch"
+        BE-->>-Buyer: 200 { trade }
     end
 
-    rect rgb(255, 250, 230)
-        Note over Seller, Safe: Phase 3 — Arm giao dịch on-chain (ARMED)
+    rect rgb(255, 245, 200)
+        Note over Seller,SW: Giai đoạn 3 — Ký bảo đảm on-chain (ARMED)
 
-        Seller ->> Esc: armTrade(tradeId, buyer, safe, amount, deadline, nonce)
-        Esc -->> Seller: TX confirmed, emit TradeArmed
+        Seller->>+SC: Gửi tx khóa Safe\n(escrow guard transaction)
+        SC-->>-Seller: onchainTradeId, snapshotNonce
 
-        Seller ->> Seller: Ký EIP-191<br/>"SafeExchange:arm-trade:{id}:{ts}"
-        Seller ->> BE: POST /api/trades/:id/arm<br/>{onchainTradeId, snapshotNonce, signature}
-        BE ->> DB: UPDATE trades SET status=ARMED, onchainTradeId, snapshotNonce
-        BE ->> BE: onTradeArmed(safeAddress)<br/>→ Safe Watcher bắt đầu theo dõi
-        BE ->> Buyer: WS sendToWallet: "Giao dịch được kích hoạt"
-        BE -->> Seller: trade (ARMED)
+        Seller->>+BE: POST /api/trades/:id/arm\n{ onchainTradeId, snapshotNonce }
+        BE->>DB: getTrade(id) — kiểm tra status == JOINED
+        DB-->>BE: trade
+        BE->>DB: updateTrade(status: ARMED, onchainTradeId, snapshotNonce)
+        BE->>DB: createLog(TRADE_EVENT, "Safe bị khóa (snapshotNonce: N)")
+        BE->>WS: broadcastTradeUpdate(ARMED)
+        WS-->>Buyer: notification "Giao dịch kích hoạt — có thể gửi ký quỹ"
+        BE->>+SW: onTradeArmed(safeAddress)
+        Note right of SW: Bắt đầu giám sát\nownership on-chain
+        BE-->>-Seller: 200 { trade }
     end
 
-    rect rgb(255, 240, 240)
-        Note over Buyer, Safe: Phase 4 — Buyer nộp ký quỹ ETH (FUNDED)
+    rect rgb(255, 225, 195)
+        Note over Seller,SW: Giai đoạn 4 — Buyer nạp ETH ký quỹ (FUNDED)
 
-        Buyer ->> Esc: depositFunds(tradeId) value: priceEth ETH
-        Esc -->> Buyer: TX confirmed
+        Buyer->>+SC: Gửi ETH vào escrow contract
+        SC-->>-Buyer: transaction confirmed
 
-        Buyer ->> Buyer: Ký EIP-191<br/>"SafeExchange:deposit:{id}:{ts}"
-        Buyer ->> BE: POST /api/trades/:id/deposit<br/>{signature}
-        BE ->> DB: UPDATE trades SET status=FUNDED
-        BE ->> Seller: WS sendToWallet: "Đã nhận ký quỹ"
-        BE -->> Buyer: trade (FUNDED)
+        Buyer->>Buyer: Ký message\n"SafeExchange:deposit:{tradeId}:{ts}"
+        Buyer->>+BE: POST /api/trades/:id/deposit\n{ signature, signedMessage }
+        BE->>BE: Verify EIP-191 — recover address == buyerAddress
+        BE->>DB: getTrade(id) — kiểm tra status == ARMED
+        DB-->>BE: trade
+        BE->>DB: updateTrade(status: FUNDED)
+        BE->>DB: createLog(TRADE_EVENT, "Buyer deposit {priceEth} ETH")
+        BE->>WS: broadcastTradeUpdate(FUNDED)
+        WS-->>Seller: notification "Đã nhận ký quỹ — chuyển ownership ngay"
+        BE-->>-Buyer: 200 { trade }
     end
 
-    rect rgb(245, 240, 255)
-        Note over Seller, Safe: Phase 5 — Chuyển ownership Safe & hoàn tất (COMPLETED)
+    rect rgb(210, 255, 230)
+        Note over Seller,SW: Giai đoạn 5 — Hoàn tất giao dịch (COMPLETED)
 
-        Seller ->> Safe: execTransaction(removeOwner seller + addOwner buyer)
-        Safe -->> Seller: TX confirmed, emit ExecutionSuccess
+        Seller->>SC: Chuyển ownership Safe → buyerAddress (on-chain)
+        SW-->>BE: Phát hiện OwnershipTransfer event
 
-        Note over BE: Safe Watcher phát hiện ExecutionSuccess<br/>→ kiểm tra isOwner, nonce<br/>(xem sơ đồ 04-sequence-watcher.md)
+        Seller->>Seller: Ký message\n"SafeExchange:complete-trade:{tradeId}:{ts}"
+        Seller->>+BE: POST /api/trades/:id/complete\n{ signature, signedMessage }
+        BE->>BE: Verify EIP-191
+        BE->>DB: getTrade(id) — kiểm tra status == FUNDED
+        DB-->>BE: trade
+        BE->>DB: updateTrade(status: COMPLETED)
+        BE->>DB: createLog(TRADE_EVENT, "Quyền sở hữu đã chuyển")
+        BE->>WS: sendToParticipants("Giao dịch hoàn tất")
+        WS-->>Seller: notification "Hoàn tất — thanh toán thực hiện"
+        WS-->>Buyer: notification "Hoàn tất — Safe đã về tay bạn"
+        BE->>SW: clearTradeNotifyCache(tradeId)
+        deactivate SW
+        BE-->>-Seller: 200 { trade }
+    end
 
-        BE ->> Buyer: WS broadcastTradeUpdate: OWNERSHIP_TRANSFERRED
+    rect rgb(255, 215, 215)
+        Note over Seller,SW: Nhánh phụ — Hủy giao dịch (bất kỳ giai đoạn trước COMPLETED)
 
-        Buyer ->> Buyer: Ký EIP-191<br/>"SafeExchange:complete-trade:{id}:{ts}"
-        Buyer ->> BE: POST /api/trades/:id/complete<br/>{signature}
-        BE ->> DB: UPDATE trades SET status=COMPLETED
-        BE ->> Esc: (Escrow tự giải phóng ETH cho Seller khi verify ownership)
-        BE ->> Seller: WS sendToParticipants: "Giao dịch hoàn tất"
-        BE ->> Buyer: WS sendToParticipants: "Giao dịch hoàn tất"
-        BE -->> Buyer: trade (COMPLETED)
+        alt Seller hủy
+            Seller->>Seller: Ký message\n"SafeExchange:cancel-trade:{tradeId}:{ts}"
+            Seller->>+BE: POST /api/trades/:id/cancel\n{ reason, walletAddress, signature }
+            BE->>DB: getTrade — kiểm tra isSeller
+            BE->>DB: updateTrade(status: CANCELLED)
+            BE->>DB: createLog(TRADE_EVENT, reason)
+            BE->>WS: sendToParticipants("Giao dịch đã hủy")
+            WS-->>Buyer: notification warning
+            BE-->>-Seller: 200 { trade }
+        else Buyer hủy
+            Buyer->>Buyer: Ký message\n"SafeExchange:cancel-trade:{tradeId}:{ts}"
+            Buyer->>+BE: POST /api/trades/:id/cancel\n{ reason, walletAddress, signature }
+            BE->>DB: getTrade — kiểm tra isBuyer
+            BE->>DB: updateTrade(status: CANCELLED)
+            BE->>DB: createLog(TRADE_EVENT, reason)
+            BE->>WS: sendToParticipants("Giao dịch đã hủy")
+            WS-->>Seller: notification warning
+            BE-->>-Buyer: 200 { trade }
+        end
     end
 ```
-
-## Ghi chú xác thực
-
-Mọi endpoint ghi đều yêu cầu `signature` + `signedMessage` trong body. Backend gọi `requireSignature()` để xác minh:
-
-```
-signedMessage = "SafeExchange:{action}:{resource}:{isoTimestamp}"
-```
-
-| Action | Người ký | Resource |
-|--------|---------|----------|
-| `create-trade` | sellerAddress | safeAddress |
-| `join-trade` | buyerAddress | tradeId |
-| `arm-trade` | sellerAddress | tradeId |
-| `deposit` | buyerAddress | tradeId |
-| `complete-trade` | buyer hoặc seller | tradeId |
-| `cancel-trade` | buyer hoặc seller | tradeId |
