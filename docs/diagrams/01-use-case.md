@@ -1,101 +1,196 @@
-# Sơ Đồ Use Case Tổng Quát
+# Use Case Diagrams — WebSafeExchange
 
-Trả lời câu hỏi: **Ai dùng hệ thống và họ làm được gì?**
+> Yêu cầu Mermaid v11+ để render đúng hình người (actor) và hình bầu dục (use case).
 
-> Seller và Buyer được gộp chung thành **Người dùng** trong sơ đồ này — cùng một ví, đóng vai trò khác nhau tùy từng giao dịch. Xem [00-decomposition.md](./00-decomposition.md) để biết chức năng nào thuộc về vai trò nào.
+---
+
+## 1. Sơ đồ Use Case Tổng quan
+
+> Seller và Buyer được gộp thành **User**. Chi tiết vai trò xem ở phần phân rã bên dưới.
 
 ```mermaid
 flowchart LR
-    Guest(["Khách\n(chưa kết nối ví)"])
-    User(["Người dùng\n(đã kết nối ví)"])
-    Sys(["Hệ thống\n(Safe Watcher)"])
+    User@{ shape: person, label: "User\n(Seller / Buyer)" }
+    Admin@{ shape: person, label: "Admin" }
 
-    subgraph BOUNDARY["Hệ thống WebSafeExchange"]
+    subgraph WSE["WebSafeExchange"]
+        AUTH([Xác thực ví Web3])
 
-        subgraph PUBLIC["Công khai"]
-            UC1("Xem danh sách\ngiao dịch")
-            UC2("Tìm kiếm\ngiao dịch / Safe")
-            UC3("Xem forum")
-            UC4("Xem thông tin\nSafe on-chain")
-        end
+        UC1([Thực hiện giao dịch Safe])
+        UC2([Tìm kiếm giao dịch])
+        UC3([Xem chi tiết giao dịch])
+        UC4([Quản lý ví Safe])
+        UC5([Đăng bài diễn đàn])
+        UC6([Xem bài diễn đàn])
+        UC7([Bình luận bài viết])
+        UC8([Cập nhật hồ sơ cá nhân])
 
-        subgraph TRADE["Giao dịch Safe"]
-            UC5("Tạo listing bán Safe")
-            UC6("Tham gia giao dịch")
-            UC7("Arm giao dịch on-chain")
-            UC8("Nộp ký quỹ ETH")
-            UC9("Xác nhận hoàn tất")
-            UC10("Hủy giao dịch")
-        end
+        UC9([Quản lý nội dung diễn đàn])
+        UC10([Xem nhật ký hệ thống])
 
-        subgraph COMMUNITY["Cộng đồng & Hồ sơ"]
-            UC11("Đăng bài forum")
-            UC12("Bình luận")
-            UC13("Cập nhật hồ sơ")
-        end
+        UC1 -.->|"<<include>>"| AUTH
+        UC4 -.->|"<<include>>"| AUTH
+        UC5 -.->|"<<include>>"| AUTH
+        UC8 -.->|"<<include>>"| AUTH
 
-        subgraph BASE["Cơ sở"]
-            UCB1("Ký xác thực ví\nEIP-191 signature")
-            UCB2("Gọi Escrow Contract\non-chain TX")
-        end
-
-        subgraph WATCHER["Tự động — Safe Watcher"]
-            UCW1("Giám sát Safe\nwatch ExecutionSuccess")
-            UCW2("Kiểm tra isOwner\n& nonce")
-            UCW3("Phát hiện\nownership transfer")
-            UCW4("Cảnh báo\ngian lận")
-            UCW5("Gửi thông báo\nWebSocket")
-        end
-
+        UC7 -.->|"<<extend>>"| UC6
+        UC9 -.->|"<<extend>>"| UC6
     end
 
-    Guest --> UC1
-    Guest --> UC2
-    Guest --> UC3
-    Guest --> UC4
+    User --- UC1
+    User --- UC2
+    User --- UC3
+    User --- UC4
+    User --- UC5
+    User --- UC6
+    User --- UC7
+    User --- UC8
 
-    User --> UC1
-    User --> UC2
-    User --> UC3
-    User --> UC4
-    User --> UC5
-    User --> UC6
-    User --> UC7
-    User --> UC8
-    User --> UC9
-    User --> UC10
-    User --> UC11
-    User --> UC12
-    User --> UC13
-
-    Sys --> UCW1
-
-    %% ── Include ──────────────────────────────────────────────────────────────
-    UC5 -. "«include»" .-> UCB1
-    UC6 -. "«include»" .-> UCB1
-    UC7 -. "«include»" .-> UCB1
-    UC8 -. "«include»" .-> UCB1
-    UC9 -. "«include»" .-> UCB1
-    UC10 -. "«include»" .-> UCB1
-
-    UC7 -. "«include»" .-> UCB2
-    UC8 -. "«include»" .-> UCB2
-
-    UCW1 -. "«include»" .-> UCW2
-    UCW3 -. "«include»" .-> UCW2
-    UCW3 -. "«include»" .-> UCW5
-
-    %% ── Extend ───────────────────────────────────────────────────────────────
-    UC10 -. "«extend»\n[trước khi hoàn tất]" .-> UC9
-    UCW4 -. "«extend»\n[nonce tăng, buyer chưa là owner]" .-> UCW1
-    UCW4 -. "«include»" .-> UCW5
+    Admin --- UC9
+    Admin --- UC10
+    Admin --- UC6
 ```
 
-## Ghi chú
+---
 
-| Quan hệ | Ý nghĩa trong hệ thống |
-|---------|----------------------|
-| `«include»` UCB1 | Mọi thao tác ghi đều yêu cầu chữ ký EIP-191 để xác thực quyền sở hữu ví |
-| `«include»` UCB2 | Arm và Deposit đòi hỏi giao dịch on-chain trực tiếp với Escrow Contract |
-| `«extend»` UC10 → UC9 | Buyer hoặc Seller có thể hủy thay vì xác nhận hoàn tất (trước khi trade COMPLETED) |
-| `«extend»` UCW4 → UCW1 | Cảnh báo gian lận chỉ kích hoạt khi nonce Safe tăng mà buyer chưa thành owner |
+## 2. Phân rã: Phân hệ Giao dịch Safe
+
+```mermaid
+flowchart LR
+    Seller@{ shape: person, label: "Seller\n(Người bán)" }
+    Buyer@{ shape: person, label: "Buyer\n(Người mua)" }
+
+    subgraph TRADE["Phân hệ Giao dịch Safe"]
+        subgraph SEL["Chức năng Seller"]
+            UC_CREATE([Tạo giao dịch bán Safe])
+            UC_ARM([Ký bảo đảm giao dịch])
+        end
+
+        subgraph SHARED["Chức năng chung"]
+            UC_SEARCH([Tìm kiếm giao dịch])
+            UC_VIEW([Xem chi tiết giao dịch])
+            UC_COMPLETE([Hoàn tất giao dịch])
+            UC_CANCEL([Hủy giao dịch])
+            UC_LOGS([Xem nhật ký giao dịch])
+            AUTH_T([Xác thực ví Web3])
+        end
+
+        subgraph BUY["Chức năng Buyer"]
+            UC_JOIN([Tham gia giao dịch])
+            UC_DEPOSIT([Nạp tiền ký quỹ])
+        end
+
+        UC_CREATE -.->|"<<include>>"| AUTH_T
+        UC_ARM    -.->|"<<include>>"| AUTH_T
+        UC_JOIN   -.->|"<<include>>"| AUTH_T
+        UC_DEPOSIT-.->|"<<include>>"| AUTH_T
+        UC_COMPLETE-.->|"<<include>>"| AUTH_T
+        UC_CANCEL -.->|"<<include>>"| AUTH_T
+
+        UC_LOGS   -.->|"<<extend>>"| UC_VIEW
+        UC_CANCEL -.->|"<<extend>>"| UC_VIEW
+    end
+
+    Seller --- UC_CREATE
+    Seller --- UC_ARM
+    Seller --- UC_SEARCH
+    Seller --- UC_VIEW
+    Seller --- UC_COMPLETE
+    Seller --- UC_CANCEL
+    Seller --- UC_LOGS
+
+    Buyer --- UC_JOIN
+    Buyer --- UC_DEPOSIT
+    Buyer --- UC_SEARCH
+    Buyer --- UC_VIEW
+    Buyer --- UC_COMPLETE
+    Buyer --- UC_CANCEL
+    Buyer --- UC_LOGS
+```
+
+---
+
+## 3. Phân rã: Phân hệ Diễn đàn
+
+```mermaid
+flowchart LR
+    WalletUser@{ shape: person, label: "Người dùng\n(Có ví)" }
+    AnonUser@{ shape: person, label: "Người dùng\nẩn danh" }
+    ForumAdmin@{ shape: person, label: "Admin" }
+
+    subgraph FORUM["Phân hệ Diễn đàn"]
+        subgraph WALLET_UC["Chức năng người dùng có ví"]
+            UC_SELL_POST([Đăng bài rao bán Safe])
+            UC_BUY_POST([Đăng bài tìm mua Safe])
+            UC_DISC_POST([Đăng bài thảo luận / Hỏi đáp])
+            UC_DELETE([Xóa bài của mình])
+        end
+
+        subgraph COMMON_UC["Chức năng chung"]
+            UC_READ([Xem bài diễn đàn])
+            UC_COMMENT([Bình luận bài viết])
+            AUTH_F([Xác thực ví Web3])
+        end
+
+        subgraph ADMIN_UC["Chức năng Admin"]
+            UC_PIN([Ghim bài viết])
+            UC_DEL_ANY([Xóa bài bất kỳ])
+        end
+
+        UC_SELL_POST -.->|"<<include>>"| AUTH_F
+        UC_BUY_POST  -.->|"<<include>>"| AUTH_F
+        UC_DISC_POST -.->|"<<include>>"| AUTH_F
+        UC_DELETE    -.->|"<<include>>"| AUTH_F
+        UC_PIN       -.->|"<<include>>"| AUTH_F
+
+        UC_COMMENT   -.->|"<<extend>>"| UC_READ
+        UC_DELETE    -.->|"<<extend>>"| UC_SELL_POST
+    end
+
+    WalletUser  --- UC_SELL_POST
+    WalletUser  --- UC_BUY_POST
+    WalletUser  --- UC_DISC_POST
+    WalletUser  --- UC_DELETE
+    WalletUser  --- UC_READ
+    WalletUser  --- UC_COMMENT
+
+    AnonUser    --- UC_READ
+    AnonUser    --- UC_COMMENT
+
+    ForumAdmin  --- UC_PIN
+    ForumAdmin  --- UC_DEL_ANY
+    ForumAdmin  --- UC_READ
+```
+
+---
+
+## 4. Phân rã: Phân hệ Quản lý Safe
+
+```mermaid
+flowchart LR
+    SafeUser@{ shape: person, label: "User\n(Chủ Safe)" }
+
+    subgraph SAFE_SYS["Phân hệ Quản lý Safe"]
+        UC_CONNECT([Kết nối ví Web3])
+        UC_VIEW_SAFE([Xem thông tin ví Safe])
+        UC_VIEW_OWNERS([Xem danh sách chủ sở hữu])
+        UC_VIEW_PENDING([Xem giao dịch chờ xác nhận])
+        UC_PREPARE([Chuẩn bị cấu hình Safe])
+        UC_SNAPSHOT([Xem ảnh chụp trạng thái Safe])
+        AUTH_S([Xác thực ví Web3])
+
+        UC_CONNECT -.->|"<<include>>"| AUTH_S
+        UC_PREPARE -.->|"<<include>>"| AUTH_S
+
+        UC_VIEW_OWNERS  -.->|"<<extend>>"| UC_VIEW_SAFE
+        UC_VIEW_PENDING -.->|"<<extend>>"| UC_VIEW_SAFE
+        UC_SNAPSHOT     -.->|"<<extend>>"| UC_VIEW_SAFE
+    end
+
+    SafeUser --- UC_CONNECT
+    SafeUser --- UC_VIEW_SAFE
+    SafeUser --- UC_VIEW_OWNERS
+    SafeUser --- UC_VIEW_PENDING
+    SafeUser --- UC_PREPARE
+    SafeUser --- UC_SNAPSHOT
+```
