@@ -1,6 +1,6 @@
 # Use Case Diagrams — WebSafeExchange
 
-> Yêu cầu Mermaid v11+ để render đúng hình người (actor) và hình bầu dục (use case).
+> Actor được biểu diễn bằng hình chữ nhật, use case bằng hình bầu dục `([...])` — tương thích với mọi phiên bản Mermaid.
 
 ---
 
@@ -10,8 +10,8 @@
 
 ```mermaid
 flowchart LR
-    User@{ shape: person, label: "User\n(Seller / Buyer)" }
-    Admin@{ shape: person, label: "Admin" }
+    ActorUser["User\n(Seller / Buyer)"]
+    ActorAdmin["Admin"]
 
     subgraph WSE["WebSafeExchange"]
         AUTH([Xác thực ví Web3])
@@ -37,18 +37,18 @@ flowchart LR
         UC9 -.->|"<<extend>>"| UC6
     end
 
-    User --- UC1
-    User --- UC2
-    User --- UC3
-    User --- UC4
-    User --- UC5
-    User --- UC6
-    User --- UC7
-    User --- UC8
+    ActorUser --- UC1
+    ActorUser --- UC2
+    ActorUser --- UC3
+    ActorUser --- UC4
+    ActorUser --- UC5
+    ActorUser --- UC6
+    ActorUser --- UC7
+    ActorUser --- UC8
 
-    Admin --- UC9
-    Admin --- UC10
-    Admin --- UC6
+    ActorAdmin --- UC9
+    ActorAdmin --- UC10
+    ActorAdmin --- UC6
 ```
 
 ---
@@ -57,8 +57,8 @@ flowchart LR
 
 ```mermaid
 flowchart LR
-    Seller@{ shape: person, label: "Seller\n(Người bán)" }
-    Buyer@{ shape: person, label: "Buyer\n(Người mua)" }
+    Seller["Seller\n(Người bán)"]
+    Buyer["Buyer\n(Người mua)"]
 
     subgraph TRADE["Phân hệ Giao dịch Safe"]
         subgraph SEL["Chức năng Seller"]
@@ -114,9 +114,9 @@ flowchart LR
 
 ```mermaid
 flowchart LR
-    WalletUser@{ shape: person, label: "Người dùng\n(Có ví)" }
-    AnonUser@{ shape: person, label: "Người dùng\nẩn danh" }
-    ForumAdmin@{ shape: person, label: "Admin" }
+    WalletUser["Người dùng\n(Có ví)"]
+    AnonUser["Người dùng\nẩn danh"]
+    ForumAdmin["Admin"]
 
     subgraph FORUM["Phân hệ Diễn đàn"]
         subgraph WALLET_UC["Chức năng người dùng có ví"]
@@ -168,7 +168,7 @@ flowchart LR
 
 ```mermaid
 flowchart LR
-    SafeUser@{ shape: person, label: "User\n(Chủ Safe)" }
+    SafeUser["User\n(Chủ Safe)"]
 
     subgraph SAFE_SYS["Phân hệ Quản lý Safe"]
         UC_CONNECT([Kết nối ví Web3])

@@ -115,6 +115,60 @@ function getApiKit(chainId: number): SafeApiKit {
   });
 }
 
+function getSafeErrorMessage(err: unknown, fallback: string): string {
+  if (typeof err === "string" && err.trim()) return err;
+
+  const anyErr = err as any;
+
+  // Prioritise Safe Transaction Service response body (axios-style errors)
+  const responseData = anyErr?.response?.data ?? anyErr?.data;
+  if (responseData) {
+    if (typeof responseData === "string" && responseData.trim()) return responseData;
+    if (typeof responseData === "object") {
+      const detail =
+        responseData.detail ??
+        responseData.message ??
+        responseData.nonFieldErrors ??
+        responseData.non_field_errors ??
+        responseData.error;
+      if (Array.isArray(detail) && detail.length > 0) return detail.join(", ");
+      if (typeof detail === "string" && detail.trim()) return detail;
+      const firstFieldError = Object.values(responseData).find((value) => {
+        if (Array.isArray(value)) return (value as unknown[]).length > 0;
+        return typeof value === "string" && (value as string).trim();
+      });
+      if (Array.isArray(firstFieldError)) return (firstFieldError as string[]).join(", ");
+      if (typeof firstFieldError === "string") return firstFieldError;
+    }
+  }
+
+  if (err instanceof Error) {
+    // ethers v6 shortMessage is concise and avoids the verbose transaction dump
+    const short = anyErr.shortMessage as string | undefined;
+    if (short && short !== "Error") return short;
+    // api-kit v4 may produce empty statusText — skip those, fall to fallback
+    if (err.message && err.message !== "Error") return err.message;
+    // ethers v6 revert reason
+    if (anyErr.reason) return String(anyErr.reason);
+  }
+
+  const causeMessage = anyErr?.cause instanceof Error ? (anyErr.cause as Error).message : undefined;
+  return causeMessage || fallback;
+}
+
+function isSafeNotFoundError(err: unknown): boolean {
+  if (!(err instanceof Error)) return false;
+  return /not found|404/i.test(err.message);
+}
+
+function normalizeTransactionData(data: string): string {
+  const normalized = data.trim() || "0x";
+  if (!/^0x([0-9a-fA-F]{2})*$/.test(normalized)) {
+    throw new Error("Call data must be valid hex bytes, for example 0x or 0xa9059cbb...");
+  }
+  return normalized;
+}
+
 async function fetchJson<T>(url: string): Promise<T> {
   const response = await fetch(url, { headers: { accept: "application/json" } });
   if (!response.ok) throw new Error(`Safe API request failed: ${response.status}`);
@@ -303,7 +357,9 @@ export async function getPendingSafeTransactions(
       };
     });
   } catch (error) {
-    console.warn("getPendingTransactions failed:", error);
+    if (!isSafeNotFoundError(error)) {
+      console.warn("getPendingTransactions failed:", error);
+    }
     return [];
   }
 }
@@ -377,27 +433,57 @@ export async function proposeNewTransaction(input: {
   signerAddress: string;
 }): Promise<SafeTransactionSignResult> {
   try {
-    const safe = await Safe.init({
-      provider: input.eip1193Provider as any,
-      signer: input.signerAddress,
-      safeAddress: ethers.getAddress(input.safeAddress),
-    });
+    const safeAddress = ethers.getAddress(input.safeAddress);
+    const signerAddress = ethers.getAddress(input.signerAddress);
+    const to = ethers.getAddress(input.to);
+    const value = BigInt(input.value || "0");
+    if (value < BigInt(0)) throw new Error("Transaction value cannot be negative");
+    const data = normalizeTransactionData(input.data);
+
+    let safe: Safe;
+    try {
+      safe = await Safe.init({
+        provider: input.eip1193Provider as any,
+        signer: signerAddress,
+        safeAddress,
+      });
+    } catch (initErr: any) {
+      const short = initErr?.shortMessage as string | undefined;
+      const detail = (short && short !== "Error") ? short
+        : (initErr?.message && initErr.message !== "Error") ? initErr.message
+        : null;
+      throw new Error(
+        detail
+          ? `Không thể kết nối Safe contract: ${detail}`
+          : "Safe contract không tồn tại trên mạng này. Kiểm tra địa chỉ ví Safe và chain đang kết nối.",
+      );
+    }
+
+    let isOwner: boolean;
+    try {
+      isOwner = await safe.isOwner(signerAddress);
+    } catch {
+      throw new Error("Không thể xác minh quyền owner. Safe chưa được deploy hoặc mạng không hỗ trợ.");
+    }
+    if (!isOwner) throw new Error("Ví kết nối không phải là owner của Safe này");
 
     const safeTransaction = await safe.createTransaction({
-      transactions: [{ to: ethers.getAddress(input.to), value: input.value, data: input.data || "0x" }],
+      transactions: [{ to, value: value.toString(), data }],
     });
 
     const safeTxHash = await safe.getTransactionHash(safeTransaction);
     const signedTx = await safe.signTransaction(safeTransaction);
-    const signature = signedTx.getSignature(input.signerAddress);
+    const signature = signedTx.getSignature(signerAddress);
+    if (!signature?.data) throw new Error("Ví không trả về chữ ký hợp lệ. Vui lòng thử lại hoặc kiểm tra kết nối ví.");
 
     const apiKit = getApiKit(input.chainId);
     await apiKit.proposeTransaction({
-      safeAddress: ethers.getAddress(input.safeAddress),
+      safeAddress,
       safeTransactionData: safeTransaction.data,
       safeTxHash,
-      senderAddress: ethers.getAddress(input.signerAddress),
-      senderSignature: signature?.data ?? "",
+      senderAddress: signerAddress,
+      senderSignature: signature.data,
+      origin: "WebSafeExchange Safe Control",
     });
 
     return {
@@ -410,7 +496,7 @@ export async function proposeNewTransaction(input: {
     return {
       success: false,
       source: "prepared-only",
-      message: err.message || "Failed to propose transaction",
+      message: getSafeErrorMessage(err, "Failed to propose transaction"),
     };
   }
 }
