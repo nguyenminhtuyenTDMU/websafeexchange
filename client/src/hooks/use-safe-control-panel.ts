@@ -147,7 +147,11 @@ export function useSafeControlPanel() {
           signerAddress: address,
         });
         setActionResult(result);
-        if (result.success) await refreshSelectedSafe();
+        if (!result.success) {
+          setError(result.message);
+          throw new Error(result.message);
+        }
+        await refreshSelectedSafe();
         return result;
       } catch (err: any) {
         setError(err.message || "Failed to propose transaction");

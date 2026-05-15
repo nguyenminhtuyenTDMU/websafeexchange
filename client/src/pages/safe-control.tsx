@@ -65,6 +65,15 @@ function splitOwners(input: string): string[] {
 
 // ─── New Transaction Form ────────────────────────────────────────────────────
 
+function parseEthToWei(value: string): string {
+  const normalized = value.trim() || "0";
+  if (!/^\d+(\.\d{0,18})?$/.test(normalized)) {
+    throw new Error("So ETH khong hop le");
+  }
+  const [whole, fraction = ""] = normalized.split(".");
+  return `${whole}${fraction.padEnd(18, "0")}`.replace(/^0+(?=\d)/, "");
+}
+
 function NewTransactionForm({
   onPropose,
   isActioning,
@@ -80,8 +89,8 @@ function NewTransactionForm({
   const handleSubmit = async () => {
     setFormErr(null);
     if (!isValidEthAddress(to)) { setFormErr("Địa chỉ không hợp lệ"); return; }
-    const valueWei = String(Math.floor(parseFloat(ethValue || "0") * 1e18));
     try {
+      const valueWei = parseEthToWei(ethValue);
       await onPropose({ to, value: valueWei, data: data || "0x" });
       setTo(""); setEthValue("0"); setData("0x");
     } catch (err: any) {
@@ -253,20 +262,12 @@ export default function SafeControl() {
     refreshSafes,
     refreshSelectedSafe,
     deploySafe,
-    proposeTransaction,
     confirmTransaction,
     executeTransaction,
     clearActionResult,
   } = useSafeControlPanel();
 
   const totalPending = pendingTransactions.filter((t) => t.status === "waiting_signatures" || t.status === "ready_to_execute").length;
-  const [showNewTxForm, setShowNewTxForm] = useState(false);
-
-  const handlePropose = async (input: { to: string; value: string; data: string }) => {
-    clearActionResult();
-    await proposeTransaction(input);
-    setShowNewTxForm(false);
-  };
 
   return (
     <div className="container px-4 md:px-8 py-8 md:py-12">
@@ -528,33 +529,6 @@ export default function SafeControl() {
                 </AlertDescription>
               </Alert>
             )}
-
-            {/* New transaction */}
-            <Card>
-              <CardHeader>
-                <div className="flex items-center justify-between gap-3">
-                  <div>
-                    <CardTitle className="flex items-center gap-2">
-                      <PlusCircle className="h-4 w-4" />
-                      Giao dịch mới
-                    </CardTitle>
-                  </div>
-                  <Button
-                    variant={showNewTxForm ? "secondary" : "default"}
-                    size="sm"
-                    onClick={() => { setShowNewTxForm((v) => !v); clearActionResult(); }}
-                    className="gap-2"
-                  >
-                    {showNewTxForm ? "Hủy" : <><PlusCircle className="h-4 w-4" /> Giao dịch mới</>}
-                  </Button>
-                </div>
-              </CardHeader>
-              {showNewTxForm && (
-                <CardContent>
-                  <NewTransactionForm onPropose={handlePropose} isActioning={isActioning} />
-                </CardContent>
-              )}
-            </Card>
 
             {/* Pending transactions */}
             <Card>

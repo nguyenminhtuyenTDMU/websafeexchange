@@ -1,0 +1,10 @@
+
+> rest-express@1.0.0 dev
+> set NODE_ENV=development && tsx server/index.ts
+
+[dotenv@17.2.3] injecting env (12) from .env -- tip: 👥 sync secrets across teammates & machines: https://dotenvx.com/ops
+11:32:20 AM [express] WebSocket server đã khởi tạo
+11:32:20 AM [watcher] [watcher] Khởi động event-driven mode (chain: 11155111, escrow: 0xeF4b477e...)
+[dotenv@17.2.3] injecting env (0) from .env -- tip: 🔐 prevent committing .env to code: https://dotenvx.com/precommit
+11:32:22 AM [express] serving on port 5001
+11:32:25 AM [watcher] [watcher] Recovered 0 active trade(s) from DB
