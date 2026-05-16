@@ -1,12 +1,12 @@
-import { useAccount } from "wagmi";
 import { ChatPanel } from "@/components/chat-widget";
+import { useLocation } from "wouter";
 
 export default function Assistant() {
+  const [, navigate] = useLocation();
+
   return (
-    <div className="flex flex-col items-center justify-center min-h-[calc(100vh-4rem)] p-4">
-      <div className="w-full max-w-xl h-[680px] rounded-2xl border shadow-lg bg-background flex flex-col overflow-hidden">
-        <ChatPanel onClose={() => window.history.back()} />
-      </div>
+    <div className="flex flex-col h-[calc(100vh-4rem)]">
+      <ChatPanel onClose={() => navigate("/")} fullPage />
     </div>
   );
 }

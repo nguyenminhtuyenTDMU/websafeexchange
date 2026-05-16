@@ -1,7 +1,12 @@
 import { Shield, ExternalLink } from "lucide-react";
-import { Link } from "wouter";
+import { Link, useLocation } from "wouter";
+
+const HIDDEN_ROUTES = ["/assistant"];
 
 export function Footer() {
+  const [location] = useLocation();
+  if (HIDDEN_ROUTES.includes(location)) return null;
+
   return (
     <footer className="border-t bg-card">
       <div className="container px-4 md:px-8 py-8">

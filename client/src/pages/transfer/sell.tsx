@@ -21,6 +21,7 @@ import { useSafeSdk } from "@/hooks/use-safe-sdk";
 import { escrowABI } from "@/lib/contracts/EscrowABI";
 import { getEscrowAddress, SUPPORTED_CHAIN_ID } from "@/lib/contracts/addresses";
 import { DeadlineDisplay } from "@/components/deadline-display";
+import { useSearch } from "wouter";
 import type { Trade } from "@shared/schema";
 import type { SafeInfo } from "@/lib/safe-sdk";
 
@@ -74,6 +75,18 @@ export default function Sell() {
   const pendingUiActionRef = useRef<string | null>(
     typeof window === "undefined" ? null : new URLSearchParams(window.location.search).get("action")
   );
+  const search = useSearch();
+
+  // Sync URL params when chatbot navigates to same route with new query params
+  useEffect(() => {
+    const params = new URLSearchParams(search.replace(/^\?/, ""));
+    const urlAction = params.get("action");
+    const urlTradeId = params.get("tradeId");
+    if (urlAction && urlAction !== "create_trade") pendingUiActionRef.current = urlAction;
+    if (urlTradeId) setCreatedTradeId(urlTradeId);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [search]);
+
   const [safeInfo, setSafeInfo] = useState<SafeInfo | null>(null);
   const [isCheckingSafe, setIsCheckingSafe] = useState(false);
   const [isSwappingOwner, setIsSwappingOwner] = useState(false);
@@ -409,6 +422,7 @@ export default function Sell() {
   }, [
     trade,
     isWrongNetwork,
+    search,
     armTradeMutation,
     sellerCancelMutation,
     cancelTimeoutMutation,
