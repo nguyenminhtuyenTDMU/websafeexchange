@@ -397,6 +397,7 @@ export async function deploySafeOnChain(input: {
   signerAddress: string;
 }): Promise<{ address: string }> {
   const owners = input.owners.map((o) => ethers.getAddress(o));
+  const saltNonce = `${Date.now()}${Math.floor(Math.random() * 1_000_000)}`;
 
   // protocol-kit v6: init with predictedSafe gives an undeployed Safe instance
   const safeSdk = await Safe.init({
@@ -404,6 +405,7 @@ export async function deploySafeOnChain(input: {
     signer: input.signerAddress,
     predictedSafe: {
       safeAccountConfig: { owners, threshold: input.threshold },
+      safeDeploymentConfig: { saltNonce },
     },
   });
 
