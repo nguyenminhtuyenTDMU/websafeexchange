@@ -1,4 +1,4 @@
-import Safe from "@safe-global/protocol-kit";
+import Safe, { EthSafeSignature } from "@safe-global/protocol-kit";
 import SafeApiKit from "@safe-global/api-kit";
 import { ethers } from "ethers";
 
@@ -150,6 +150,11 @@ function getSafeErrorMessage(err: unknown, fallback: string): string {
     if (err.message && err.message !== "Error") return err.message;
     // ethers v6 revert reason
     if (anyErr.reason) return String(anyErr.reason);
+  }
+
+  // Handle plain objects thrown by api-kit / fetch wrappers
+  if (anyErr?.message && typeof anyErr.message === "string" && anyErr.message.trim() && anyErr.message !== "Error") {
+    return anyErr.message;
   }
 
   const causeMessage = anyErr?.cause instanceof Error ? (anyErr.cause as Error).message : undefined;
@@ -328,14 +333,20 @@ export async function getPendingSafeTransactions(
   if (!isValidEthAddress(safeAddress)) throw new Error("Invalid Safe address");
   const safe = ethers.getAddress(safeAddress);
   try {
-    const apiKit = getApiKit(chainId);
-    const result = await apiKit.getPendingTransactions(safe);
+    const baseUrl = getSafeServiceUrl(chainId);
+    const response = await fetch(
+      `${baseUrl}/api/v1/safes/${safe}/multisig-transactions/?executed=False&limit=100`,
+      { headers: { accept: "application/json" } },
+    );
+    if (response.status === 404) return [];
+    if (!response.ok) throw new Error(`Safe TX Service ${response.status}`);
+    const result = await response.json() as { results?: any[] };
 
-    return (result.results ?? []).map((tx) => {
+    return (result.results ?? []).map((tx: any) => {
       const confirmationsCount = tx.confirmations?.length ?? 0;
       const requiredConfirmations = tx.confirmationsRequired ?? 1;
-      const executed = !!(tx as any).executionDate;
-      const failed = executed && (tx as any).isSuccessful === false;
+      const executed = !!tx.executionDate;
+      const failed = executed && tx.isSuccessful === false;
       const status: SafeTransactionStatus = failed
         ? "failed"
         : executed
@@ -357,9 +368,7 @@ export async function getPendingSafeTransactions(
       };
     });
   } catch (error) {
-    if (!isSafeNotFoundError(error)) {
-      console.warn("getPendingTransactions failed:", error);
-    }
+    console.warn("getPendingTransactions failed:", error);
     return [];
   }
 }
@@ -475,18 +484,47 @@ export async function proposeNewTransaction(input: {
 
     const safeTxHash = await safe.getTransactionHash(safeTransaction);
     const signedTx = await safe.signTransaction(safeTransaction);
-    const signature = signedTx.getSignature(signerAddress);
+    const signature = signedTx.getSignature(signerAddress.toLowerCase());
     if (!signature?.data) throw new Error("Ví không trả về chữ ký hợp lệ. Vui lòng thử lại hoặc kiểm tra kết nối ví.");
 
-    const apiKit = getApiKit(input.chainId);
-    await apiKit.proposeTransaction({
-      safeAddress,
-      safeTransactionData: safeTransaction.data,
-      safeTxHash,
-      senderAddress: signerAddress,
-      senderSignature: signature.data,
-      origin: "WebSafeExchange Safe Control",
+    const serviceUrl = getSafeServiceUrl(input.chainId);
+    const txData = safeTransaction.data;
+    const response = await fetch(`${serviceUrl}/api/v1/safes/${safeAddress}/multisig-transactions/`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        to: txData.to,
+        value: txData.value,
+        data: txData.data,
+        operation: txData.operation ?? 0,
+        nonce: txData.nonce,
+        safeTxGas: txData.safeTxGas,
+        baseGas: txData.baseGas,
+        gasPrice: txData.gasPrice,
+        gasToken: txData.gasToken,
+        refundReceiver: txData.refundReceiver,
+        contractTransactionHash: safeTxHash,
+        sender: signerAddress,
+        signature: signature.data,
+        origin: "WebSafeExchange Safe Control",
+      }),
     });
+
+    if (!response.ok) {
+      let errorMsg: string;
+      try {
+        const body = await response.json() as any;
+        errorMsg =
+          body.detail ??
+          body.message ??
+          (Array.isArray(body.nonFieldErrors) ? body.nonFieldErrors.join(", ") : undefined) ??
+          (Array.isArray(body.non_field_errors) ? body.non_field_errors.join(", ") : undefined) ??
+          JSON.stringify(body);
+      } catch {
+        errorMsg = await response.text().catch(() => `HTTP ${response.status}`);
+      }
+      throw new Error(`Safe TX Service ${response.status}: ${errorMsg}`);
+    }
 
     return {
       success: true,
@@ -495,6 +533,7 @@ export async function proposeNewTransaction(input: {
       message: "Transaction proposed and your signature submitted.",
     };
   } catch (err: any) {
+    console.error("[proposeNewTransaction]", err);
     return {
       success: false,
       source: "prepared-only",
@@ -519,12 +558,27 @@ export async function confirmSafeTransaction(input: {
       safeAddress: ethers.getAddress(input.safeAddress),
     });
 
-    const apiKit = getApiKit(input.chainId);
-    const tx = await apiKit.getTransaction(input.safeTxHash);
     const signature = await safe.signHash(input.safeTxHash);
-    await apiKit.confirmTransaction(input.safeTxHash, signature.data);
 
-    void tx;
+    const serviceUrl = getSafeServiceUrl(input.chainId);
+    const response = await fetch(
+      `${serviceUrl}/api/v1/multisig-transactions/${input.safeTxHash}/confirmations/`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ signature: signature.data }),
+      },
+    );
+
+    if (!response.ok) {
+      const body = await response.json().catch(() => null) as any;
+      const errorMsg =
+        body?.detail ?? body?.message ??
+        (Array.isArray(body?.nonFieldErrors) ? body.nonFieldErrors.join(", ") : undefined) ??
+        `HTTP ${response.status}`;
+      throw new Error(`Safe TX Service ${response.status}: ${errorMsg}`);
+    }
+
     return {
       success: true,
       safeTxHash: input.safeTxHash,
@@ -532,11 +586,12 @@ export async function confirmSafeTransaction(input: {
       message: "Signature added successfully.",
     };
   } catch (err: any) {
+    console.error("[confirmSafeTransaction]", err);
     return {
       success: false,
       safeTxHash: input.safeTxHash,
       source: "prepared-only",
-      message: err.message || "Failed to confirm transaction",
+      message: getSafeErrorMessage(err, "Failed to confirm transaction"),
     };
   }
 }
@@ -551,17 +606,49 @@ export async function executeSafeTransaction(input: {
   signerAddress: string;
 }): Promise<SafeTransactionSignResult> {
   try {
+    const safeAddress = ethers.getAddress(input.safeAddress);
     const safe = await Safe.init({
       provider: input.eip1193Provider as any,
       signer: input.signerAddress,
-      safeAddress: ethers.getAddress(input.safeAddress),
+      safeAddress,
     });
 
-    const apiKit = getApiKit(input.chainId);
-    const safeTransaction = await apiKit.getTransaction(input.safeTxHash);
+    // Fetch full transaction + collected signatures directly from service
+    const serviceUrl = getSafeServiceUrl(input.chainId);
+    const res = await fetch(
+      `${serviceUrl}/api/v1/multisig-transactions/${input.safeTxHash}/`,
+      { headers: { accept: "application/json" } },
+    );
+    if (!res.ok) throw new Error(`Failed to fetch transaction: HTTP ${res.status}`);
+    const txData = await res.json() as any;
 
-    const execResponse = await safe.executeTransaction(safeTransaction as any);
-    const txHash = (execResponse as any).hash ?? (execResponse as any).transactionResponse?.hash;
+    // Rebuild SafeTransaction with original params so the hash matches
+    const safeTransaction = await safe.createTransaction({
+      transactions: [{
+        to: txData.to,
+        value: txData.value ?? "0",
+        data: txData.data || "0x",
+        operation: txData.operation ?? 0,
+      }],
+      options: {
+        nonce: txData.nonce,
+        safeTxGas: txData.safeTxGas ?? "0",
+        baseGas: txData.baseGas ?? "0",
+        gasPrice: txData.gasPrice ?? "0",
+        gasToken: txData.gasToken ?? ethers.ZeroAddress,
+        refundReceiver: txData.refundReceiver ?? ethers.ZeroAddress,
+      },
+    });
+
+    // Attach all collected signatures
+    for (const confirmation of txData.confirmations ?? []) {
+      safeTransaction.addSignature(new EthSafeSignature(confirmation.owner, confirmation.signature));
+    }
+
+    const execResponse = await safe.executeTransaction(safeTransaction);
+    const txHash =
+      (execResponse as any).hash ??
+      (execResponse as any).transactionResponse?.hash;
 
     return {
       success: true,
@@ -571,11 +658,12 @@ export async function executeSafeTransaction(input: {
       message: `Transaction executed. Hash: ${txHash ?? "pending"}`,
     };
   } catch (err: any) {
+    console.error("[executeSafeTransaction]", err);
     return {
       success: false,
       safeTxHash: input.safeTxHash,
       source: "prepared-only",
-      message: err.message || "Failed to execute transaction",
+      message: getSafeErrorMessage(err, "Failed to execute transaction"),
     };
   }
 }
