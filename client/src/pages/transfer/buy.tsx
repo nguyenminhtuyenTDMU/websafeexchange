@@ -20,7 +20,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useWebSocket } from "@/hooks/use-websocket";
 import { escrowABI } from "@/lib/contracts/EscrowABI";
 import { getEscrowAddress, SUPPORTED_CHAIN_ID } from "@/lib/contracts/addresses";
-import { Link } from "wouter";
+import { Link, useSearch } from "wouter";
 import { DeadlineDisplay } from "@/components/deadline-display";
 import type { Trade } from "@shared/schema";
 
@@ -71,6 +71,17 @@ export default function Buy() {
   const pendingUiActionRef = useRef<string | null>(
     typeof window === "undefined" ? null : new URLSearchParams(window.location.search).get("action")
   );
+  const search = useSearch();
+
+  // Sync URL params when chatbot navigates to same route with new query params
+  useEffect(() => {
+    const params = new URLSearchParams(search.replace(/^\?/, ""));
+    const urlAction = params.get("action");
+    const urlTradeId = params.get("tradeId");
+    if (urlAction) pendingUiActionRef.current = urlAction;
+    if (urlTradeId) setResumeTradeId(urlTradeId);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [search]);
 
   const form = useForm<SearchFormValues>({
     resolver: zodResolver(searchFormSchema),
@@ -149,7 +160,11 @@ export default function Buy() {
       if (!res.ok) throw new Error("Không tìm thấy trade");
       return res.json();
     },
-    onSuccess: (data) => setFoundTrade(data),
+    onSuccess: (data) => {
+      // Clear any pending chatbot action — manual search should never auto-trigger MetaMask
+      pendingUiActionRef.current = null;
+      setFoundTrade(data);
+    },
     onError: (error: Error) => {
       toast({ variant: "destructive", title: "Không tìm thấy", description: error.message });
       setFoundTrade(null);
@@ -377,6 +392,7 @@ export default function Buy() {
     trade,
     foundTrade,
     isWrongNetwork,
+    search,
     joinTradeMutation,
     depositMutation,
     releaseFundsMutation,
@@ -755,6 +771,7 @@ export default function Buy() {
             <Button
               variant="outline"
               onClick={() => {
+                pendingUiActionRef.current = null;
                 setFoundTrade(null);
                 setResumeTradeId(null);
                 if (address) localStorage.removeItem(`buy_trade_${address}`);

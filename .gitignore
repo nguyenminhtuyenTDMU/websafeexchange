@@ -8,3 +8,4 @@ vite.config.ts.*
 .history
 .gitnexus
 .claude
+langflow/docs
