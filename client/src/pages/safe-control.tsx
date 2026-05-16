@@ -78,7 +78,7 @@ function NewTransactionForm({
   onPropose,
   isActioning,
 }: {
-  onPropose: (input: { to: string; value: string; data: string }) => Promise<void>;
+  onPropose: (input: { to: string; value: string; data: string }) => Promise<unknown>;
   isActioning: boolean;
 }) {
   const [to, setTo] = useState("");
@@ -262,6 +262,7 @@ export default function SafeControl() {
     refreshSafes,
     refreshSelectedSafe,
     deploySafe,
+    proposeTransaction,
     confirmTransaction,
     executeTransaction,
     clearActionResult,
@@ -529,7 +530,21 @@ export default function SafeControl() {
                 </AlertDescription>
               </Alert>
             )}
-
+            {/* New transaction form */}
+            {selectedSafeAddress && selectedSafeDetails?.isConnectedWalletOwner && (
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <PlusCircle className="h-5 w-5 text-primary" />
+                    Tạo giao dịch mới
+                  </CardTitle>
+                  <CardDescription>Đề xuất giao dịch mới cho ví Safe đã chọn.</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <NewTransactionForm onPropose={proposeTransaction} isActioning={isActioning} />
+                </CardContent>
+              </Card>
+            )}
             {/* Pending transactions */}
             <Card>
               <CardHeader>
