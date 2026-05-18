@@ -6,4 +6,3 @@ vite.config.ts.*
 *.tar.gz
 .env
 .history
-langflow/docs
