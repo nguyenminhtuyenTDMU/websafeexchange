@@ -6,3 +6,6 @@ vite.config.ts.*
 *.tar.gz
 .env
 .history
+# Hardhat build output
+artifacts/
+cache/
