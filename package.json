@@ -124,5 +124,16 @@
   },
   "optionalDependencies": {
     "bufferutil": "^4.0.8"
+  },
+  "overrides": {
+    "@safe-global/safe-contracts": {
+      "ethers": "$ethers"
+    }
+  },
+  "allowScripts": {
+    "esbuild@0.18.20": true,
+    "esbuild@0.25.9": true,
+    "esbuild@0.21.5": true,
+    "keccak@3.0.4": true
   }
 }
