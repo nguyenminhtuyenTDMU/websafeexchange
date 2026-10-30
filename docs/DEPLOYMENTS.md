@@ -22,6 +22,10 @@ Mã nguồn: `remix/CleanHandover_flat.sol`.
 Đã kiểm tra on-chain: `verifierAt(0)` và `assetCheckerAt(0..3)` trả về đúng các địa chỉ trên;
 `isOfficialSingleton(SafeL2 1.4.1) = true`.
 
+## Cấu hình compiler (đã đối chiếu metadata trong bytecode on-chain)
+
+- `v0.8.24+commit.e11b9ed9`, EVM version `cancun`, optimizer bật với 200 runs, không dùng viaIR.
+
 ## Trạng thái verify mã nguồn trên Etherscan
 
-- [ ] Chưa verify. Khi verify phải dùng đúng cấu hình compiler lúc deploy (phiên bản, EVM version, optimizer).
+- [ ] Chưa verify. Khi verify phải dùng đúng cấu hình compiler ở trên.
