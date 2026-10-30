@@ -8,3 +8,6 @@ vite.config.ts.*
 .history
 .gitnexus
 .claude
+# Hardhat build output
+artifacts/
+cache/
