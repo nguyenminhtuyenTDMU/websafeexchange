@@ -1,40 +1,26 @@
-require("@nomicfoundation/hardhat-toolbox");
+require("@nomicfoundation/hardhat-ethers");
+require("@nomicfoundation/hardhat-chai-matchers");
 require("dotenv").config();
-require("hardhat-deploy");
+
+// Hardhat chỉ dùng để biên dịch và chạy bộ kiểm thử ở máy local.
+// Triển khai lên Sepolia thực hiện bằng Remix + MetaMask (xem docs/DEPLOY_REMIX.md).
 /** @type import('hardhat/config').HardhatUserConfig */
 module.exports = {
-  namedAccounts: {
-    deployer: {
-      default: 0
-    }
-  },
   solidity: {
-    version: "0.8.19",
+    version: "0.8.24",
     settings: {
-      optimizer: {
-        enabled: true,
-        runs: 200
-      },
-      viaIR: true
-    }
+      optimizer: { enabled: true, runs: 200 },
+      viaIR: true,
+      evmVersion: "cancun", // cần cho transient storage (TSTORE/TLOAD)
+    },
   },
   paths: {
     sources: "./contracts",
     tests: "./test",
     cache: "./cache",
-    artifacts: "./artifacts"
+    artifacts: "./artifacts",
   },
   networks: {
-    hardhat: {
-      chainId: 31337
-    },
-    sepolia: {
-      url: process.env.SEPOLIA_RPC_URL || "",
-      accounts: process.env.PRIVATE_KEY ? [process.env.PRIVATE_KEY] : []
-    },
-    mainnet: {
-      url: process.env.MAINNET_RPC_URL || "",
-      accounts: process.env.PRIVATE_KEY ? [process.env.PRIVATE_KEY] : []
-    }
-  }
+    hardhat: { chainId: 31337, hardfork: "cancun" },
+  },
 };
