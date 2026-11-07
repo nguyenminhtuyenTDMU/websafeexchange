@@ -44,6 +44,8 @@ trong cùng MultiSend (chi tiết: `docs/SECURITY_ANALYSIS.md`, mục 3.3). Gi�
 
 ## Trạng thái verify mã nguồn trên Etherscan
 
-- [ ] `CleanHandoverEscrow` v2
-- [ ] `SafeWalletVerifier` v2
-- [ ] 4 asset checker (không có constructor args)
+Đã verify toàn bộ ngày 08/11/2026 (Solidity single file, cấu hình compiler như trên):
+
+- [x] `CleanHandoverEscrow` v2 và `SafeWalletVerifier` v2: dùng `remix/CleanHandover_flat.sol` tại commit `274c61b`.
+- [x] 4 asset checker: không có constructor args. Phải dùng file gộp **ngày 30/10** (`git show 4f13d99:remix/CleanHandover_flat.sol`),
+  vì hash metadata cuối bytecode tính trên toàn bộ file nguồn; file gộp hiện tại khác nên không khớp.

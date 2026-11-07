@@ -7,15 +7,9 @@ interface IERC20Balance { function balanceOf(address account) external view retu
 interface IERC721Owner  { function ownerOf(uint256 tokenId) external view returns (address); }
 interface IOwnableOwner { function owner() external view returns (address); }
 
-/*
- * Bốn checker tham chiếu cho trục tài sản. Mọi lỗi đọc dữ liệu đều trả về false (fail-closed).
- *
- * Giới hạn đã biết của phương pháp đối chiếu số dư:
- *  - token rebase / token thu phí khi chuyển có số dư tự thay đổi => không áp dụng được;
- *  - số tài sản khai báo bị giới hạn (MAX_ASSETS trong escrow) do gas tăng tuyến tính.
- */
+// đọc lỗi thì trả về false
 
-/// @notice ETH: số dư ví >= value. Tham số token bị bỏ qua.
+/// @notice Số dư ETH của ví >= value.
 contract EthBalanceChecker is IAssetChecker {
     function holds(address wallet, address, uint256 value) external view returns (bool) {
         return wallet.balance >= value;
@@ -34,7 +28,7 @@ contract Erc20BalanceChecker is IAssetChecker {
     }
 }
 
-/// @notice ERC-721: ownerOf(value) == wallet, với value là tokenId.
+/// @notice ERC-721: value là tokenId.
 contract Erc721OwnerChecker is IAssetChecker {
     function holds(address wallet, address token, uint256 value) external view returns (bool) {
         if (token.code.length == 0) return false;
@@ -46,7 +40,7 @@ contract Erc721OwnerChecker is IAssetChecker {
     }
 }
 
-/// @notice Ownable: owner() của hợp đồng `token` == wallet. Tham số value bị bỏ qua.
+/// @notice owner() của hợp đồng `token` là ví.
 contract OwnableOwnerChecker is IAssetChecker {
     function holds(address wallet, address token, uint256) external view returns (bool) {
         if (token.code.length == 0) return false;

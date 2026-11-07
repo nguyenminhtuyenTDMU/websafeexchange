@@ -25,24 +25,7 @@ interface ISafeAdmin {
 
 /**
  * @title SafeWalletVerifier
- * @notice Adapter tham chiếu cho ví Safe (Gnosis Safe) v1.3.0 / v1.4.1 / v1.5.0.
- *
- * Các điều kiện "bàn giao sạch" (mỗi điều kiện là một bit trong failMask):
- *  - NOT_OFFICIAL_SAFE  : proxy không trỏ tới singleton Safe chính thức
- *                         (singleton bị thay => mọi hàm view khác đều có thể bị làm giả)
- *  - OWNERS_MISMATCH    : tập owner hiện tại KHÁC ĐÚNG tập owner đã thỏa thuận (còn owner ẩn / thiếu owner)
- *  - THRESHOLD_MISMATCH : ngưỡng ký khác ngưỡng đã thỏa thuận
- *  - MODULES_ENABLED    : còn module được bật (module thực thi giao dịch không cần chữ ký owner)
- *  - GUARD_SET          : còn transaction guard (có thể chặn / kiểm duyệt giao dịch của người mua)
- *  - MODULE_GUARD_SET   : còn module guard (Safe v1.5)
- *  - FALLBACK_HANDLER   : fallback handler khác 0 và khác handler đã thỏa thuận
- *                         (handler độc có thể giả mạo chữ ký EIP-1271 thay cho ví)
- *  - EXECUTOR_NOT_ENABLED : (chỉ checkReadiness) escrow chưa được bật làm module của ví
- *
- * Guard, module guard, fallback handler không có hàm getter => đọc trực tiếp khe lưu trữ
- * (storage slot) qua getStorageAt() của StorageAccessible.
- *
- * Hợp đồng bất biến: danh sách singleton chính thức chỉ đặt trong constructor, không có quản trị viên.
+ * @notice Kiểm tra ví Safe 1.3.0 / 1.4.1 / 1.5.0. Mỗi điều kiện chưa đạt là một bit trong failMask.
  */
 contract SafeWalletVerifier is IWalletVerifier {
     uint256 public constant NOT_OFFICIAL_SAFE  = 1 << 0;
@@ -54,7 +37,7 @@ contract SafeWalletVerifier is IWalletVerifier {
     uint256 public constant FALLBACK_HANDLER   = 1 << 6;
     uint256 public constant EXECUTOR_NOT_ENABLED = 1 << 7;
 
-    /// @dev Giới hạn số module đọc ra khi kiểm tra; ví "sẵn sàng" chỉ được có đúng 1 module (escrow).
+    // đọc 2 module là đủ biết ví có module nào khác ngoài escrow không
     uint256 internal constant MODULE_PAGE = 2;
 
     bytes32 internal constant GUARD_SLOT            = keccak256("guard_manager.guard.address");
@@ -70,11 +53,9 @@ contract SafeWalletVerifier is IWalletVerifier {
         }
     }
 
-    // ─── IWalletVerifier ─────────────────────────────────────────────────────
-
     function isSupportedWallet(address wallet) public view returns (bool) {
         if (wallet.code.length == 0) return false;
-        // masterCopy() được SafeProxy tự trả lời từ slot 0, không chuyển tiếp xuống singleton.
+        // proxy tự trả lời masterCopy() từ slot 0, singleton giả không can thiệp được
         try ISafeView(wallet).masterCopy() returns (address mc) {
             return isOfficialSingleton[mc];
         } catch {
@@ -98,7 +79,7 @@ contract SafeWalletVerifier is IWalletVerifier {
         uint256 threshold,
         address allowedFallbackHandler
     ) external view returns (uint256 failMask) {
-        // Singleton không chính thức => không tin bất kỳ kết quả view nào khác.
+        // singleton lạ thì các hàm view khác đều không đáng tin
         if (!isSupportedWallet(wallet)) return NOT_OFFICIAL_SAFE;
 
         ISafeView safe = ISafeView(wallet);
@@ -124,10 +105,7 @@ contract SafeWalletVerifier is IWalletVerifier {
         failMask |= _checkHooks(safe, allowedFallbackHandler);
     }
 
-    /**
-     * Sẵn sàng = singleton chính thức, module DUY NHẤT là `executor`, không guard / module guard,
-     * fallback handler hợp lệ. Owner và ngưỡng ký không cần đúng: escrow sẽ tự đặt lại khi bàn giao.
-     */
+    // owner và ngưỡng chưa cần đúng ở bước này, escrow sẽ đặt lại khi bàn giao
     function checkReadiness(address wallet, address executor, address allowedFallbackHandler)
         external view returns (uint256 failMask)
     {
@@ -148,14 +126,8 @@ contract SafeWalletVerifier is IWalletVerifier {
         failMask |= _checkHooks(safe, allowedFallbackHandler);
     }
 
-    /**
-     * Thứ tự lời gọi (đều qua execTransactionFromModule, do `executor` thực hiện):
-     *  1. addOwnerWithThreshold(newOwner_i, 1)  — owner mới được chèn vào đầu danh sách liên kết;
-     *  2. removeOwner(newOwners[0], oldOwner_j, 1) — sau bước 1, owner cũ đầu tiên luôn đứng ngay sau newOwners[0];
-     *  3. changeThreshold(threshold);
-     *  4. disableModule(SENTINEL, executor) — readiness bảo đảm executor là module duy nhất (đứng đầu danh sách).
-     * Owner ẩn do người bán cài thêm bị xóa ở bước 2 cùng mọi owner cũ.
-     */
+    // addOwner chèn owner mới vào đầu danh sách liên kết, nên owner cũ cần xóa luôn đứng ngay sau newOwners[0].
+    // escrow là module duy nhất nên prevModule là SENTINEL.
     function handoverCalls(address wallet, address[] calldata newOwners, uint256 threshold, address executor)
         external view returns (bytes[] memory calls)
     {
@@ -173,9 +145,7 @@ contract SafeWalletVerifier is IWalletVerifier {
         calls[k++] = _moduleCall(wallet, abi.encodeCall(ISafeAdmin.disableModule, (SENTINEL, executor)));
     }
 
-    // ─── Internal ────────────────────────────────────────────────────────────
-
-    /// @dev Guard, module guard, fallback handler: không có getter nên đọc thẳng storage slot.
+    // guard, module guard và fallback handler không có getter nên đọc thẳng storage slot
     function _checkHooks(ISafeView safe, address allowedFallbackHandler) internal view returns (uint256 failMask) {
         (bool okGuard, address guard) = _readAddress(safe, GUARD_SLOT);
         if (!okGuard || guard != address(0)) failMask |= GUARD_SET;
@@ -204,7 +174,7 @@ contract SafeWalletVerifier is IWalletVerifier {
         }
     }
 
-    /// @dev So sánh hai chiều để không bị đánh lừa bởi phần tử trùng lặp.
+    // so hai chiều để không bị lừa bởi phần tử trùng
     function _sameSet(address[] memory actual, address[] calldata expected) internal pure returns (bool) {
         if (actual.length != expected.length) return false;
         for (uint256 i = 0; i < expected.length; i++) {
