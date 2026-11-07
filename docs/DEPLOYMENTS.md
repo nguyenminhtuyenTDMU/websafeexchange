@@ -5,13 +5,13 @@ Cấu hình compiler: `v0.8.24+commit.e11b9ed9`, EVM version `cancun`, optimizer
 
 ## Bản hiện hành (v2, thiết kế escrow-làm-module)
 
-Chưa triển khai. Cần deploy lại `SafeWalletVerifier` và `CleanHandoverEscrow`; **bốn asset checker dùng lại** địa chỉ bên dưới
-(mã không đổi).
+Triển khai 07/11/2026. Đã kiểm tra on-chain: bytecode khớp mã nguồn (trừ metadata), escrow nối đúng verifier và 4 checker;
+bốn asset checker dùng lại từ lần triển khai đầu (mã không đổi).
 
 | Hợp đồng | Vai trò | Địa chỉ |
 |---|---|---|
-| `CleanHandoverEscrow` | Hợp đồng ký quỹ lõi | _chưa deploy_ |
-| `SafeWalletVerifier` | Trục ví, `verifierId = 0` | _chưa deploy_ |
+| `CleanHandoverEscrow` | Hợp đồng ký quỹ lõi | [`0x256d891d310F76Fb8D2F9357CbEc987412f241A4`](https://sepolia.etherscan.io/address/0x256d891d310F76Fb8D2F9357CbEc987412f241A4) |
+| `SafeWalletVerifier` | Trục ví, `verifierId = 0` (8 singleton, gồm Safe 1.5.0) | [`0x4A6A1454CDBcA552F3ee414A6c726ee1E1ef43d2`](https://sepolia.etherscan.io/address/0x4A6A1454CDBcA552F3ee414A6c726ee1E1ef43d2) |
 | `EthBalanceChecker` | Trục tài sản, `checkerId = 0` | [`0x857b6a56F18e54a79c8C57d890314A92A1e2a633`](https://sepolia.etherscan.io/address/0x857b6a56F18e54a79c8C57d890314A92A1e2a633) |
 | `Erc20BalanceChecker` | Trục tài sản, `checkerId = 1` | [`0x924088D6cA89e008b64Bb4B68C522bd94bC9E8ed`](https://sepolia.etherscan.io/address/0x924088D6cA89e008b64Bb4B68C522bd94bC9E8ed) |
 | `Erc721OwnerChecker` | Trục tài sản, `checkerId = 2` | [`0x5edb0709D2EA755e536C299Ee64a8446fCf0FA40`](https://sepolia.etherscan.io/address/0x5edb0709D2EA755e536C299Ee64a8446fCf0FA40) |
