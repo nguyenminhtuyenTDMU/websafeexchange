@@ -148,6 +148,26 @@ describe("CleanHandover — escrow bàn giao ví Safe", function () {
     });
   });
 
+  describe("T4b — Module guard (chỉ có từ Safe 1.5.0)", function () {
+    before(function () {
+      if (process.env.SAFE_VERSION !== "1.5.0") this.skip();
+    });
+
+    it("Còn module guard => không nhận tiền (MODULE_GUARD_SET); gỡ đi thì bàn giao bình thường", async function () {
+      const { escrow, seller, buyer, safe, execSafe, safeCall, enableEscrowModule, list, depositFor } = f;
+      const moduleGuard = await (await ethers.getContractFactory("MockModuleGuard")).deploy();
+      await execSafe(seller, safeCall("setModuleGuard", [moduleGuard.target]));
+      await enableEscrowModule();
+      const id = await list();
+      await expect(depositFor(id)).to.be.revertedWithCustomError(escrow, "WalletNotReady").withArgs(BIT.MODULE_GUARD_SET, 0);
+
+      await execSafe(seller, safeCall("setModuleGuard", [ethers.ZeroAddress]));
+      await depositFor(id);
+      await escrow.connect(buyer).finalizeHandover(id);
+      expect(await safe.getOwners()).to.deep.equal([buyer.address]);
+    });
+  });
+
   describe("T6 — Rút tài sản", function () {
     it("Rút trước khi người mua nạp => không nhận tiền, chỉ đúng tài sản bị thiếu", async function () {
       const { escrow, seller, token, attacker, execSafe, enableEscrowModule, list, depositFor } = f;
@@ -211,7 +231,7 @@ describe("CleanHandover — escrow bàn giao ví Safe", function () {
       const id = await openAndFund();
       await expect(
         execSafe(seller, [call(escrow, "finalizeHandover", [id]), safeCall("enableModule", [attacker.address])])
-      ).to.be.revertedWith("GS013");
+      ).to.be.reverted; // 1.4.1: "GS013", 1.5.0: custom error
       expect((await escrow.trades(id)).status).to.equal(Status.FUNDED);
       expect(await safe.isModuleEnabled(attacker.address)).to.equal(false);
       expect(await safe.getOwners()).to.deep.equal([seller.address]);

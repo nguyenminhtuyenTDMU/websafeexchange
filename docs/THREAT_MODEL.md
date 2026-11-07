@@ -43,7 +43,7 @@ Nguyên tắc rút ra: **chỉ bên giữ quyền điều khiển tới cuối g
 | T2 | Sai ngưỡng ký | S | Escrow tự đặt ngưỡng; kiểm tra `getThreshold() == threshold` (`THRESHOLD_MISMATCH`) | Không cần làm gì | T2 |
 | T3 | Cài module làm cửa hậu | S | Lúc nạp: escrow phải là module **duy nhất** (`MODULES_ENABLED`, `EXECUTOR_NOT_ENABLED`); sau bàn giao: không còn module nào | `disableModule` module lạ, `enableModule(escrow)` | T3 (3 test) |
 | T4 | Cài guard để chặn / kiểm duyệt giao dịch của B | S | Slot `guard_manager.guard.address` phải bằng 0 (`GUARD_SET`) | `setGuard(0x0)` | T4 |
-| T4b | Module guard (Safe v1.5) | S | Slot `module_manager.module_guard.address` phải bằng 0 (`MODULE_GUARD_SET`) | `setModuleGuard(0x0)` | — |
+| T4b | Module guard (Safe v1.5) | S | Slot `module_manager.module_guard.address` phải bằng 0 (`MODULE_GUARD_SET`) | `setModuleGuard(0x0)` | T4b (Safe 1.5.0) |
 | T5 | Fallback handler độc giả mạo chữ ký EIP-1271 | S | Slot `fallback_manager.handler.address` bằng 0 hoặc handler đã thỏa thuận (`FALLBACK_HANDLER`) | `setFallbackHandler` về handler chuẩn | T5 |
 | T6 | Rút tài sản (ETH / ERC-20 / NFT / Ownable), trước hoặc sau khi B nạp tiền | S | Đối chiếu tài sản niêm yết lúc nạp tiền **và** lúc bàn giao (bitmask theo từng tài sản) | Trả lại tài sản | T6 (4 test) |
 | T7 | Thay singleton để mọi hàm view "khai" là sạch | S | `masterCopy()` do proxy tự trả lời phải thuộc danh sách singleton chính thức (`NOT_OFFICIAL_SAFE`) | Không khắc phục được | T7 (2 test) |
@@ -77,10 +77,11 @@ Mỗi bit = 1 là một dòng "chưa đạt" kèm cột hướng dẫn ở trên
 ## 5. Kiểm chứng
 
 ```
-npx hardhat test test/CleanHandover.test.cjs --config hardhat.config.cjs                 # 33 test
-SAFE_VARIANT=L2 npx hardhat test test/CleanHandover.test.cjs --config hardhat.config.cjs # cùng 33 test trên SafeL2
+npx hardhat test test/CleanHandover.test.cjs --config hardhat.config.cjs                                       # Safe 1.4.1
+SAFE_VERSION=1.5.0 SAFE_VARIANT=L2 npx hardhat test test/CleanHandover.test.cjs --config hardhat.config.cjs # SafeL2 1.5.0 (34 test)
 FUZZ_RUNS=1000 npx hardhat test test/CleanHandover.fuzz.test.cjs --config hardhat.config.cjs
 ```
 
-Tất cả chạy trên bộ hợp đồng **Safe v1.4.1 chính thức** (artifact của `@safe-global/safe-contracts`), không dùng mock Safe.
+Tất cả chạy trên bộ hợp đồng Safe **chính thức**, không dùng mock Safe: bản 1.4.1 (`@safe-global/safe-contracts`) và bản 1.5.0
+(`@safe-global/safe-smart-account`, đặt `SAFE_VERSION=1.5.0`), mỗi bản cả Safe và SafeL2. Test module guard (T4b) chỉ chạy trên 1.5.0.
 Kết quả phân tích tĩnh và fuzz: `docs/SECURITY_ANALYSIS.md`.

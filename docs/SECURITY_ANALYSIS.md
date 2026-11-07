@@ -104,7 +104,7 @@ PYTHONUTF8=1 myth -v 4 analyze --bin-runtime -c "$(cat bin/<Contract>.bin-runtim
 
 ## 3.1 Cách làm
 
-`test/CleanHandover.fuzz.test.cjs`, dùng thư viện fast-check, chạy trên Safe v1.4.1 chính thức (cả Safe và SafeL2).
+`test/CleanHandover.fuzz.test.cjs`, dùng thư viện fast-check, chạy trên bộ hợp đồng Safe chính thức (1.4.1 và 1.5.0, cả Safe và SafeL2).
 Mỗi kịch bản ngẫu nhiên gồm 4 pha:
 
 1. **Chuẩn bị:** người bán bật hoặc không bật escrow làm module, cùng 0–4 hành vi có hại (module lạ, guard, fallback độc, owner phụ,
@@ -133,7 +133,11 @@ Bất biến kiểm tra sau mỗi kịch bản:
 | 505 | SafeL2 | 413 | 511 | 76 (76) | 263 | 135 / 0 |
 | **Tổng** | | **2.019** | **2.502** | **479 (479)** | **1.308** | **661 / 0** |
 
-5.000 kịch bản, **không vi phạm bất biến nào**. Tái lập: `FUZZ_RUNS=1000 FUZZ_SEED=<seed> [SAFE_VARIANT=L2] npx hardhat test test/CleanHandover.fuzz.test.cjs --config hardhat.config.cjs`.
+5.000 kịch bản, **không vi phạm bất biến nào**.
+
+Chạy bổ sung trên **SafeL2 1.5.0** (`SAFE_VERSION=1.5.0 SAFE_VARIANT=L2`), seed 606 và 707, mỗi seed 1.000 kịch bản:
+774 hoàn tất (đều sạch), 184 bị từ chối lúc bàn giao (đều đã hoàn tiền), 517 kịch bản trung thực đều hoàn tất,
+finalize bọc thử 240 lần, thành công 0 lần. Không vi phạm bất biến nào. Tái lập: `FUZZ_RUNS=1000 FUZZ_SEED=<seed> [SAFE_VARIANT=L2] npx hardhat test test/CleanHandover.fuzz.test.cjs --config hardhat.config.cjs`.
 
 ## 3.3 Lỗ hổng fuzz test tìm ra ở thiết kế cũ
 
@@ -163,7 +167,7 @@ cột "Finalize bọc" ở bảng trên cho 661 lần thử, 0 lần thành côn
 
 # 4. Đối chiếu với threat model
 
-Các kịch bản T1–T13 trong `docs/THREAT_MODEL.md` được chứng minh bằng 33 test (chạy trên cả Safe và SafeL2) và bằng fuzz test.
+Các kịch bản T1–T13 trong `docs/THREAT_MODEL.md` được chứng minh bằng 34 test (chạy trên Safe 1.4.1 và 1.5.0, mỗi bản cả Safe và SafeL2) và bằng fuzz test.
 Slither và Mythril không phát hiện lớp lỗi nào nằm ngoài các kịch bản đó (reentrancy ghi trạng thái, biến chưa khởi tạo, ghi đè storage,
 `tx.origin`, `delegatecall` không kiểm soát, `selfdestruct`...).
 Các giới hạn đã biết (allowance, chữ ký đã ủy thác, token rebase…) được liệt kê ở mục 4 của threat model.

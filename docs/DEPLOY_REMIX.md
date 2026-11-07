@@ -14,11 +14,12 @@
 Tham số `officialSingletons`:
 
 ```
-["0x41675C099F32341bf84BFc5382aF534df5C7461a","0x29fcB43b46531BcA003ddC8FCB67FFE91900C762","0xd9Db270c1B5E3Bd161E8c8503c55cEABeE709552","0x3E5c63644E683549055b9Be8653de26E0B4CD36E","0x69f4D1788e39c87893C980c06EdF4b7f686e2938","0xfb1bffC9d739B8D520DaF37dF666da4C687191EA"]
+["0x41675C099F32341bf84BFc5382aF534df5C7461a","0x29fcB43b46531BcA003ddC8FCB67FFE91900C762","0xd9Db270c1B5E3Bd161E8c8503c55cEABeE709552","0x3E5c63644E683549055b9Be8653de26E0B4CD36E","0x69f4D1788e39c87893C980c06EdF4b7f686e2938","0xfb1bffC9d739B8D520DaF37dF666da4C687191EA","0xFf51A5898e281Db6DfC7855790607438dF2ca44b","0xEdd160fEBBD92E350D4D398fb636302fccd67C7e"]
 ```
 
-(Safe và SafeL2 bản 1.4.1, Safe và SafeL2 bản 1.3.0 ở cả hai bản canonical và eip155.)
-Safe tạo bằng app.safe.global trên Sepolia dùng **SafeL2 1.4.1** = `0x29fcB4...C762`.
+Thứ tự: Safe 1.4.1, SafeL2 1.4.1, Safe 1.3.0, SafeL2 1.3.0 (canonical), Safe 1.3.0, SafeL2 1.3.0 (eip155), **Safe 1.5.0, SafeL2 1.5.0**.
+Safe tạo bằng app.safe.global trên Sepolia (11/2026) là **SafeL2 1.5.0** = `0xEdd160...7C7e`.
+Toàn bộ test chạy được trên cả 1.4.1 và 1.5.0 (`SAFE_VERSION=1.5.0`).
 
 ## 2. Bốn asset checker
 
@@ -40,7 +41,10 @@ Optimization Yes / 200 → EVM `cancun`. Constructor arguments thường đượ
 
 | Thành phần | Địa chỉ |
 |---|---|
-| CompatibilityFallbackHandler 1.4.1 (dùng làm `allowedFallbackHandler`) | `0xfd0732Dc9E303f09fCEf3a7388Ad10A83459Ec99` |
+| CompatibilityFallbackHandler **1.5.0** (dùng làm `allowedFallbackHandler` cho Safe 1.5.0) | `0x3EfCBb83A4A7AfcB4F68D501E2c2203a38be77f4` |
+| CompatibilityFallbackHandler 1.4.1 (cho Safe 1.4.1) | `0xfd0732Dc9E303f09fCEf3a7388Ad10A83459Ec99` |
+
+`allowedFallbackHandler` phải đúng handler mà Safe đang dùng (xem trên app.safe.global → Settings → Setup, hoặc hỏi trợ lý).
 
 ## 6. Chạy thử một giao dịch bàn giao trên Sepolia
 
@@ -50,7 +54,7 @@ Cần **hai tài khoản MetaMask**: người bán (S) và người mua (B).
 2. **(S) Niêm yết** trên Remix, gọi `createTrade` với tuple:
    ```
    ["<địa chỉ Safe>", 0, "<địa chỉ B>", <giá wei>, <deadline unix>, ["<địa chỉ B>"], 1,
-    "0xfd0732Dc9E303f09fCEf3a7388Ad10A83459Ec99",
+    "0x3EfCBb83A4A7AfcB4F68D501E2c2203a38be77f4",
     [[0, "0x0000000000000000000000000000000000000000", <số wei ETH trong Safe>]]]
    ```
    Lấy `tradeId` từ `tradeCount()`.

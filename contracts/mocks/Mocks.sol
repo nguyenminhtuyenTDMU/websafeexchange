@@ -81,6 +81,26 @@ contract MockGuard is ISafeGuardLike {
     }
 }
 
+/// @dev Cùng selector với IModuleGuard của Safe 1.5.0.
+interface ISafeModuleGuardLike {
+    function checkModuleTransaction(address to, uint256 value, bytes calldata data, uint8 operation, address module)
+        external returns (bytes32 moduleTxHash);
+    function checkAfterModuleExecution(bytes32 txHash, bool success) external;
+}
+
+/// @notice Module guard "cài cắm" (Safe 1.5.0): có thể chặn mọi giao dịch qua module, kể cả của người mua sau này.
+contract MockModuleGuard is ISafeModuleGuardLike {
+    function checkModuleTransaction(address, uint256, bytes calldata, uint8, address) external pure returns (bytes32) {
+        return bytes32(0);
+    }
+
+    function checkAfterModuleExecution(bytes32, bool) external pure {}
+
+    function supportsInterface(bytes4 interfaceId) external pure returns (bool) {
+        return interfaceId == type(ISafeModuleGuardLike).interfaceId || interfaceId == 0x01ffc9a7;
+    }
+}
+
 /// @notice Được Safe delegatecall tới để ghi đè slot 0 (địa chỉ singleton) => thay "bộ não" của ví.
 contract SingletonSwitcher {
     function switchTo(address newSingleton) external {

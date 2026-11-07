@@ -3,12 +3,14 @@
  * (artifact build sẵn của @safe-global/safe-contracts).
  *
  * SAFE_VARIANT=L2 để dùng SafeL2 (bản mà app.safe.global dùng trên Sepolia); mặc định là Safe.
+ * SAFE_VERSION=1.5.0 để dùng Safe 1.5.0 (@safe-global/safe-smart-account); mặc định là 1.4.1 (@safe-global/safe-contracts).
  */
 const { ethers } = require("hardhat");
 const path = require("path");
 
+const SAFE_PACKAGE = process.env.SAFE_VERSION === "1.5.0" ? "safe-smart-account" : "safe-contracts";
 const SAFE_ARTIFACTS = path.join(
-  __dirname, "..", "..", "node_modules", "@safe-global", "safe-contracts", "build", "artifacts", "contracts"
+  __dirname, "..", "..", "node_modules", "@safe-global", SAFE_PACKAGE, "build", "artifacts", "contracts"
 );
 const loadSafeArtifact = (rel) => require(path.join(SAFE_ARTIFACTS, rel));
 const SINGLETON_ARTIFACT = process.env.SAFE_VARIANT === "L2" ? "SafeL2.sol/SafeL2.json" : "Safe.sol/Safe.json";
