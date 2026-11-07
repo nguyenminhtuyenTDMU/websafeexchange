@@ -14,14 +14,15 @@ import {IAssetChecker} from "./interfaces/IAssetChecker.sol";
  *
  *  1. createTrade  : người bán (đang là owner) niêm yết ví + điều kiện: tập owner mới, ngưỡng ký,
  *                    fallback handler chấp nhận, danh sách tài sản trong ví. Mọi điều kiện được băm thành termsHash.
- *  2. deposit      : người mua nạp đúng giá, kèm termsHash mình đã xem => chống người bán đổi điều kiện phút chót.
- *  3. Bàn giao NGUYÊN TỬ: người bán thực thi MỘT giao dịch Safe (MultiSend) gồm:
- *        beginHandover(id) → swapOwner/addOwner/changeThreshold... → completeHandover(id)
- *     - beginHandover chứng minh đầu giao dịch người bán vẫn đang kiểm soát ví;
- *     - completeHandover xác minh bàn giao sạch + tài sản còn nguyên ngay trong cùng giao dịch.
- *     Nếu bất kỳ điều kiện nào chưa đạt, CẢ giao dịch Safe bị revert => người bán vẫn giữ ví, tiền vẫn nằm trong escrow.
- *     Vì không tồn tại khoảnh khắc "người mua đã có ví nhưng chưa trả tiền", người mua không thể phá hoại
- *     trạng thái ví để vừa lấy ví vừa đòi hoàn tiền.
+ *     Trước đó người bán chuẩn bị ví: bật CHÍNH escrow này làm module duy nhất, gỡ guard, đặt fallback chuẩn.
+ *  2. deposit      : người mua nạp đúng giá, kèm termsHash mình đã xem (chống người bán đổi điều kiện phút chót).
+ *                    Hợp đồng kiểm tra ví đã sẵn sàng rồi chụp nonce của ví: từ đây ví bị "đóng băng".
+ *  3. finalizeHandover (ai gọi cũng được): escrow — với tư cách module — tự thêm owner mới, xóa MỌI owner cũ,
+ *     đặt ngưỡng ký, gỡ chính mình khỏi danh sách module, rồi xác minh bàn giao sạch + tài sản còn nguyên.
+ *     Sai một điều kiện => revert toàn bộ, người bán vẫn giữ ví, tiền vẫn nằm trong escrow.
+ *     Điều kiện nonce không đổi kể từ lúc nạp tiền bảo đảm finalizeHandover KHÔNG chạy bên trong một giao dịch
+ *     của ví (ví luôn tăng nonce trước khi thực thi), nên sau khi kiểm tra không còn lệnh nào của người bán
+ *     chạy tiếp được. Đây là lỗ hổng của thiết kế cũ (begin/complete trong MultiSend) mà fuzz test phát hiện.
  *  4. Tiền được ghi có (pull-payment) và rút bằng withdraw().
  *
  * Bất biến: không có owner/admin, không có hàm nâng cấp; danh sách verifier và asset checker cố định từ constructor.
@@ -68,7 +69,6 @@ contract CleanHandoverEscrow {
 
     uint256 public constant MAX_OWNERS = 10;
     uint256 public constant MAX_ASSETS = 20;
-    bytes32 private constant HANDOVER_TAG = keccak256("CleanHandover.handover");
 
     IWalletVerifier[] private _verifiers;
     IAssetChecker[] private _assetCheckers;
@@ -94,7 +94,6 @@ contract CleanHandoverEscrow {
         bytes32 termsHash
     );
     event TradeFunded(uint256 indexed tradeId, address indexed buyer, uint256 amount, uint256 nonceAtFunding);
-    event HandoverStarted(uint256 indexed tradeId, address indexed wallet);
     event TradeCompleted(uint256 indexed tradeId, address indexed seller, address indexed buyer, uint256 amount);
     event TradeCancelled(uint256 indexed tradeId, CancelReason reason, bool refunded);
     event Withdrawn(address indexed account, uint256 amount);
@@ -111,12 +110,13 @@ contract CleanHandoverEscrow {
     error InvalidState();
     error NotSeller();
     error NotBuyer();
-    error NotWallet();
     error WrongAmount();
     error TermsMismatch();
     error DeadlinePassed();
     error DeadlineNotPassed();
-    error NotAtomic();
+    error WalletNotReady(uint256 readinessFailMask, uint256 assetFailMask);
+    error WalletChangedSinceFunding();
+    error HandoverCallFailed(uint256 index);
     error HandoverNotClean(uint256 walletFailMask, uint256 assetFailMask);
     error NoSuspiciousActivity();
     error NothingToWithdraw();
@@ -138,7 +138,7 @@ contract CleanHandoverEscrow {
 
     // ─── Người bán: niêm yết ────────────────────────────────────────────────
 
-    function createTrade(TradeParams calldata p) external returns (uint256 id) {
+    function createTrade(TradeParams calldata p) external nonReentrant returns (uint256 id) {
         if (p.verifierId >= _verifiers.length) revert UnknownVerifier();
         IWalletVerifier verifier = _verifiers[p.verifierId];
 
@@ -199,35 +199,38 @@ contract CleanHandoverEscrow {
         if (msg.value != t.price) revert WrongAmount();
         if (expectedTermsHash != t.termsHash) revert TermsMismatch();
 
+        // Chỉ nhận tiền khi ví đã sẵn sàng: sau thời điểm này người bán không cần (và không được) đụng vào ví nữa.
+        (uint256 readinessMask, uint256 assetMask) = _readiness(id);
+        if (readinessMask != 0 || assetMask != 0) revert WalletNotReady(readinessMask, assetMask);
+
         t.nonceAtFunding = _verifiers[t.verifierId].txNonce(t.wallet);
         t.status = Status.FUNDED;
 
         emit TradeFunded(id, msg.sender, msg.value, t.nonceAtFunding);
     }
 
-    // ─── Bàn giao nguyên tử (gọi TỪ CHÍNH ví, trong cùng một giao dịch) ─────────
+    // ─── Bàn giao (escrow tự thực hiện với tư cách module của ví) ───────────────
 
-    function beginHandover(uint256 id) external {
+    /**
+     * @notice Ai cũng có thể gọi (thường là người mua). Toàn bộ việc chuyển quyền và kiểm tra nằm trong
+     *         MỘT lời gọi do escrow điều khiển từ đầu đến cuối.
+     */
+    function finalizeHandover(uint256 id) external nonReentrant {
         Trade storage t = trades[id];
         if (t.status != Status.FUNDED) revert InvalidState();
-        if (msg.sender != t.wallet) revert NotWallet();
-        if (!_verifiers[t.verifierId].isController(t.wallet, t.seller)) revert NotController();
+        IWalletVerifier verifier = _verifiers[t.verifierId];
 
-        bytes32 key = _handoverKey(id);
-        assembly { tstore(key, 1) }
+        // Ví tăng nonce trước khi thực thi mọi giao dịch do owner ký. Nonce không đổi => không có giao dịch nào
+        // của ví đang chạy bao quanh lời gọi này, và ví không bị thay đổi kể từ lúc người mua nạp tiền.
+        if (verifier.txNonce(t.wallet) != t.nonceAtFunding) revert WalletChangedSinceFunding();
+        if (!verifier.isController(t.wallet, t.seller)) revert NotController();
 
-        emit HandoverStarted(id, t.wallet);
-    }
-
-    function completeHandover(uint256 id) external nonReentrant {
-        Trade storage t = trades[id];
-        if (t.status != Status.FUNDED) revert InvalidState();
-        if (msg.sender != t.wallet) revert NotWallet();
-
-        bytes32 key = _handoverKey(id);
-        uint256 started;
-        assembly { started := tload(key) }
-        if (started != 1) revert NotAtomic();
+        address[] memory newOwners = _newOwners[id];
+        bytes[] memory calls = verifier.handoverCalls(t.wallet, newOwners, t.threshold, address(this));
+        for (uint256 i = 0; i < calls.length; i++) {
+            (bool ok, bytes memory ret) = t.wallet.call(calls[i]);
+            if (!ok || ret.length != 32 || !abi.decode(ret, (bool))) revert HandoverCallFailed(i);
+        }
 
         (uint256 walletMask, uint256 assetMask) = _handoverStatus(id);
         if (walletMask != 0 || assetMask != 0) revert HandoverNotClean(walletMask, assetMask);
@@ -235,7 +238,6 @@ contract CleanHandoverEscrow {
         t.status = Status.COMPLETED;
         if (activeTradeOf[t.wallet] == id) activeTradeOf[t.wallet] = 0;
         pendingWithdrawals[t.seller] += t.price;
-        assembly { tstore(key, 0) }
 
         emit TradeCompleted(id, t.seller, t.buyer, t.price);
     }
@@ -243,7 +245,7 @@ contract CleanHandoverEscrow {
     // ─── Hủy / hoàn tiền ─────────────────────────────────────────────────────
 
     /// @notice Người bán hủy bất cứ lúc nào trước khi hoàn tất; nếu đã nạp tiền thì hoàn cho người mua.
-    function cancelBySeller(uint256 id) external {
+    function cancelBySeller(uint256 id) external nonReentrant {
         Trade storage t = trades[id];
         if (msg.sender != t.seller) revert NotSeller();
         _cancel(id, CancelReason.SELLER_CANCELLED);
@@ -252,22 +254,24 @@ contract CleanHandoverEscrow {
     /**
      * @notice Người mua hủy:
      *  - trước khi nạp tiền: tự do;
-     *  - sau khi nạp tiền: chỉ khi ví đã thực thi giao dịch kể từ lúc nạp (nonce thay đổi) mà chưa hoàn tất.
+     *  - sau khi nạp tiền: khi bàn giao không còn thực hiện được — ví đã thực thi giao dịch kể từ lúc nạp
+     *    (nonce thay đổi) hoặc tài sản đã niêm yết không còn nguyên (vd: bị rút qua allowance cũ).
      */
-    function cancelByBuyer(uint256 id) external {
+    function cancelByBuyer(uint256 id) external nonReentrant {
         Trade storage t = trades[id];
         if (msg.sender != t.buyer) revert NotBuyer();
         if (t.status == Status.OPEN) {
             _cancel(id, CancelReason.BUYER_CANCELLED);
         } else {
             if (t.status != Status.FUNDED) revert InvalidState();
-            if (_verifiers[t.verifierId].txNonce(t.wallet) == t.nonceAtFunding) revert NoSuspiciousActivity();
+            bool walletChanged = _verifiers[t.verifierId].txNonce(t.wallet) != t.nonceAtFunding;
+            if (!walletChanged && _assetStatus(id) == 0) revert NoSuspiciousActivity();
             _cancel(id, CancelReason.SUSPICIOUS_ACTIVITY);
         }
     }
 
     /// @notice Bất kỳ ai cũng có thể hủy giao dịch đã quá hạn; tiền (nếu có) được hoàn cho người mua.
-    function cancelExpired(uint256 id) external {
+    function cancelExpired(uint256 id) external nonReentrant {
         Trade storage t = trades[id];
         if (block.timestamp <= t.deadline) revert DeadlineNotPassed();
         _cancel(id, CancelReason.EXPIRED);
@@ -285,10 +289,16 @@ contract CleanHandoverEscrow {
     // ─── View cho dapp / trợ lý hướng dẫn bàn giao ──────────────────────────
 
     /**
-     * @notice Trạng thái bàn giao hiện tại của giao dịch.
-     * @return walletFailMask bit điều kiện ví chưa đạt (ý nghĩa bit: xem verifier).
-     * @return assetFailMask  bit i = 1 nghĩa là tài sản thứ i không còn đúng như niêm yết.
+     * @notice Ví đã sẵn sàng để người mua nạp tiền / để bàn giao chưa. Dùng cho trợ lý hướng dẫn người bán.
+     * @return readinessFailMask bit điều kiện chưa đạt (ý nghĩa bit: xem verifier, hàm checkReadiness).
+     * @return assetFailMask     bit i = 1 nghĩa là tài sản thứ i không còn đúng như niêm yết.
      */
+    function getReadiness(uint256 id) external view returns (uint256 readinessFailMask, uint256 assetFailMask) {
+        if (trades[id].status == Status.NONE) revert InvalidState();
+        return _readiness(id);
+    }
+
+    /// @notice Trạng thái ví so với điều kiện bàn giao sạch (bằng 0 sau khi hoàn tất).
     function getHandoverStatus(uint256 id) external view returns (uint256 walletFailMask, uint256 assetFailMask) {
         if (trades[id].status == Status.NONE) revert InvalidState();
         return _handoverStatus(id);
@@ -308,6 +318,17 @@ contract CleanHandoverEscrow {
         walletMask = _verifiers[t.verifierId].checkHandover(
             t.wallet, _newOwners[id], t.threshold, t.allowedFallbackHandler
         );
+        assetMask = _assetStatus(id);
+    }
+
+    function _readiness(uint256 id) internal view returns (uint256 readinessMask, uint256 assetMask) {
+        Trade storage t = trades[id];
+        readinessMask = _verifiers[t.verifierId].checkReadiness(t.wallet, address(this), t.allowedFallbackHandler);
+        assetMask = _assetStatus(id);
+    }
+
+    function _assetStatus(uint256 id) internal view returns (uint256 assetMask) {
+        Trade storage t = trades[id];
         AssetSpec[] storage assets = _assets[id];
         for (uint256 i = 0; i < assets.length; i++) {
             AssetSpec storage a = assets[i];
@@ -325,10 +346,6 @@ contract CleanHandoverEscrow {
         if (funded) pendingWithdrawals[t.buyer] += t.price;
 
         emit TradeCancelled(id, reason, funded);
-    }
-
-    function _handoverKey(uint256 id) private pure returns (bytes32) {
-        return keccak256(abi.encode(HANDOVER_TAG, id));
     }
 
     // Không có receive(): ETH chỉ vào qua deposit().

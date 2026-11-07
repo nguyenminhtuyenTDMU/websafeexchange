@@ -3,61 +3,77 @@
 ## 0. Chuẩn bị
 
 - MetaMask ở mạng **Sepolia**, có ít Sepolia ETH (faucet).
-- Mở https://remix.ethereum.org và tạo file `CleanHandover_flat.sol`, dán nội dung từ `remix/CleanHandover_flat.sol`.
-- Tab **Solidity Compiler**: chọn compiler `0.8.24` trở lên. Trong *Advanced Configurations*, chọn **EVM version = cancun**
-  (bắt buộc vì dùng transient storage), bật Optimization 200 runs. Bấm Compile.
-- Tab **Deploy & Run**: chọn Environment **Injected Provider - MetaMask**.
+- Mở https://remix.ethereum.org, tạo file `CleanHandover_flat.sol` và dán nội dung từ `remix/CleanHandover_flat.sol`.
+- Tab **Solidity Compiler**: compiler `0.8.24+commit.e11b9ed9`; trong *Advanced Configurations* chọn **EVM version = cancun**,
+  bật Optimization **200** runs. Bấm Compile.
+- Tab **Deploy & Run**: Environment **Injected Provider - MetaMask**, kiểm tra dòng *Sepolia (11155111) network*.
+- File gộp chứa nhiều hợp đồng: chọn đúng tên trong ô **CONTRACT** trước khi bấm Deploy. Bỏ qua các interface (`I...`).
 
-## 1. Deploy SafeWalletVerifier
+## 1. SafeWalletVerifier
 
-Tham số `officialSingletons` (singleton Safe chính thức trên Sepolia, lấy từ `@safe-global/safe-deployments`):
+Tham số `officialSingletons`:
 
 ```
 ["0x41675C099F32341bf84BFc5382aF534df5C7461a","0x29fcB43b46531BcA003ddC8FCB67FFE91900C762","0xd9Db270c1B5E3Bd161E8c8503c55cEABeE709552","0x3E5c63644E683549055b9Be8653de26E0B4CD36E","0x69f4D1788e39c87893C980c06EdF4b7f686e2938","0xfb1bffC9d739B8D520DaF37dF666da4C687191EA"]
 ```
 
-(Safe 1.4.1, SafeL2 1.4.1, Safe 1.3.0 và SafeL2 1.3.0 ở cả hai bản canonical và eip155.)
+(Safe và SafeL2 bản 1.4.1, Safe và SafeL2 bản 1.3.0 ở cả hai bản canonical và eip155.)
 Safe tạo bằng app.safe.global trên Sepolia dùng **SafeL2 1.4.1** = `0x29fcB4...C762`.
 
-## 2. Deploy 4 asset checker
+## 2. Bốn asset checker
 
-Deploy lần lượt, không có tham số, theo **đúng thứ tự** (thứ tự này là `checkerId`):
+Bốn checker **không đổi** so với lần triển khai đầu, nên dùng lại địa chỉ trong `docs/DEPLOYMENTS.md`.
+Nếu triển khai mới hoàn toàn, deploy theo đúng thứ tự (thứ tự = `checkerId`):
+`EthBalanceChecker` (0), `Erc20BalanceChecker` (1), `Erc721OwnerChecker` (2), `OwnableOwnerChecker` (3).
 
-| checkerId | Hợp đồng |
-|---|---|
-| 0 | `EthBalanceChecker` |
-| 1 | `Erc20BalanceChecker` |
-| 2 | `Erc721OwnerChecker` |
-| 3 | `OwnableOwnerChecker` |
-
-## 3. Deploy CleanHandoverEscrow
+## 3. CleanHandoverEscrow
 
 - `verifiers`: `["<địa chỉ SafeWalletVerifier>"]`
 - `assetCheckers`: `["<Eth>","<Erc20>","<Erc721>","<Ownable>"]`
 
 ## 4. Verify mã nguồn trên Etherscan
 
-Remix → Plugin manager → bật **Contract Verification - Etherscan**, nhập API key và verify cả 6 hợp đồng.
-Cấu hình compiler phải giống hệt lúc deploy (0.8.24, cancun, optimizer 200).
+Verify and Publish → Solidity (Single file) → `v0.8.24+commit.e11b9ed9` → MIT → dán toàn bộ file gộp →
+Optimization Yes / 200 → EVM `cancun`. Constructor arguments thường được Etherscan tự điền.
 
 ## 5. Địa chỉ Safe hữu ích trên Sepolia
 
 | Thành phần | Địa chỉ |
 |---|---|
 | CompatibilityFallbackHandler 1.4.1 (dùng làm `allowedFallbackHandler`) | `0xfd0732Dc9E303f09fCEf3a7388Ad10A83459Ec99` |
-| MultiSendCallOnly 1.4.1 (dùng cho giao dịch bàn giao nguyên tử) | `0x9641d764fc13c8B624c04430C7356C1C7C8102e2` |
 
-## 6. Chạy thử một giao dịch trên Sepolia
+## 6. Chạy thử một giao dịch bàn giao trên Sepolia
 
-1. Tạo Safe 1-of-1 tại https://app.safe.global (Sepolia), owner là ví người bán. Nạp ít ETH vào Safe.
-2. Người bán gọi `createTrade` trên Remix với tuple:
-   `[safe, 0, buyer, price, deadline, [buyer], 1, "0xfd0732Dc9E303f09fCEf3a7388Ad10A83459Ec99", [[0,"0x0000000000000000000000000000000000000000", <số wei>]]]`
-3. Người mua (đổi tài khoản MetaMask) đọc `trades(id).termsHash`, rồi gọi `deposit(id, termsHash)` kèm VALUE = price.
-4. Người bán vào Safe → **Transaction Builder**, tạo batch 3 lệnh:
-   1. `CleanHandoverEscrow.beginHandover(id)`
-   2. `Safe.swapOwner(0x0000000000000000000000000000000000000001, seller, buyer)`
-   3. `CleanHandoverEscrow.completeHandover(id)`
+Cần **hai tài khoản MetaMask**: người bán (S) và người mua (B).
 
-   Sau đó ký và thực thi. Safe sẽ gộp thành một giao dịch MultiSend.
-5. Người bán gọi `withdraw()` để nhận tiền.
-6. Trong lúc làm, gọi `getHandoverStatus(id)` để xem các bit chưa đạt (xem `docs/THREAT_MODEL.md`).
+1. **(S) Tạo Safe** 1-of-1 tại https://app.safe.global (mạng Sepolia), owner là S. Nạp ít ETH vào Safe (ví dụ 0.01).
+2. **(S) Niêm yết** trên Remix, gọi `createTrade` với tuple:
+   ```
+   ["<địa chỉ Safe>", 0, "<địa chỉ B>", <giá wei>, <deadline unix>, ["<địa chỉ B>"], 1,
+    "0xfd0732Dc9E303f09fCEf3a7388Ad10A83459Ec99",
+    [[0, "0x0000000000000000000000000000000000000000", <số wei ETH trong Safe>]]]
+   ```
+   Lấy `tradeId` từ `tradeCount()`.
+3. **(S) Bật escrow làm module của Safe.** Trong app.safe.global chọn **New transaction → Transaction Builder**:
+   - *Enter Address or ENS Name*: **địa chỉ của chính Safe**;
+   - *Enter ABI*: dán `[{"inputs":[{"name":"module","type":"address"}],"name":"enableModule","outputs":[],"stateMutability":"nonpayable","type":"function"}]`;
+   - chọn hàm `enableModule`, `module` = **địa chỉ CleanHandoverEscrow** → Add transaction → Create batch → ký và thực thi.
+   Safe{Wallet} có thể hiện cảnh báo "enableModule": đây đúng là thao tác chủ đích.
+
+   **Cách B, nếu giao diện Safe chặn hoặc lỗi (làm hoàn toàn trong Remix):**
+   1. Tạo file `SafeRemixHelper.sol` từ `remix/SafeRemixHelper.sol` và compile.
+   2. Chọn `SafeCalldata`, deploy lên **Remix VM** (miễn phí, chỉ để tính toán). Gọi:
+      - `enableModuleData(<địa chỉ escrow>)` → copy kết quả `data`;
+      - `ownerSignature(<địa chỉ S>)` → copy kết quả `signatures`.
+   3. Chuyển Environment về **Injected Provider - MetaMask** (tài khoản S). Chọn `ISafeForRemix`,
+      dán **địa chỉ Safe** vào ô *At Address* rồi bấm At Address.
+   4. Gọi `execTransaction` với: `to` = địa chỉ Safe, `value` = 0, `data` = (bước 2), `operation` = 0,
+      `safeTxGas`, `baseGas`, `gasPrice` = 0, `gasToken`, `refundReceiver` = `0x0000000000000000000000000000000000000000`,
+      `signatures` = (bước 2). Xác nhận MetaMask.
+   5. Kiểm tra `isModuleEnabled(<địa chỉ escrow>)` = true.
+4. **(S / trợ lý) Kiểm tra sẵn sàng**: gọi `getReadiness(tradeId)` trên Remix → phải trả về `0, 0`.
+5. **(B) Nạp tiền**: đổi tài khoản MetaMask sang B, đọc `trades(tradeId)` để lấy `termsHash`,
+   gọi `deposit(tradeId, termsHash)` với VALUE = giá.
+   Từ lúc này **S không được thực hiện thêm bất kỳ giao dịch nào với Safe** (nếu không, B sẽ hủy được và lấy lại tiền).
+6. **(B) Hoàn tất**: gọi `finalizeHandover(tradeId)`. Kiểm tra trên app.safe.global: owner duy nhất là B, không còn module.
+7. **(S) Rút tiền**: đổi sang S, gọi `withdraw()`.

@@ -14,6 +14,15 @@ interface ISafeView {
     function getStorageAt(uint256 offset, uint256 length) external view returns (bytes memory);
 }
 
+interface ISafeAdmin {
+    function execTransactionFromModule(address to, uint256 value, bytes calldata data, uint8 operation)
+        external returns (bool success);
+    function addOwnerWithThreshold(address owner, uint256 threshold) external;
+    function removeOwner(address prevOwner, address owner, uint256 threshold) external;
+    function changeThreshold(uint256 threshold) external;
+    function disableModule(address prevModule, address module) external;
+}
+
 /**
  * @title SafeWalletVerifier
  * @notice Adapter tham chiếu cho ví Safe (Gnosis Safe) v1.3.0 / v1.4.1 / v1.5.0.
@@ -28,6 +37,7 @@ interface ISafeView {
  *  - MODULE_GUARD_SET   : còn module guard (Safe v1.5)
  *  - FALLBACK_HANDLER   : fallback handler khác 0 và khác handler đã thỏa thuận
  *                         (handler độc có thể giả mạo chữ ký EIP-1271 thay cho ví)
+ *  - EXECUTOR_NOT_ENABLED : (chỉ checkReadiness) escrow chưa được bật làm module của ví
  *
  * Guard, module guard, fallback handler không có hàm getter => đọc trực tiếp khe lưu trữ
  * (storage slot) qua getStorageAt() của StorageAccessible.
@@ -42,6 +52,10 @@ contract SafeWalletVerifier is IWalletVerifier {
     uint256 public constant GUARD_SET          = 1 << 4;
     uint256 public constant MODULE_GUARD_SET   = 1 << 5;
     uint256 public constant FALLBACK_HANDLER   = 1 << 6;
+    uint256 public constant EXECUTOR_NOT_ENABLED = 1 << 7;
+
+    /// @dev Giới hạn số module đọc ra khi kiểm tra; ví "sẵn sàng" chỉ được có đúng 1 module (escrow).
+    uint256 internal constant MODULE_PAGE = 2;
 
     bytes32 internal constant GUARD_SLOT            = keccak256("guard_manager.guard.address");
     bytes32 internal constant MODULE_GUARD_SLOT     = keccak256("module_manager.module_guard.address");
@@ -107,6 +121,62 @@ contract SafeWalletVerifier is IWalletVerifier {
             failMask |= MODULES_ENABLED;
         }
 
+        failMask |= _checkHooks(safe, allowedFallbackHandler);
+    }
+
+    /**
+     * Sẵn sàng = singleton chính thức, module DUY NHẤT là `executor`, không guard / module guard,
+     * fallback handler hợp lệ. Owner và ngưỡng ký không cần đúng: escrow sẽ tự đặt lại khi bàn giao.
+     */
+    function checkReadiness(address wallet, address executor, address allowedFallbackHandler)
+        external view returns (uint256 failMask)
+    {
+        if (!isSupportedWallet(wallet)) return NOT_OFFICIAL_SAFE;
+        ISafeView safe = ISafeView(wallet);
+
+        try safe.getModulesPaginated(SENTINEL, MODULE_PAGE) returns (address[] memory modules, address) {
+            bool hasExecutor = false;
+            for (uint256 i = 0; i < modules.length; i++) {
+                if (modules[i] == executor) hasExecutor = true;
+                else failMask |= MODULES_ENABLED;
+            }
+            if (!hasExecutor) failMask |= EXECUTOR_NOT_ENABLED;
+        } catch {
+            failMask |= MODULES_ENABLED | EXECUTOR_NOT_ENABLED;
+        }
+
+        failMask |= _checkHooks(safe, allowedFallbackHandler);
+    }
+
+    /**
+     * Thứ tự lời gọi (đều qua execTransactionFromModule, do `executor` thực hiện):
+     *  1. addOwnerWithThreshold(newOwner_i, 1)  — owner mới được chèn vào đầu danh sách liên kết;
+     *  2. removeOwner(newOwners[0], oldOwner_j, 1) — sau bước 1, owner cũ đầu tiên luôn đứng ngay sau newOwners[0];
+     *  3. changeThreshold(threshold);
+     *  4. disableModule(SENTINEL, executor) — readiness bảo đảm executor là module duy nhất (đứng đầu danh sách).
+     * Owner ẩn do người bán cài thêm bị xóa ở bước 2 cùng mọi owner cũ.
+     */
+    function handoverCalls(address wallet, address[] calldata newOwners, uint256 threshold, address executor)
+        external view returns (bytes[] memory calls)
+    {
+        address[] memory oldOwners = ISafeView(wallet).getOwners();
+        uint256 n = newOwners.length;
+        calls = new bytes[](n + oldOwners.length + 2);
+        uint256 k = 0;
+        for (uint256 i = 0; i < n; i++) {
+            calls[k++] = _moduleCall(wallet, abi.encodeCall(ISafeAdmin.addOwnerWithThreshold, (newOwners[i], 1)));
+        }
+        for (uint256 j = 0; j < oldOwners.length; j++) {
+            calls[k++] = _moduleCall(wallet, abi.encodeCall(ISafeAdmin.removeOwner, (newOwners[0], oldOwners[j], 1)));
+        }
+        calls[k++] = _moduleCall(wallet, abi.encodeCall(ISafeAdmin.changeThreshold, (threshold)));
+        calls[k++] = _moduleCall(wallet, abi.encodeCall(ISafeAdmin.disableModule, (SENTINEL, executor)));
+    }
+
+    // ─── Internal ────────────────────────────────────────────────────────────
+
+    /// @dev Guard, module guard, fallback handler: không có getter nên đọc thẳng storage slot.
+    function _checkHooks(ISafeView safe, address allowedFallbackHandler) internal view returns (uint256 failMask) {
         (bool okGuard, address guard) = _readAddress(safe, GUARD_SLOT);
         if (!okGuard || guard != address(0)) failMask |= GUARD_SET;
 
@@ -119,7 +189,9 @@ contract SafeWalletVerifier is IWalletVerifier {
         }
     }
 
-    // ─── Internal ────────────────────────────────────────────────────────────
+    function _moduleCall(address wallet, bytes memory data) internal pure returns (bytes memory) {
+        return abi.encodeCall(ISafeAdmin.execTransactionFromModule, (wallet, 0, data, uint8(0)));
+    }
 
     function _readAddress(ISafeView safe, bytes32 slot) internal view returns (bool ok, address value) {
         try safe.getStorageAt(uint256(slot), 1) returns (bytes memory data) {

@@ -115,6 +115,7 @@
     "dependency-cruiser": "^17.3.10",
     "drizzle-kit": "^0.31.4",
     "esbuild": "^0.25.0",
+    "fast-check": "^3.23.2",
     "hardhat": "^2.27.2",
     "postcss": "^8.4.47",
     "tailwindcss": "^3.4.17",
