@@ -34,11 +34,13 @@ Render trực tiếp trong GitHub, VS Code (Markdown Preview Mermaid Support), v
 | `finalize-flow.png` | Lưu đồ `finalizeHandover` và các điểm revert | `finalize-flow.dot` (vẽ tay) |
 | `inheritance.png` | Quan hệ kế thừa / cài đặt interface | Surya |
 | `call-graph.png` | Đồ thị gọi hàm đầy đủ (phụ lục) | Surya |
+| `class.png` | Sơ đồ lớp UML: escrow (struct, enum, hàm, event), verifier, 4 checker | sol2uml |
 
 Tạo lại ảnh (cần Graphviz):
 
 ```
 surya inheritance contracts/CleanHandoverEscrow.sol contracts/verifiers/*.sol contracts/assets/*.sol contracts/interfaces/*.sol > docs/diagrams/inheritance.dot
 surya graph       contracts/CleanHandoverEscrow.sol contracts/verifiers/*.sol contracts/assets/*.sol contracts/interfaces/*.sol > docs/diagrams/call-graph.dot
+sol2uml class contracts -i "mocks,SafeExchangeEscrowSoftGuard.sol" -hp -hi -hc -hn -f dot -o docs/diagrams/class.dot
 dot -Tpng -Gdpi=150 docs/diagrams/<tên>.dot -o docs/diagrams/<tên>.png
 ```

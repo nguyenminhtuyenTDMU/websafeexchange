@@ -1,0 +1,40 @@
+
+digraph UmlClassDiagram {
+rankdir=BT
+arrowhead=open
+bgcolor="white"
+edge [color="black"]
+node [shape=record, style=filled, color="black", fillcolor="gray95", fontcolor="black"]
+subgraph  graph_0 {
+label="contracts"
+0 [label="{CleanHandoverEscrow| Public:\l\ \ \ MAX_OWNERS: uint256\l\ \ \ MAX_ASSETS: uint256\l\ \ \ tradeCount: uint256\l\ \ \ trades: mapping\(uint256=\>Trade\)\l\ \ \ activeTradeOf: mapping\(address=\>uint256\)\l\ \ \ pendingWithdrawals: mapping\(address=\>uint256\)\l| External:\l\ \ \ \ \<\<payable\>\> deposit(id: uint256, expectedTermsHash: bytes32) \<\<nonReentrant\>\>\l\ \ \ \ createTrade(p: TradeParams): (id: uint256) \<\<nonReentrant\>\>\l\ \ \ \ finalizeHandover(id: uint256) \<\<nonReentrant\>\>\l\ \ \ \ cancelBySeller(id: uint256) \<\<nonReentrant\>\>\l\ \ \ \ cancelByBuyer(id: uint256) \<\<nonReentrant\>\>\l\ \ \ \ cancelExpired(id: uint256) \<\<nonReentrant\>\>\l\ \ \ \ withdraw() \<\<nonReentrant\>\>\l\ \ \ \ getReadiness(id: uint256): (readinessFailMask: uint256, assetFailMask: uint256)\l\ \ \ \ getHandoverStatus(id: uint256): (walletFailMask: uint256, assetFailMask: uint256)\l\ \ \ \ getNewOwners(id: uint256): address[]\l\ \ \ \ getAssets(id: uint256): AssetSpec[]\l\ \ \ \ verifierCount(): uint256\l\ \ \ \ verifierAt(i: uint256): IWalletVerifier\l\ \ \ \ assetCheckerCount(): uint256\l\ \ \ \ assetCheckerAt(i: uint256): IAssetChecker\lPublic:\l\ \ \ \ \<\<event\>\> TradeCreated(tradeId: uint256, seller: address, buyer: address, wallet: address, price: uint256, deadline: uint64, termsHash: bytes32)\l\ \ \ \ \<\<event\>\> TradeFunded(tradeId: uint256, buyer: address, amount: uint256, nonceAtFunding: uint256)\l\ \ \ \ \<\<event\>\> TradeCompleted(tradeId: uint256, seller: address, buyer: address, amount: uint256)\l\ \ \ \ \<\<event\>\> TradeCancelled(tradeId: uint256, reason: CancelReason, refunded: bool)\l\ \ \ \ \<\<event\>\> Withdrawn(account: address, amount: uint256)\l\ \ \ \ \<\<modifier\>\> nonReentrant()\l\ \ \ \ constructor(verifiers: IWalletVerifier[], assetCheckers: IAssetChecker[])\l}"]
+1 [label="{\<\<Enum\>\>\nStatus| NONE: 0\lOPEN: 1\lFUNDED: 2\lCOMPLETED: 3\lCANCELLED: 4\l}"]
+2 [label="{\<\<Enum\>\>\nCancelReason| SELLER_CANCELLED: 0\lBUYER_CANCELLED: 1\lSUSPICIOUS_ACTIVITY: 2\lEXPIRED: 3\l}"]
+3 [label="{\<\<Struct\>\>\nAssetSpec| checkerId: uint8\ltoken: address\lvalue: uint256\l}"]
+4 [label="{\<\<Struct\>\>\nTradeParams| wallet: address\lverifierId: uint8\lbuyer: address\lprice: uint256\ldeadline: uint64\lnewOwners: address[]\lthreshold: uint256\lallowedFallbackHandler: address\lassets: AssetSpec[]\l}"]
+5 [label="{\<\<Struct\>\>\nTrade| seller: address\lbuyer: address\lwallet: address\lverifierId: uint8\lstatus: Status\ldeadline: uint64\lprice: uint256\lthreshold: uint256\lallowedFallbackHandler: address\lnonceAtFunding: uint256\ltermsHash: bytes32\l}"]
+}
+subgraph  graph_1 {
+label="contracts\assets"
+9 [label="{EthBalanceChecker| External:\l\ \ \ \ holds(wallet: address, address, value: uint256): bool\l}"]
+10 [label="{Erc20BalanceChecker| External:\l\ \ \ \ holds(wallet: address, token: address, value: uint256): bool\l}"]
+11 [label="{Erc721OwnerChecker| External:\l\ \ \ \ holds(wallet: address, token: address, value: uint256): bool\l}"]
+12 [label="{OwnableOwnerChecker| External:\l\ \ \ \ holds(wallet: address, token: address, uint256): bool\l}"]
+}
+subgraph  graph_2 {
+label="contracts\verifiers"
+17 [label="{SafeWalletVerifier| Public:\l\ \ \ NOT_OFFICIAL_SAFE: uint256\l\ \ \ OWNERS_MISMATCH: uint256\l\ \ \ THRESHOLD_MISMATCH: uint256\l\ \ \ MODULES_ENABLED: uint256\l\ \ \ GUARD_SET: uint256\l\ \ \ MODULE_GUARD_SET: uint256\l\ \ \ FALLBACK_HANDLER: uint256\l\ \ \ EXECUTOR_NOT_ENABLED: uint256\l\ \ \ isOfficialSingleton: mapping\(address=\>bool\)\l| External:\l\ \ \ \ isController(wallet: address, account: address): bool\l\ \ \ \ txNonce(wallet: address): uint256\l\ \ \ \ checkHandover(wallet: address, newOwners: address[], threshold: uint256, allowedFallbackHandler: address): (failMask: uint256)\l\ \ \ \ checkReadiness(wallet: address, executor: address, allowedFallbackHandler: address): (failMask: uint256)\l\ \ \ \ handoverCalls(wallet: address, newOwners: address[], threshold: uint256, executor: address): (calls: bytes[])\lPublic:\l\ \ \ \ constructor(officialSingletons: address[])\l\ \ \ \ isSupportedWallet(wallet: address): bool\l}"]
+}
+1 -> 0 [arrowhead=diamond, weight=2]
+2 -> 0 [arrowhead=diamond, weight=2]
+3 -> 0 [arrowhead=diamond, weight=2]
+4 -> 0 [arrowhead=diamond, weight=2]
+5 -> 0 [arrowhead=diamond, weight=2]
+0 -> 5 []
+0 -> 2 [style=dashed, ]
+0 -> 4 [style=dashed, ]
+0 -> 3 [style=dashed, ]
+0 -> 1 [style=dashed, ]
+4 -> 3 [style=dashed, ]
+5 -> 1 [style=dashed, ]
+}
