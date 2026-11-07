@@ -1,0 +1,30 @@
+digraph finalize {
+  rankdir=TB;
+  fontname="Arial"; node [fontname="Arial", fontsize=11]; edge [fontname="Arial", fontsize=10];
+  node [shape=box, style="rounded,filled", fillcolor="#ffffff"];
+
+  start [label="finalizeHandover(id)", shape=oval, fillcolor="#dbe9f7"];
+  s1 [label="status == FUNDED ?"];
+  s2 [label="verifier.txNonce(ví) == nonceAtFunding ?"];
+  s3 [label="người bán vẫn là owner ?"];
+  s4 [label="calls = verifier.handoverCalls(...)"];
+  s5 [label="ví.call(calls[i]) qua module:\n1. addOwnerWithThreshold(owner mới)\n2. removeOwner(mọi owner cũ)\n3. changeThreshold\n4. disableModule(escrow)"];
+  s6 [label="checkHandover + kiểm tra tài sản\n== (0, 0) ?"];
+  done [label="status = COMPLETED\npendingWithdrawals[người bán] += giá\nemit TradeCompleted", fillcolor="#d9efd9"];
+  rv [label="revert toàn bộ\n(ví và tiền giữ nguyên)", fillcolor="#f6d6d6"];
+
+  start -> s1;
+  s1 -> s2 [label=" có"];
+  s2 -> s3 [label=" có"];
+  s3 -> s4 [label=" có"];
+  s4 -> s5;
+  s5 -> s6 [label=" mọi lời gọi thành công"];
+  s6 -> done [label=" có"];
+
+  s1 -> rv [label=" InvalidState", color="#b04040", fontcolor="#b04040"];
+  s2 -> rv [label=" WalletChangedSinceFunding", color="#b04040", fontcolor="#b04040"];
+  s3 -> rv [label=" NotController", color="#b04040", fontcolor="#b04040"];
+  s5 -> rv [label=" HandoverCallFailed(i)", color="#b04040", fontcolor="#b04040"];
+  s6 -> rv [label=" HandoverNotClean", color="#b04040", fontcolor="#b04040"];
+  {rank=same; s4; rv}
+}

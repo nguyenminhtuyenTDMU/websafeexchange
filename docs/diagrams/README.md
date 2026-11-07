@@ -25,3 +25,20 @@ Bộ sơ đồ trả lời đủ 5 câu hỏi thiết yếu, không thừa khôn
 ## Tất cả sơ đồ dùng Mermaid
 
 Render trực tiếp trong GitHub, VS Code (Markdown Preview Mermaid Support), và GitBook.
+
+## Sơ đồ hợp đồng CleanHandover v2 (Graphviz)
+
+| File | Nội dung | Nguồn |
+|---|---|---|
+| `architecture.png` | Kiến trúc hai trục: escrow, trục ví, trục tài sản, ví Safe | `architecture.dot` (vẽ tay) |
+| `finalize-flow.png` | Lưu đồ `finalizeHandover` và các điểm revert | `finalize-flow.dot` (vẽ tay) |
+| `inheritance.png` | Quan hệ kế thừa / cài đặt interface | Surya |
+| `call-graph.png` | Đồ thị gọi hàm đầy đủ (phụ lục) | Surya |
+
+Tạo lại ảnh (cần Graphviz):
+
+```
+surya inheritance contracts/CleanHandoverEscrow.sol contracts/verifiers/*.sol contracts/assets/*.sol contracts/interfaces/*.sol > docs/diagrams/inheritance.dot
+surya graph       contracts/CleanHandoverEscrow.sol contracts/verifiers/*.sol contracts/assets/*.sol contracts/interfaces/*.sol > docs/diagrams/call-graph.dot
+dot -Tpng -Gdpi=150 docs/diagrams/<tên>.dot -o docs/diagrams/<tên>.png
+```

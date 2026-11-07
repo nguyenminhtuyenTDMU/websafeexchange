@@ -1,0 +1,321 @@
+digraph G {
+  graph [ ratio = "auto", page = "100", compound =true ];
+subgraph "clusterCleanHandoverEscrow" {
+  graph [ label = "CleanHandoverEscrow", color = "lightgray", style = "filled", bgcolor = "lightgray" ];
+  "CleanHandoverEscrow.nonReentrant" [ label = "nonReentrant", color = "yellow" ];
+  "CleanHandoverEscrow.<Constructor>" [ label = "<Constructor>", color = "green" ];
+  "CleanHandoverEscrow.createTrade" [ label = "createTrade", color = "blue" ];
+  "CleanHandoverEscrow.deposit" [ label = "deposit", color = "blue" ];
+  "CleanHandoverEscrow.finalizeHandover" [ label = "finalizeHandover", color = "blue" ];
+  "CleanHandoverEscrow.cancelBySeller" [ label = "cancelBySeller", color = "blue" ];
+  "CleanHandoverEscrow.cancelByBuyer" [ label = "cancelByBuyer", color = "blue" ];
+  "CleanHandoverEscrow.cancelExpired" [ label = "cancelExpired", color = "blue" ];
+  "CleanHandoverEscrow.withdraw" [ label = "withdraw", color = "blue" ];
+  "CleanHandoverEscrow.getReadiness" [ label = "getReadiness", color = "blue" ];
+  "CleanHandoverEscrow.getHandoverStatus" [ label = "getHandoverStatus", color = "blue" ];
+  "CleanHandoverEscrow.getNewOwners" [ label = "getNewOwners", color = "blue" ];
+  "CleanHandoverEscrow.getAssets" [ label = "getAssets", color = "blue" ];
+  "CleanHandoverEscrow.verifierCount" [ label = "verifierCount", color = "blue" ];
+  "CleanHandoverEscrow.verifierAt" [ label = "verifierAt", color = "blue" ];
+  "CleanHandoverEscrow.assetCheckerCount" [ label = "assetCheckerCount", color = "blue" ];
+  "CleanHandoverEscrow.assetCheckerAt" [ label = "assetCheckerAt", color = "blue" ];
+  "CleanHandoverEscrow._handoverStatus" [ label = "_handoverStatus" ];
+  "CleanHandoverEscrow._readiness" [ label = "_readiness" ];
+  "CleanHandoverEscrow._assetStatus" [ label = "_assetStatus" ];
+  "CleanHandoverEscrow._cancel" [ label = "_cancel" ];
+  "CleanHandoverEscrow.Reentrancy" [ color = "brown2", shape =box ];
+  "CleanHandoverEscrow.InvalidParams" [ color = "brown2", shape =box ];
+  "CleanHandoverEscrow.UnknownVerifier" [ color = "brown2", shape =box ];
+  "CleanHandoverEscrow.UnsupportedWallet" [ color = "brown2", shape =box ];
+  "CleanHandoverEscrow.NotController" [ color = "brown2", shape =box ];
+  "CleanHandoverEscrow.address" [ label = "address" ];
+  "CleanHandoverEscrow.DeadlinePassed" [ color = "brown2", shape =box ];
+  "CleanHandoverEscrow.WalletBusy" [ color = "brown2", shape =box ];
+  "CleanHandoverEscrow.UnknownAssetChecker" [ color = "brown2", shape =box ];
+  "CleanHandoverEscrow.AssetNotHeld" [ color = "brown2", shape =box ];
+  "CleanHandoverEscrow.InvalidState" [ color = "brown2", shape =box ];
+  "CleanHandoverEscrow.NotBuyer" [ color = "brown2", shape =box ];
+  "CleanHandoverEscrow.WrongAmount" [ color = "brown2", shape =box ];
+  "CleanHandoverEscrow.TermsMismatch" [ color = "brown2", shape =box ];
+  "CleanHandoverEscrow.WalletNotReady" [ color = "brown2", shape =box ];
+  "CleanHandoverEscrow.WalletChangedSinceFunding" [ color = "brown2", shape =box ];
+  "CleanHandoverEscrow.HandoverCallFailed" [ color = "brown2", shape =box ];
+  "CleanHandoverEscrow.HandoverNotClean" [ color = "brown2", shape =box ];
+  "CleanHandoverEscrow.NotSeller" [ color = "brown2", shape =box ];
+  "CleanHandoverEscrow.NoSuspiciousActivity" [ color = "brown2", shape =box ];
+  "CleanHandoverEscrow.DeadlineNotPassed" [ color = "brown2", shape =box ];
+  "CleanHandoverEscrow.NothingToWithdraw" [ color = "brown2", shape =box ];
+  "CleanHandoverEscrow.payable" [ label = "payable" ];
+  "CleanHandoverEscrow.TransferFailed" [ color = "brown2", shape =box ];
+}
+
+subgraph "clusterISafeView" {
+  graph [ label = "ISafeView  (iface)", color = "lightgray", style = "filled", bgcolor = "lightgray" ];
+  "ISafeView.masterCopy" [ label = "masterCopy", color = "blue" ];
+  "ISafeView.getOwners" [ label = "getOwners" ];
+  "ISafeView.getThreshold" [ label = "getThreshold" ];
+  "ISafeView.isOwner" [ label = "isOwner", color = "blue" ];
+  "ISafeView.nonce" [ label = "nonce", color = "blue" ];
+  "ISafeView.getModulesPaginated" [ label = "getModulesPaginated" ];
+  "ISafeView.getStorageAt" [ label = "getStorageAt" ];
+}
+
+subgraph "clusterISafeAdmin" {
+  graph [ label = "ISafeAdmin  (iface)", color = "lightgray", style = "filled", bgcolor = "lightgray" ];
+  "ISafeAdmin.execTransactionFromModule" [ label = "execTransactionFromModule", color = "blue" ];
+  "ISafeAdmin.addOwnerWithThreshold" [ label = "addOwnerWithThreshold", color = "blue" ];
+  "ISafeAdmin.removeOwner" [ label = "removeOwner", color = "blue" ];
+  "ISafeAdmin.changeThreshold" [ label = "changeThreshold", color = "blue" ];
+  "ISafeAdmin.disableModule" [ label = "disableModule", color = "blue" ];
+}
+
+subgraph "clusterSafeWalletVerifier" {
+  graph [ label = "SafeWalletVerifier", color = "lightgray", style = "filled", bgcolor = "lightgray" ];
+  "SafeWalletVerifier.<Constructor>" [ label = "<Constructor>", color = "green" ];
+  "IWalletVerifier.isSupportedWallet" [ label = "isSupportedWallet", color = "green" ];
+  "IWalletVerifier.isController" [ label = "isController", color = "blue" ];
+  "IWalletVerifier.txNonce" [ label = "txNonce", color = "blue" ];
+  "SafeWalletVerifier.checkHandover" [ label = "checkHandover", color = "blue" ];
+  "SafeWalletVerifier.checkReadiness" [ label = "checkReadiness", color = "blue" ];
+  "IWalletVerifier.handoverCalls" [ label = "handoverCalls", color = "blue" ];
+  "SafeWalletVerifier._checkHooks" [ label = "_checkHooks" ];
+  "SafeWalletVerifier._moduleCall" [ label = "_moduleCall" ];
+  "SafeWalletVerifier._readAddress" [ label = "_readAddress" ];
+  "SafeWalletVerifier._sameSet" [ label = "_sameSet" ];
+  "SafeWalletVerifier._containsMem" [ label = "_containsMem" ];
+  "SafeWalletVerifier._containsCalldata" [ label = "_containsCalldata" ];
+  "SafeWalletVerifier.address" [ label = "address" ];
+}
+
+subgraph "clusterIERC20Balance" {
+  graph [ label = "IERC20Balance  (iface)", color = "lightgray", style = "filled", bgcolor = "lightgray" ];
+  "IERC20Balance.balanceOf" [ label = "balanceOf", color = "blue" ];
+}
+
+subgraph "clusterIERC721Owner" {
+  graph [ label = "IERC721Owner  (iface)", color = "lightgray", style = "filled", bgcolor = "lightgray" ];
+  "IERC721Owner.ownerOf" [ label = "ownerOf", color = "blue" ];
+}
+
+subgraph "clusterIOwnableOwner" {
+  graph [ label = "IOwnableOwner  (iface)", color = "lightgray", style = "filled", bgcolor = "lightgray" ];
+  "IOwnableOwner.owner" [ label = "owner", color = "blue" ];
+}
+
+subgraph "clusterEthBalanceChecker" {
+  graph [ label = "EthBalanceChecker", color = "lightgray", style = "filled", bgcolor = "lightgray" ];
+  "EthBalanceChecker.holds" [ label = "holds", color = "blue" ];
+}
+
+subgraph "clusterErc20BalanceChecker" {
+  graph [ label = "Erc20BalanceChecker", color = "lightgray", style = "filled", bgcolor = "lightgray" ];
+  "Erc20BalanceChecker.holds" [ label = "holds", color = "blue" ];
+}
+
+subgraph "clusterErc721OwnerChecker" {
+  graph [ label = "Erc721OwnerChecker", color = "lightgray", style = "filled", bgcolor = "lightgray" ];
+  "Erc721OwnerChecker.holds" [ label = "holds", color = "blue" ];
+}
+
+subgraph "clusterOwnableOwnerChecker" {
+  graph [ label = "OwnableOwnerChecker", color = "lightgray", style = "filled", bgcolor = "lightgray" ];
+  "OwnableOwnerChecker.holds" [ label = "holds", color = "blue" ];
+}
+
+subgraph "clusterIWalletVerifier" {
+  graph [ label = "IWalletVerifier  (iface)", color = "lightgray", style = "filled", bgcolor = "lightgray" ];
+  "IWalletVerifier.isSupportedWallet" [ label = "isSupportedWallet", color = "blue" ];
+  "IWalletVerifier.isController" [ label = "isController", color = "blue" ];
+  "IWalletVerifier.txNonce" [ label = "txNonce", color = "blue" ];
+  "IWalletVerifier.handoverCalls" [ label = "handoverCalls", color = "blue" ];
+  "IWalletVerifier.checkReadiness" [ label = "checkReadiness", color = "blue" ];
+  "IWalletVerifier.checkHandover" [ label = "checkHandover", color = "blue" ];
+}
+
+subgraph "clusterIAssetChecker" {
+  graph [ label = "IAssetChecker  (iface)", color = "lightgray", style = "filled", bgcolor = "lightgray" ];
+  "IAssetChecker.holds" [ label = "holds", color = "blue" ];
+}
+
+subgraph "clusterabi" {
+  graph [ label = "abi", color = "lightgray" ];
+  "abi.encodeCall" [ label = "encodeCall" ];
+}
+
+  "CleanHandoverEscrow.nonReentrant";
+  "CleanHandoverEscrow.Reentrancy";
+  "CleanHandoverEscrow.<Constructor>";
+  "CleanHandoverEscrow.InvalidParams";
+  "CleanHandoverEscrow.createTrade";
+  "CleanHandoverEscrow.UnknownVerifier";
+  "IWalletVerifier.isSupportedWallet";
+  "CleanHandoverEscrow.UnsupportedWallet";
+  "IWalletVerifier.isController";
+  "CleanHandoverEscrow.NotController";
+  "CleanHandoverEscrow.address";
+  "CleanHandoverEscrow.DeadlinePassed";
+  "CleanHandoverEscrow.WalletBusy";
+  "CleanHandoverEscrow.UnknownAssetChecker";
+  "CleanHandoverEscrow.AssetNotHeld";
+  "CleanHandoverEscrow.deposit";
+  "CleanHandoverEscrow.InvalidState";
+  "CleanHandoverEscrow.NotBuyer";
+  "CleanHandoverEscrow.WrongAmount";
+  "CleanHandoverEscrow.TermsMismatch";
+  "CleanHandoverEscrow._readiness";
+  "CleanHandoverEscrow.WalletNotReady";
+  "CleanHandoverEscrow.finalizeHandover";
+  "IWalletVerifier.txNonce";
+  "CleanHandoverEscrow.WalletChangedSinceFunding";
+  "IWalletVerifier.handoverCalls";
+  "CleanHandoverEscrow.HandoverCallFailed";
+  "CleanHandoverEscrow._handoverStatus";
+  "CleanHandoverEscrow.HandoverNotClean";
+  "CleanHandoverEscrow.cancelBySeller";
+  "CleanHandoverEscrow.NotSeller";
+  "CleanHandoverEscrow._cancel";
+  "CleanHandoverEscrow.cancelByBuyer";
+  "CleanHandoverEscrow._assetStatus";
+  "CleanHandoverEscrow.NoSuspiciousActivity";
+  "CleanHandoverEscrow.cancelExpired";
+  "CleanHandoverEscrow.DeadlineNotPassed";
+  "CleanHandoverEscrow.withdraw";
+  "CleanHandoverEscrow.NothingToWithdraw";
+  "CleanHandoverEscrow.payable";
+  "CleanHandoverEscrow.TransferFailed";
+  "CleanHandoverEscrow.getReadiness";
+  "CleanHandoverEscrow.getHandoverStatus";
+  "SafeWalletVerifier.checkHandover";
+  "ISafeView.getOwners";
+  "SafeWalletVerifier._sameSet";
+  "ISafeView.getThreshold";
+  "ISafeView.getModulesPaginated";
+  "SafeWalletVerifier._checkHooks";
+  "SafeWalletVerifier.checkReadiness";
+  "SafeWalletVerifier._moduleCall";
+  "abi.encodeCall";
+  "SafeWalletVerifier._readAddress";
+  "SafeWalletVerifier.address";
+  "ISafeView.getStorageAt";
+  "SafeWalletVerifier._containsMem";
+  "SafeWalletVerifier._containsCalldata";
+  "CleanHandoverEscrow.nonReentrant" -> "CleanHandoverEscrow.Reentrancy" [ color = "red" ];
+  "CleanHandoverEscrow.<Constructor>" -> "CleanHandoverEscrow.InvalidParams" [ color = "red" ];
+  "CleanHandoverEscrow.createTrade" -> "CleanHandoverEscrow.UnknownVerifier" [ color = "red" ];
+  "CleanHandoverEscrow.createTrade" -> "IWalletVerifier.isSupportedWallet" [ color = "orange" ];
+  "CleanHandoverEscrow.createTrade" -> "CleanHandoverEscrow.UnsupportedWallet" [ color = "red" ];
+  "CleanHandoverEscrow.createTrade" -> "IWalletVerifier.isController" [ color = "orange" ];
+  "CleanHandoverEscrow.createTrade" -> "CleanHandoverEscrow.NotController" [ color = "red" ];
+  "CleanHandoverEscrow.createTrade" -> "CleanHandoverEscrow.address" [ color = "green" ];
+  "CleanHandoverEscrow.createTrade" -> "CleanHandoverEscrow.InvalidParams" [ color = "red" ];
+  "CleanHandoverEscrow.createTrade" -> "CleanHandoverEscrow.DeadlinePassed" [ color = "red" ];
+  "CleanHandoverEscrow.createTrade" -> "CleanHandoverEscrow.WalletBusy" [ color = "red" ];
+  "CleanHandoverEscrow.createTrade" -> "CleanHandoverEscrow.InvalidParams" [ color = "red" ];
+  "CleanHandoverEscrow.createTrade" -> "CleanHandoverEscrow.address" [ color = "green" ];
+  "CleanHandoverEscrow.createTrade" -> "CleanHandoverEscrow.address" [ color = "green" ];
+  "CleanHandoverEscrow.createTrade" -> "CleanHandoverEscrow.InvalidParams" [ color = "red" ];
+  "CleanHandoverEscrow.createTrade" -> "CleanHandoverEscrow.InvalidParams" [ color = "red" ];
+  "CleanHandoverEscrow.createTrade" -> "CleanHandoverEscrow.InvalidParams" [ color = "red" ];
+  "CleanHandoverEscrow.createTrade" -> "CleanHandoverEscrow.UnknownAssetChecker" [ color = "red" ];
+  "CleanHandoverEscrow.createTrade" -> "CleanHandoverEscrow.AssetNotHeld" [ color = "red" ];
+  "CleanHandoverEscrow.createTrade" -> "CleanHandoverEscrow.address" [ color = "green" ];
+  "CleanHandoverEscrow.deposit" -> "CleanHandoverEscrow.InvalidState" [ color = "red" ];
+  "CleanHandoverEscrow.deposit" -> "CleanHandoverEscrow.NotBuyer" [ color = "red" ];
+  "CleanHandoverEscrow.deposit" -> "CleanHandoverEscrow.DeadlinePassed" [ color = "red" ];
+  "CleanHandoverEscrow.deposit" -> "CleanHandoverEscrow.WrongAmount" [ color = "red" ];
+  "CleanHandoverEscrow.deposit" -> "CleanHandoverEscrow.TermsMismatch" [ color = "red" ];
+  "CleanHandoverEscrow.deposit" -> "CleanHandoverEscrow._readiness" [ color = "green" ];
+  "CleanHandoverEscrow.deposit" -> "CleanHandoverEscrow.WalletNotReady" [ color = "red" ];
+  "CleanHandoverEscrow.finalizeHandover" -> "CleanHandoverEscrow.InvalidState" [ color = "red" ];
+  "CleanHandoverEscrow.finalizeHandover" -> "IWalletVerifier.txNonce" [ color = "orange" ];
+  "CleanHandoverEscrow.finalizeHandover" -> "CleanHandoverEscrow.WalletChangedSinceFunding" [ color = "red" ];
+  "CleanHandoverEscrow.finalizeHandover" -> "IWalletVerifier.isController" [ color = "orange" ];
+  "CleanHandoverEscrow.finalizeHandover" -> "CleanHandoverEscrow.NotController" [ color = "red" ];
+  "CleanHandoverEscrow.finalizeHandover" -> "IWalletVerifier.handoverCalls" [ color = "orange" ];
+  "CleanHandoverEscrow.finalizeHandover" -> "CleanHandoverEscrow.address" [ color = "green" ];
+  "CleanHandoverEscrow.finalizeHandover" -> "CleanHandoverEscrow.HandoverCallFailed" [ color = "red" ];
+  "CleanHandoverEscrow.finalizeHandover" -> "CleanHandoverEscrow._handoverStatus" [ color = "green" ];
+  "CleanHandoverEscrow.finalizeHandover" -> "CleanHandoverEscrow.HandoverNotClean" [ color = "red" ];
+  "CleanHandoverEscrow.cancelBySeller" -> "CleanHandoverEscrow.NotSeller" [ color = "red" ];
+  "CleanHandoverEscrow.cancelBySeller" -> "CleanHandoverEscrow._cancel" [ color = "green" ];
+  "CleanHandoverEscrow.cancelByBuyer" -> "CleanHandoverEscrow.NotBuyer" [ color = "red" ];
+  "CleanHandoverEscrow.cancelByBuyer" -> "CleanHandoverEscrow._cancel" [ color = "green" ];
+  "CleanHandoverEscrow.cancelByBuyer" -> "CleanHandoverEscrow.InvalidState" [ color = "red" ];
+  "CleanHandoverEscrow.cancelByBuyer" -> "CleanHandoverEscrow._assetStatus" [ color = "green" ];
+  "CleanHandoverEscrow.cancelByBuyer" -> "CleanHandoverEscrow.NoSuspiciousActivity" [ color = "red" ];
+  "CleanHandoverEscrow.cancelByBuyer" -> "CleanHandoverEscrow._cancel" [ color = "green" ];
+  "CleanHandoverEscrow.cancelExpired" -> "CleanHandoverEscrow.DeadlineNotPassed" [ color = "red" ];
+  "CleanHandoverEscrow.cancelExpired" -> "CleanHandoverEscrow._cancel" [ color = "green" ];
+  "CleanHandoverEscrow.withdraw" -> "CleanHandoverEscrow.NothingToWithdraw" [ color = "red" ];
+  "CleanHandoverEscrow.withdraw" -> "CleanHandoverEscrow.payable" [ color = "green" ];
+  "CleanHandoverEscrow.withdraw" -> "CleanHandoverEscrow.TransferFailed" [ color = "red" ];
+  "CleanHandoverEscrow.getReadiness" -> "CleanHandoverEscrow.InvalidState" [ color = "red" ];
+  "CleanHandoverEscrow.getReadiness" -> "CleanHandoverEscrow._readiness" [ color = "green" ];
+  "CleanHandoverEscrow.getHandoverStatus" -> "CleanHandoverEscrow.InvalidState" [ color = "red" ];
+  "CleanHandoverEscrow.getHandoverStatus" -> "CleanHandoverEscrow._handoverStatus" [ color = "green" ];
+  "CleanHandoverEscrow._handoverStatus" -> "CleanHandoverEscrow._assetStatus" [ color = "green" ];
+  "CleanHandoverEscrow._readiness" -> "CleanHandoverEscrow.address" [ color = "green" ];
+  "CleanHandoverEscrow._readiness" -> "CleanHandoverEscrow._assetStatus" [ color = "green" ];
+  "CleanHandoverEscrow._cancel" -> "CleanHandoverEscrow.InvalidState" [ color = "red" ];
+  "SafeWalletVerifier.checkHandover" -> "IWalletVerifier.isSupportedWallet" [ color = "green" ];
+  "SafeWalletVerifier.checkHandover" -> "ISafeView.getOwners" [ color = "orange" ];
+  "SafeWalletVerifier.checkHandover" -> "SafeWalletVerifier._sameSet" [ color = "green" ];
+  "SafeWalletVerifier.checkHandover" -> "ISafeView.getThreshold" [ color = "orange" ];
+  "SafeWalletVerifier.checkHandover" -> "ISafeView.getModulesPaginated" [ color = "orange" ];
+  "SafeWalletVerifier.checkHandover" -> "SafeWalletVerifier._checkHooks" [ color = "green" ];
+  "SafeWalletVerifier.checkReadiness" -> "IWalletVerifier.isSupportedWallet" [ color = "green" ];
+  "SafeWalletVerifier.checkReadiness" -> "ISafeView.getModulesPaginated" [ color = "orange" ];
+  "SafeWalletVerifier.checkReadiness" -> "SafeWalletVerifier._checkHooks" [ color = "green" ];
+  "IWalletVerifier.handoverCalls" -> "SafeWalletVerifier._moduleCall" [ color = "green" ];
+  "IWalletVerifier.handoverCalls" -> "abi.encodeCall" [ color = "orange" ];
+  "IWalletVerifier.handoverCalls" -> "SafeWalletVerifier._moduleCall" [ color = "green" ];
+  "IWalletVerifier.handoverCalls" -> "abi.encodeCall" [ color = "orange" ];
+  "IWalletVerifier.handoverCalls" -> "SafeWalletVerifier._moduleCall" [ color = "green" ];
+  "IWalletVerifier.handoverCalls" -> "abi.encodeCall" [ color = "orange" ];
+  "IWalletVerifier.handoverCalls" -> "SafeWalletVerifier._moduleCall" [ color = "green" ];
+  "IWalletVerifier.handoverCalls" -> "abi.encodeCall" [ color = "orange" ];
+  "SafeWalletVerifier._checkHooks" -> "SafeWalletVerifier._readAddress" [ color = "green" ];
+  "SafeWalletVerifier._checkHooks" -> "SafeWalletVerifier.address" [ color = "green" ];
+  "SafeWalletVerifier._checkHooks" -> "SafeWalletVerifier._readAddress" [ color = "green" ];
+  "SafeWalletVerifier._checkHooks" -> "SafeWalletVerifier.address" [ color = "green" ];
+  "SafeWalletVerifier._checkHooks" -> "SafeWalletVerifier._readAddress" [ color = "green" ];
+  "SafeWalletVerifier._checkHooks" -> "SafeWalletVerifier.address" [ color = "green" ];
+  "SafeWalletVerifier._moduleCall" -> "abi.encodeCall" [ color = "orange" ];
+  "SafeWalletVerifier._readAddress" -> "ISafeView.getStorageAt" [ color = "orange" ];
+  "SafeWalletVerifier._readAddress" -> "SafeWalletVerifier.address" [ color = "green" ];
+  "SafeWalletVerifier._readAddress" -> "SafeWalletVerifier.address" [ color = "green" ];
+  "SafeWalletVerifier._readAddress" -> "SafeWalletVerifier.address" [ color = "green" ];
+  "SafeWalletVerifier._readAddress" -> "SafeWalletVerifier.address" [ color = "green" ];
+  "SafeWalletVerifier._sameSet" -> "SafeWalletVerifier._containsMem" [ color = "green" ];
+  "SafeWalletVerifier._sameSet" -> "SafeWalletVerifier._containsCalldata" [ color = "green" ];
+
+
+rankdir=LR
+node [shape=plaintext]
+subgraph cluster_01 { 
+label = "Legend";
+key [label=<<table border="0" cellpadding="2" cellspacing="0" cellborder="0">
+  <tr><td align="right" port="i1">Internal Call</td></tr>
+  <tr><td align="right" port="i2">External Call</td></tr>
+  <tr><td align="right" port="i2">Custom Error Call</td></tr>
+  <tr><td align="right" port="i3">Defined Contract</td></tr>
+  <tr><td align="right" port="i4">Undefined Contract</td></tr>
+  </table>>]
+key2 [label=<<table border="0" cellpadding="2" cellspacing="0" cellborder="0">
+  <tr><td port="i1">&nbsp;&nbsp;&nbsp;</td></tr>
+  <tr><td port="i2">&nbsp;&nbsp;&nbsp;</td></tr>
+  <tr><td port="i3" bgcolor="lightgray">&nbsp;&nbsp;&nbsp;</td></tr>
+  <tr><td port="i4">
+    <table border="1" cellborder="0" cellspacing="0" cellpadding="7" color="lightgray">
+      <tr>
+       <td></td>
+      </tr>
+     </table>
+  </td></tr>
+  </table>>]
+key:i1:e -> key2:i1:w [color="green"]
+key:i2:e -> key2:i2:w [color="orange"]
+key:i2:e -> key2:i2:w [color="red"]
+}
+}
+

@@ -1,0 +1,33 @@
+digraph architecture {
+  rankdir=TB;
+  fontname="Arial"; node [fontname="Arial", fontsize=11]; edge [fontname="Arial", fontsize=10];
+  node [shape=box, style="rounded,filled", fillcolor="#ffffff"];
+
+  escrow [label="CleanHandoverEscrow\n(createTrade, deposit, finalizeHandover,\ncancel*, withdraw)", fillcolor="#dbe9f7", penwidth=2];
+
+  subgraph cluster_wallet {
+    label="Trục ví"; style="rounded,dashed"; color="#5b7fa6";
+    IW [label="«interface»\nIWalletVerifier"];
+    SV [label="SafeWalletVerifier\n(Safe 1.3.0 / 1.4.1 / 1.5.0)"];
+    more_w [label="Verifier cho loại ví khác\n(hướng phát triển)", style="rounded,dashed"];
+    SV -> IW [arrowhead=empty, style=dashed];
+    more_w -> IW [arrowhead=empty, style=dashed];
+  }
+
+  subgraph cluster_asset {
+    label="Trục tài sản"; style="rounded,dashed"; color="#5b8a5b";
+    IA [label="«interface»\nIAssetChecker"];
+    C0 [label="EthBalanceChecker"];
+    C1 [label="Erc20BalanceChecker"];
+    C2 [label="Erc721OwnerChecker"];
+    C3 [label="OwnableOwnerChecker"];
+    {C0 C1 C2 C3} -> IA [arrowhead=empty, style=dashed];
+  }
+
+  safe [label="Ví Safe được bán\n(escrow là module duy nhất)", shape=cylinder, fillcolor="#fdf1d6"];
+
+  escrow -> IW [label=" verifiers[verifierId]"];
+  escrow -> IA [label=" assetCheckers[checkerId]"];
+  SV -> safe [label=" đọc trạng thái", style=dotted];
+  escrow -> safe [label=" execTransactionFromModule\n (khi bàn giao)", color="#b04040", fontcolor="#b04040"];
+}

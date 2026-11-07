@@ -1,0 +1,22 @@
+digraph G {
+  graph [ ratio = "auto", page = "40" ];
+  "CleanHandoverEscrow";
+  "ISafeView";
+  "ISafeAdmin";
+  "SafeWalletVerifier";
+  "IWalletVerifier";
+  "IERC20Balance";
+  "IERC721Owner";
+  "IOwnableOwner";
+  "EthBalanceChecker";
+  "IAssetChecker";
+  "Erc20BalanceChecker";
+  "Erc721OwnerChecker";
+  "OwnableOwnerChecker";
+  "SafeWalletVerifier" -> "IWalletVerifier";
+  "EthBalanceChecker" -> "IAssetChecker";
+  "Erc20BalanceChecker" -> "IAssetChecker";
+  "Erc721OwnerChecker" -> "IAssetChecker";
+  "OwnableOwnerChecker" -> "IAssetChecker";
+}
+
