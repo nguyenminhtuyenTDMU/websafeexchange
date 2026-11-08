@@ -54,7 +54,7 @@ Chạy lại ngày 09/11/2026 sau khi thêm tập tài sản kỳ vọng của n
 
 | Hợp đồng | Độ phủ lệnh | Kết quả | Đánh giá |
 |---|---|---|---|
-| `CleanHandoverEscrow` | 25,1% | 1 × SWC-116 (Low): `cancelExpired` dùng `block.timestamp` | Trùng Slither (`timestamp`) |
+| `CleanHandoverEscrow` | 24,6% | 1 × SWC-116 (Low): `cancelExpired` dùng `block.timestamp` | Trùng Slither (`timestamp`). Chạy lại 09/11/2026 với bản có tập tài sản kỳ vọng, kết quả không đổi (lần trước 25,1%) |
 | `SafeWalletVerifier` | 32,5% | 4 × SWC-101 (High): `txNonce`, `isSupportedWallet`, `checkReadiness`, `isController` | Cảnh báo nhầm (xem dưới) |
 | `EthBalanceChecker` | 91,5% | Không có | — |
 | `Erc20BalanceChecker` | 89,4% | 1 × SWC-101 (High): `holds` | Cảnh báo nhầm |
