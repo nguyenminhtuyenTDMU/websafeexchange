@@ -1,0 +1,14 @@
+digraph safeproxy {
+  rankdir=LR;
+  fontname="Arial"; node [fontname="Arial", fontsize=12]; edge [fontname="Arial", fontsize=11];
+  node [shape=box, style="rounded,filled", fillcolor="#ffffff"];
+
+  user [label="Owner / module\n(gửi lời gọi)", shape=oval];
+  proxy [label="SafeProxy (địa chỉ ví)\n─────────────\nslot 0: singleton\nowners, threshold, nonce,\nmodules, guard, handler...", fillcolor="#fdf1d6"];
+  single [label="Singleton Safe\n(mã logic dùng chung,\nkhông giữ trạng thái của ví)", fillcolor="#dbe9f7"];
+  handler [label="Fallback handler\n(vd: CompatibilityFallbackHandler)", fillcolor="#eeeeee"];
+
+  user -> proxy [label=" lời gọi hàm"];
+  proxy -> single [label=" delegatecall\n(chạy trên storage của proxy)"];
+  single -> handler [label=" hàm không tồn tại\n→ chuyển tiếp", style=dashed];
+}

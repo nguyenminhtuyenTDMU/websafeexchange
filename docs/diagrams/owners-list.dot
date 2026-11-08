@@ -1,0 +1,18 @@
+digraph owners {
+  rankdir=LR;
+  fontname="Arial"; node [fontname="Arial", fontsize=12]; edge [fontname="Arial", fontsize=11];
+  node [shape=box, style="rounded,filled", fillcolor="#ffffff"];
+
+  subgraph cluster_b {
+    label="(b) Sau addOwnerWithThreshold(N): N được chèn vào đầu"; style="rounded,dashed";
+    s2 [label="SENTINEL\n0x1", fillcolor="#eeeeee"];
+    n2 [label="N", fillcolor="#d9efd9"]; a2 [label="A"]; b2 [label="B"];
+    s2 -> n2 -> a2 -> b2; b2 -> s2 [style=dashed, constraint=false];
+  }
+  subgraph cluster_a {
+    label="(a) Ví có hai owner A, B"; style="rounded,dashed";
+    s1 [label="SENTINEL\n0x1", fillcolor="#eeeeee"];
+    a1 [label="A"]; b1 [label="B"];
+    s1 -> a1 -> b1; b1 -> s1 [style=dashed, constraint=false];
+  }
+}

@@ -1,0 +1,15 @@
+digraph v1attack {
+  rankdir=TB;
+  fontname="Arial"; node [fontname="Arial", fontsize=12]; edge [fontname="Arial", fontsize=11];
+  node [shape=box, style="rounded,filled", fillcolor="#ffffff"];
+
+  tx [label="execTransaction của Safe (người bán ký)\nSafe kiểm tra chữ ký MỘT lần ở đây", shape=oval, fillcolor="#fdf1d6"];
+  m1 [label="1. escrow.beginHandover()"];
+  m2 [label="2. swapOwner(người bán → người mua)"];
+  m3 [label="3. escrow.completeHandover()\nkiểm tra: ví sạch → giải ngân cho người bán", fillcolor="#d9efd9"];
+  m4 [label="4. enableModule(kẻ tấn công)\nvẫn chạy với quyền đã xác thực ở bước đầu", fillcolor="#f6d6d6"];
+  res [label="Kết quả: người bán nhận tiền,\nngười mua nhận ví có cửa hậu", shape=note, fillcolor="#f6d6d6"];
+
+  tx -> m1 [label=" MultiSend"];
+  m1 -> m2 -> m3 -> m4 -> res;
+}
