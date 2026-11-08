@@ -3,6 +3,10 @@
 Ngày 07/11/2026. Bán quyền kiểm soát ví **SafeL2 1.5.0** tạo bằng app.safe.global, thông qua CleanHandover v2
 (`docs/DEPLOYMENTS.md`). Mọi thao tác thực hiện bằng Remix + MetaMask; không dùng giao diện Safe{Wallet} để ký.
 
+Giao dịch này chạy trên escrow v2 (`0x256d…41A4`), khi người mua còn xác nhận tài sản bằng `termsHash`. Escrow hiện hành
+v2.1 (`0xD0a1…c351`) chỉ khác ở chỗ `deposit` nhận thêm tập tài sản kỳ vọng của người mua. Phần bàn giao không đổi.
+Phần mới được kiểm tra bằng bộ test và fuzz test, chưa chạy lại giao dịch thật.
+
 ## Các bên
 
 | Vai trò | Địa chỉ |
