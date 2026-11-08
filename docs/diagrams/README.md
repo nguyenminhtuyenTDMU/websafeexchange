@@ -35,6 +35,8 @@ Render trực tiếp trong GitHub, VS Code (Markdown Preview Mermaid Support), v
 | `inheritance.png` | Quan hệ kế thừa / cài đặt interface | Surya |
 | `call-graph.png` | Đồ thị gọi hàm đầy đủ (phụ lục) | Surya |
 | `class.png` | Sơ đồ lớp UML: escrow (struct, enum, hàm, event), verifier, 4 checker | sol2uml |
+| `usecase.png` | Biểu đồ use case tổng quát (UC01–UC08) | `uml.cjs` |
+| `seq-*.png` | Sơ đồ tuần tự: niêm yết, chuẩn bị ví, nạp tiền, hoàn tất bàn giao, hủy và rút tiền | `uml.cjs` |
 
 Tạo lại ảnh (cần Graphviz):
 
@@ -43,4 +45,11 @@ surya inheritance contracts/CleanHandoverEscrow.sol contracts/verifiers/*.sol co
 surya graph       contracts/CleanHandoverEscrow.sol contracts/verifiers/*.sol contracts/assets/*.sol contracts/interfaces/*.sol > docs/diagrams/call-graph.dot
 sol2uml class contracts -i "mocks,SafeExchangeEscrowSoftGuard.sol" -hp -hi -hc -hn -f dot -o docs/diagrams/class.dot
 dot -Tpng -Gdpi=150 docs/diagrams/<tên>.dot -o docs/diagrams/<tên>.png
+```
+
+Sơ đồ use case và tuần tự dùng toạ độ cố định, vẽ bằng `neato -n2` thay cho `dot`:
+
+```
+node docs/diagrams/uml.cjs
+neato -n2 -Tpng -Gdpi=150 docs/diagrams/<tên>.dot -o docs/diagrams/<tên>.png
 ```

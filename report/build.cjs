@@ -9,6 +9,28 @@ const {
 } = require('docx');
 const C = require('./content.cjs');
 
+// ── Đánh số bảng / hình theo chương (Bảng 2.3, Hình 3.1; phụ lục: Bảng A.1) và thay [[key]] trong văn bản ──
+const labels = {};
+{
+  let chap = null; const cnt = {};
+  for (const it of [...C.moDau, ...C.ch1, ...C.ch2, ...C.placeholders, ...C.appendix]) {
+    if (it.h1) {
+      const m = it.h1.match(/^CHƯƠNG (\d+)/) || it.h1.match(/^PHỤ LỤC ([A-Z])/);
+      chap = m ? m[1] : null; cnt.table = 0; cnt.fig = 0;
+    }
+    for (const kind of ['table', 'fig']) {
+      if (it[kind] === undefined || !it.key) continue;
+      const label = `${kind === 'table' ? 'Bảng' : 'Hình'} ${chap}.${++cnt[kind]}`;
+      labels[it.key] = label;
+      it[kind] = `${label}. ${it[kind]}`;
+    }
+  }
+}
+const fixRefs = (s) => s.replace(/\[\[(\w+)\]\]/g, (_, k) => {
+  if (!labels[k]) throw new Error(`Không tìm thấy nhãn [[${k}]]`);
+  return labels[k];
+});
+
 const FONT = 'Times New Roman';
 const SIZE = 28; // 14pt
 const CM = (x) => Math.round(x * 567); // cm → twip
@@ -26,7 +48,7 @@ const fixCite = (s) => s.replace(/\[\d+\](?:,\s*\[\d+\])*/g, (grp) =>
 
 // ── Inline: **đậm**, `mã` ──
 function runs(text, base = {}) {
-  text = fixCite(text);
+  text = fixCite(fixRefs(text));
   return text.split(/(\*\*.+?\*\*|`.+?`)/g).filter(Boolean).map((part) => {
     if (part.startsWith('**')) return new TextRun({ ...base, text: part.slice(2, -2), bold: true });
     if (part.startsWith('`')) return new TextRun({ ...base, text: part.slice(1, -1), font: 'Courier New', size: (base.size || SIZE) - 4 });
@@ -102,14 +124,20 @@ const body = render([...C.moDau, ...C.ch1, ...C.ch2, ...C.placeholders]);
 body.push(new Paragraph({ heading: HeadingLevel.HEADING_1, pageBreakBefore: true, children: [new TextRun('TÀI LIỆU THAM KHẢO')] }));
 body.push(new Paragraph({ spacing: SPACING, children: [new TextRun({ text: 'Tiếng Anh', bold: true })] }));
 order.forEach((r, i) => body.push(new Paragraph({ alignment: AlignmentType.JUSTIFIED, spacing: SPACING, indent: { left: CM(1), hanging: CM(1) }, children: runs(`${i + 1}. ${r.t}`) })));
+body.push(...render(C.appendix));
 
 const frontTitle = (t) => new Paragraph({ alignment: AlignmentType.CENTER, spacing: { before: 0, after: 240 }, children: [new TextRun({ text: t, bold: true })] });
+// khối ký tên căn giữa nửa phải trang
+const signLine = (text, run = {}, before = 0) => new Paragraph({ alignment: AlignmentType.CENTER, indent: { left: CM(5) }, spacing: { before, after: 0 }, children: [new TextRun({ text, ...run })] });
 const front = [
   frontTitle('LỜI CAM ĐOAN'), ...C.front.camDoan.map((t) => P(t)),
-  new Paragraph({ alignment: AlignmentType.RIGHT, spacing: { before: 480 }, children: [new TextRun({ text: 'Sinh viên thực hiện', italics: true })] }),
-  new Paragraph({ alignment: AlignmentType.RIGHT, spacing: { before: 960 }, children: [new TextRun({ text: 'Nguyễn Minh Tuyền', bold: true })] }),
+  signLine('Thành phố Hồ Chí Minh, ngày … tháng 12 năm 2026', { italics: true }, 480),
+  signLine('Người thực hiện', { bold: true }, 80),
+  signLine('Nguyễn Minh Tuyền', { bold: true }, 1440),
   pageBreak(),
   frontTitle('LỜI CẢM ƠN'), ...C.front.camOn.map((t) => P(t)),
+  pageBreak(),
+  frontTitle('TÓM TẮT'), ...C.front.tomTat.map((t) => P(t)),
   pageBreak(),
   new TableOfContents('MỤC LỤC', { hyperlink: true, headingStyleRange: '1-3' }),
   pageBreak(),
@@ -124,20 +152,46 @@ const front = [
 ];
 tabList.pop(); // bảng viết tắt không đưa vào danh mục
 
-const cover = [
+// ── Bìa (theo bố cục bài mẫu của Viện: logo, khung viền, thông tin sinh viên lệch phải) ──
+function jpgSize(buf) {
+  for (let i = 2; i < buf.length;) {
+    const marker = buf[i + 1], len = buf.readUInt16BE(i + 2);
+    if (marker >= 0xc0 && marker <= 0xc3) return { h: buf.readUInt16BE(i + 5), w: buf.readUInt16BE(i + 7) };
+    i += 2 + len;
+  }
+  throw new Error('không đọc được kích thước JPEG');
+}
+const LOGO = fs.readFileSync(path.join(__dirname, 'assets', 'logo-tdmu.jpg'));
+const logoSize = jpgSize(LOGO);
+const info = (label, value) => new Paragraph({ indent: { left: CM(4.5) }, spacing: { before: 40, after: 40 }, children: [
+  new TextRun({ text: `${label}: `, bold: true }), new TextRun({ text: value, bold: true })] });
+const coverPage = () => [
   center('TRƯỜNG ĐẠI HỌC THỦ DẦU MỘT', { bold: true }),
   center('VIỆN CÔNG NGHỆ SỐ', { bold: true }),
-  new Paragraph({ spacing: { before: 2400 }, children: [] }),
+  center('***********'),
+  new Paragraph({ alignment: AlignmentType.CENTER, spacing: { before: 360, after: 360 }, children: [
+    new ImageRun({ type: 'jpg', data: LOGO, transformation: { width: 200, height: Math.round(200 * logoSize.h / logoSize.w) } })] }),
+  new Paragraph({ spacing: { before: 480 }, children: [] }),
   center('BÁO CÁO TỐT NGHIỆP', { bold: true, size: 36 }),
-  new Paragraph({ spacing: { before: 600 }, children: [] }),
-  center('XÂY DỰNG HỆ THỐNG CHUYỂN GIAO QUYỀN KIỂM SOÁT VÍ ĐA CHỮ KÝ CLEANHANDOVER', { bold: true, size: 32 }),
+  new Paragraph({ spacing: { before: 480 }, children: [] }),
+  center('ĐỀ TÀI:', { bold: true }),
+  center('XÂY DỰNG HỆ THỐNG CHUYỂN GIAO QUYỀN KIỂM SOÁT VÍ ĐA CHỮ KÝ CLEANHANDOVER', { bold: true, size: 30 }),
+  new Paragraph({ spacing: { before: 960 }, children: [] }),
+  info('Sinh viên thực hiện', 'Nguyễn Minh Tuyền'),
+  info('MSSV', '2124801040049'),
+  info('Lớp', 'D21HTTT01'),
+  info('Khóa', '2021 – 2026'),
+  info('Ngành', 'Hệ thống thông tin'),
+  info('Giảng viên hướng dẫn', '[học vị] Hồ Đắc Hưng'),
   new Paragraph({ spacing: { before: 1200 }, children: [] }),
-  center('Sinh viên: Nguyễn Minh Tuyền – MSSV: 2124801040049 – Lớp: D21HTTT01'),
-  center('Giảng viên hướng dẫn: Hồ Đắc Hưng'),
-  new Paragraph({ spacing: { before: 1800 }, children: [] }),
-  center('[Bìa tạm. Thay bằng đúng Mẫu báo cáo tốt nghiệp – 04 của trường.]', { italics: true, color: 'C00000' }),
-  center('Bình Dương, tháng 12 năm 2026'),
+  center('Thành phố Hồ Chí Minh, tháng 12/2026', { bold: true }),
 ];
+const cover = coverPage();
+const coverBorders = { pageBorders: { display: 'allPages', offsetFrom: 'text' },
+  pageBorderTop: { style: BorderStyle.DOUBLE, size: 12, color: '000000', space: 10 },
+  pageBorderBottom: { style: BorderStyle.DOUBLE, size: 12, color: '000000', space: 10 },
+  pageBorderLeft: { style: BorderStyle.DOUBLE, size: 12, color: '000000', space: 10 },
+  pageBorderRight: { style: BorderStyle.DOUBLE, size: 12, color: '000000', space: 10 } };
 
 const footer = new Footer({ children: [new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({ children: [PageNumber.CURRENT], font: FONT, size: 26 })] })] });
 const page = { size: { width: 11906, height: 16838 }, margin: { left: CM(3.5), right: CM(2), top: CM(2), bottom: CM(2) } };
@@ -159,8 +213,10 @@ const doc = new Document({
   numbering: { config: [{ reference: 'dash', levels: [{ level: 0, format: LevelFormat.BULLET, text: '-', alignment: AlignmentType.LEFT,
     style: { paragraph: { indent: { left: CM(1.2), hanging: CM(0.6) } } } }] }] },
   sections: [
-    { properties: { page }, children: cover },
-    { properties: { page: { ...page, pageNumbers: { start: 1, formatType: NumberFormat.LOWER_ROMAN } } }, footers: { default: footer }, children: front },
+    { properties: { page: { ...page, borders: coverBorders } }, children: cover },
+    // bìa phụ: bắt đầu đánh số La Mã nhưng không in số
+    { properties: { page: { ...page, borders: coverBorders, pageNumbers: { start: 1, formatType: NumberFormat.LOWER_ROMAN } } }, children: coverPage() },
+    { properties: { page: { ...page, pageNumbers: { formatType: NumberFormat.LOWER_ROMAN } } }, footers: { default: footer }, children: front },
     { properties: { page: { ...page, pageNumbers: { start: 1, formatType: NumberFormat.DECIMAL } } }, footers: { default: footer }, children: body },
   ],
 });

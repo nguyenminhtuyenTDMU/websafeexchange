@@ -1,0 +1,268 @@
+[
+ {
+  "group": "Luồng chuẩn",
+  "title": "Chuẩn bị → niêm yết → nạp tiền → người mua hoàn tất: nhận ví sạch + tài sản, người bán nhận tiền",
+  "result": "Đạt",
+  "v141": "Đạt",
+  "v150": "Đạt"
+ },
+ {
+  "group": "Luồng chuẩn",
+  "title": "Bàn giao cho nhiều owner mới với ngưỡng 2/2",
+  "result": "Đạt",
+  "v141": "Đạt",
+  "v150": "Đạt"
+ },
+ {
+  "group": "Luồng chuẩn",
+  "title": "Bất kỳ ai cũng gọi được finalizeHandover (kết quả luôn như nhau)",
+  "result": "Đạt",
+  "v141": "Đạt",
+  "v150": "Đạt"
+ },
+ {
+  "group": "Luồng chuẩn",
+  "title": "Fallback handler bằng 0 cũng được chấp nhận",
+  "result": "Đạt",
+  "v141": "Đạt",
+  "v150": "Đạt"
+ },
+ {
+  "group": "Luồng chuẩn",
+  "title": "Trợ lý đọc getReadiness để hướng dẫn người bán từng bước",
+  "result": "Đạt",
+  "v141": "Đạt",
+  "v150": "Đạt"
+ },
+ {
+  "group": "T1 — Giữ chủ sở hữu ẩn",
+  "title": "Người bán cài thêm owner phụ của mình: escrow xóa MỌI owner cũ, chỉ còn người mua",
+  "result": "Đạt",
+  "v141": "Đạt",
+  "v150": "Đạt"
+ },
+ {
+  "group": "T1 — Giữ chủ sở hữu ẩn",
+  "title": "Người mua đã là owner từ trước (người bán thêm vào) → bàn giao thất bại an toàn, người mua lấy lại tiền",
+  "result": "Đạt",
+  "v141": "Đạt",
+  "v150": "Đạt"
+ },
+ {
+  "group": "T2 — Sai ngưỡng ký",
+  "title": "Ngưỡng ký cũ của người bán không ảnh hưởng: escrow đặt đúng ngưỡng đã thỏa thuận",
+  "result": "Đạt",
+  "v141": "Đạt",
+  "v150": "Đạt"
+ },
+ {
+  "group": "T3 — Cài cắm module",
+  "title": "Còn module khác ngoài escrow → không nhận tiền (MODULES_ENABLED)",
+  "result": "Đạt",
+  "v141": "Đạt",
+  "v150": "Đạt"
+ },
+ {
+  "group": "T3 — Cài cắm module",
+  "title": "Chưa bật escrow làm module → không nhận tiền (EXECUTOR_NOT_ENABLED)",
+  "result": "Đạt",
+  "v141": "Đạt",
+  "v150": "Đạt"
+ },
+ {
+  "group": "T3 — Cài cắm module",
+  "title": "Người bán gỡ module lạ rồi mới để người mua nạp → thành công",
+  "result": "Đạt",
+  "v141": "Đạt",
+  "v150": "Đạt"
+ },
+ {
+  "group": "T4 — Cài cắm guard",
+  "title": "Còn guard → không nhận tiền (GUARD_SET đọc từ storage slot)",
+  "result": "Đạt",
+  "v141": "Đạt",
+  "v150": "Đạt"
+ },
+ {
+  "group": "T5 — Fallback handler độc",
+  "title": "Fallback handler lạ → không nhận tiền",
+  "result": "Đạt",
+  "v141": "Đạt",
+  "v150": "Đạt"
+ },
+ {
+  "group": "T4b — Module guard (chỉ có từ Safe 1.5.0)",
+  "title": "Còn module guard → không nhận tiền (MODULE_GUARD_SET); gỡ đi thì bàn giao bình thường",
+  "result": "Không áp dụng",
+  "v141": "Không áp dụng",
+  "v150": "Đạt"
+ },
+ {
+  "group": "T6 — Rút tài sản",
+  "title": "Rút trước khi người mua nạp → không nhận tiền, chỉ đúng tài sản bị thiếu",
+  "result": "Đạt",
+  "v141": "Đạt",
+  "v150": "Đạt"
+ },
+ {
+  "group": "T6 — Rút tài sản",
+  "title": "Rút sau khi người mua nạp (giao dịch Safe) → không hoàn tất được, người mua hủy ngay",
+  "result": "Đạt",
+  "v141": "Đạt",
+  "v150": "Đạt"
+ },
+ {
+  "group": "T6 — Rút tài sản",
+  "title": "Rút qua allowance cũ (không cần giao dịch Safe) → bị phát hiện, người mua hủy ngay",
+  "result": "Đạt",
+  "v141": "Đạt",
+  "v150": "Đạt"
+ },
+ {
+  "group": "T6 — Rút tài sản",
+  "title": "Chuyển quyền Ownable đi sau khi nạp → không hoàn tất được",
+  "result": "Đạt",
+  "v141": "Đạt",
+  "v150": "Đạt"
+ },
+ {
+  "group": "T7 — Thay singleton (làm giả mọi hàm view)",
+  "title": "Singleton giả trả lời 'đã sạch' nhưng verifier vẫn phát hiện",
+  "result": "Đạt",
+  "v141": "Đạt",
+  "v150": "Đạt"
+ },
+ {
+  "group": "T7 — Thay singleton (làm giả mọi hàm view)",
+  "title": "Không cho niêm yết ví không phải Safe chính thức",
+  "result": "Đạt",
+  "v141": "Đạt",
+  "v150": "Đạt"
+ },
+ {
+  "group": "T8 — Gọi finalize từ bên trong giao dịch của ví (lỗ hổng fuzz test tìm ra ở thiết kế cũ)",
+  "title": "MultiSend [finalize, enableModule(attacker)] của người bán → revert, không có gì thay đổi",
+  "result": "Đạt",
+  "v141": "Đạt",
+  "v150": "Đạt"
+ },
+ {
+  "group": "T8 — Gọi finalize từ bên trong giao dịch của ví (lỗ hổng fuzz test tìm ra ở thiết kế cũ)",
+  "title": "...và sau đó người mua vẫn hoàn tất bình thường (giao dịch revert không làm đổi nonce)",
+  "result": "Đạt",
+  "v141": "Đạt",
+  "v150": "Đạt"
+ },
+ {
+  "group": "T8 — Gọi finalize từ bên trong giao dịch của ví (lỗ hổng fuzz test tìm ra ở thiết kế cũ)",
+  "title": "Bất kỳ giao dịch Safe nào sau khi nạp tiền đều khóa finalize và mở quyền hủy cho người mua",
+  "result": "Đạt",
+  "v141": "Đạt",
+  "v150": "Đạt"
+ },
+ {
+  "group": "T8 — Gọi finalize từ bên trong giao dịch của ví (lỗ hổng fuzz test tìm ra ở thiết kế cũ)",
+  "title": "Không thể hoàn tất hai lần, không thể hoàn tất khi chưa nạp tiền",
+  "result": "Đạt",
+  "v141": "Đạt",
+  "v150": "Đạt"
+ },
+ {
+  "group": "T9 — Đổi điều kiện phút chót",
+  "title": "Người bán hủy và niêm yết lại với ít tài sản hơn → khoản nạp theo termsHash cũ bị từ chối",
+  "result": "Đạt",
+  "v141": "Đạt",
+  "v150": "Đạt"
+ },
+ {
+  "group": "T9 — Đổi điều kiện phút chót",
+  "title": "Không thể niêm yết tài sản mà ví không nắm giữ",
+  "result": "Đạt",
+  "v141": "Đạt",
+  "v150": "Đạt"
+ },
+ {
+  "group": "Tập tài sản kỳ vọng của người mua",
+  "title": "Người mua chỉ được khai báo tài sản nằm trong danh sách người bán chào",
+  "result": "Đạt",
+  "v141": "Đạt",
+  "v150": "Đạt"
+ },
+ {
+  "group": "Tập tài sản kỳ vọng của người mua",
+  "title": "Tập kỳ vọng được lưu lại lúc nạp tiền",
+  "result": "Đạt",
+  "v141": "Đạt",
+  "v150": "Đạt"
+ },
+ {
+  "group": "Tập tài sản kỳ vọng của người mua",
+  "title": "Lúc giải ngân hợp đồng đối chiếu tập kỳ vọng của người mua, không phải danh sách chào bán",
+  "result": "Đạt",
+  "v141": "Đạt",
+  "v150": "Đạt"
+ },
+ {
+  "group": "Tập tài sản kỳ vọng của người mua",
+  "title": "Tài sản kỳ vọng bị rút sau khi nạp → bit tương ứng theo thứ tự người mua khai báo",
+  "result": "Đạt",
+  "v141": "Đạt",
+  "v150": "Đạt"
+ },
+ {
+  "group": "T10 — Người bán ôm tiền / kéo dài thời gian",
+  "title": "Hết hạn mà chưa bàn giao → ai cũng hủy được, người mua rút lại tiền",
+  "result": "Đạt",
+  "v141": "Đạt",
+  "v150": "Đạt"
+ },
+ {
+  "group": "T10 — Người bán ôm tiền / kéo dài thời gian",
+  "title": "Người bán hủy sau khi người mua đã nạp → tiền về người mua",
+  "result": "Đạt",
+  "v141": "Đạt",
+  "v150": "Đạt"
+ },
+ {
+  "group": "Kiểm tra quyền & tham số",
+  "title": "Chỉ owner hiện tại của Safe mới được niêm yết",
+  "result": "Đạt",
+  "v141": "Đạt",
+  "v150": "Đạt"
+ },
+ {
+  "group": "Kiểm tra quyền & tham số",
+  "title": "Một ví chỉ có một giao dịch đang mở",
+  "result": "Đạt",
+  "v141": "Đạt",
+  "v150": "Đạt"
+ },
+ {
+  "group": "Kiểm tra quyền & tham số",
+  "title": "Từ chối tập owner mới trùng lặp / chứa người bán / ngưỡng không hợp lệ",
+  "result": "Đạt",
+  "v141": "Đạt",
+  "v150": "Đạt"
+ },
+ {
+  "group": "Kiểm tra quyền & tham số",
+  "title": "Chỉ người mua được nạp, đúng số tiền",
+  "result": "Đạt",
+  "v141": "Đạt",
+  "v150": "Đạt"
+ },
+ {
+  "group": "Kiểm tra quyền & tham số",
+  "title": "Không nhận ETH gửi thẳng vào escrow",
+  "result": "Đạt",
+  "v141": "Đạt",
+  "v150": "Đạt"
+ },
+ {
+  "group": "Kiểm tra quyền & tham số",
+  "title": "Verifier không bị lừa bởi danh sách owner trùng lặp",
+  "result": "Đạt",
+  "v141": "Đạt",
+  "v150": "Đạt"
+ }
+]
