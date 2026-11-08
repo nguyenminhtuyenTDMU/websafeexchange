@@ -2,3 +2,4 @@ node_modules/
 *.pdf
 page-*.jpg
 all.txt
+build/

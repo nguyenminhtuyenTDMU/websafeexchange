@@ -1,5 +1,5 @@
 // Tạo bản nháp BCTN theo Điều 43–44 (Quy định trình bày BCTN, ĐH Thủ Dầu Một).
-// Chạy: node build.cjs  → BCTN_NguyenMinhTuyen_nhap.docx
+// Chạy: npm run build (trong report/) → build.cjs tạo build/raw.docx, update-index.py cập nhật mục lục bằng LibreOffice
 const fs = require('fs');
 const path = require('path');
 const {
@@ -59,7 +59,6 @@ const P = (text, opt = {}) => new Paragraph({ alignment: AlignmentType.JUSTIFIED
 const center = (text, run = {}) => new Paragraph({ alignment: AlignmentType.CENTER, spacing: SPACING, children: runs(text, run) });
 const pageBreak = () => new Paragraph({ children: [new PageBreak()] });
 
-const figList = []; const tabList = [];
 
 function pngSize(file) {
   const b = fs.readFileSync(file);
@@ -70,15 +69,13 @@ function figure(item) {
   const { w, h } = pngSize(file);
   const widthCm = Math.min(item.w || TEXT_W, TEXT_W);
   const px = Math.round(widthCm / 2.54 * 96);
-  figList.push(item.fig);
   return [
     new Paragraph({ alignment: AlignmentType.CENTER, spacing: { before: 120, after: 0 }, keepNext: true,
       children: [new ImageRun({ type: 'png', data: fs.readFileSync(file), transformation: { width: px, height: Math.round(px * h / w) } })] }),
-    new Paragraph({ alignment: AlignmentType.CENTER, spacing: { before: 60, after: 160 }, children: runs(item.fig, { italics: true }) }),
+    new Paragraph({ style: 'CaptionFigure', children: runs(item.fig) }),
   ];
 }
 function table(item) {
-  tabList.push(item.table);
   const totalTw = CM(TEXT_W);
   const sum = item.widths.reduce((a, b) => a + b, 0);
   const colW = item.widths.map((w) => Math.round(totalTw * w / sum));
@@ -93,7 +90,7 @@ function table(item) {
       children: runs(text, { size: 26, bold: head || undefined }) })],
   });
   return [
-    new Paragraph({ alignment: AlignmentType.CENTER, spacing: { before: 160, after: 80 }, keepNext: true, children: runs(item.table, { bold: true }) }),
+    new Paragraph({ style: 'CaptionTable', children: runs(item.table) }),
     new Table({
       width: { size: totalTw, type: WidthType.DXA }, columnWidths: colW,
       rows: [
@@ -139,18 +136,18 @@ const front = [
   pageBreak(),
   frontTitle('TÓM TẮT'), ...C.front.tomTat.map((t) => P(t)),
   pageBreak(),
+  frontTitle('MỤC LỤC'),
   new TableOfContents('MỤC LỤC', { hyperlink: true, headingStyleRange: '1-3' }),
   pageBreak(),
   frontTitle('DANH MỤC CÁC CHỮ VIẾT TẮT'),
   ...table({ table: '', widths: [3, 12.5], cols: ['Từ viết tắt', 'Từ hoặc cụm từ đầy đủ'], rows: C.front.vietTat }).slice(1),
   pageBreak(),
   frontTitle('DANH MỤC CÁC BẢNG'),
-  ...tabList.filter(Boolean).map((t) => new Paragraph({ spacing: SPACING, children: runs(t) })),
+  new TableOfContents('Danh mục các bảng', { hyperlink: true, stylesWithLevels: [{ styleName: 'Chu thich bang', level: 1 }] }),
   pageBreak(),
   frontTitle('DANH MỤC CÁC HÌNH'),
-  ...figList.map((t) => new Paragraph({ spacing: SPACING, children: runs(t) })),
+  new TableOfContents('Danh mục các hình', { hyperlink: true, stylesWithLevels: [{ styleName: 'Chu thich hinh', level: 1 }] }),
 ];
-tabList.pop(); // bảng viết tắt không đưa vào danh mục
 
 // ── Bìa (theo bố cục bài mẫu của Viện: logo, khung viền, thông tin sinh viên lệch phải) ──
 function jpgSize(buf) {
@@ -207,6 +204,10 @@ const doc = new Document({
       { id: 'Heading1', name: 'Heading 1', basedOn: 'Normal', next: 'Normal', quickFormat: true, ...hd({ run: { bold: true }, paragraph: { alignment: AlignmentType.CENTER, spacing: { before: 0, after: 240 }, outlineLevel: 0 } }) },
       { id: 'Heading2', name: 'Heading 2', basedOn: 'Normal', next: 'Normal', quickFormat: true, ...hd({ run: { bold: true }, paragraph: { alignment: AlignmentType.JUSTIFIED, outlineLevel: 1 } }) },
       { id: 'Heading3', name: 'Heading 3', basedOn: 'Normal', next: 'Normal', quickFormat: true, ...hd({ run: { bold: true }, paragraph: { alignment: AlignmentType.JUSTIFIED, outlineLevel: 2 } }) },
+      { id: 'CaptionTable', name: 'Chu thich bang', basedOn: 'Normal', next: 'Normal', run: { font: FONT, size: SIZE, bold: true },
+        paragraph: { alignment: AlignmentType.CENTER, spacing: { before: 160, after: 80 }, keepNext: true } },
+      { id: 'CaptionFigure', name: 'Chu thich hinh', basedOn: 'Normal', next: 'Normal', run: { font: FONT, size: SIZE, italics: true },
+        paragraph: { alignment: AlignmentType.CENTER, spacing: { before: 60, after: 160 } } },
       { id: 'Heading4', name: 'Heading 4', basedOn: 'Normal', next: 'Normal', quickFormat: true, ...hd({ run: { italics: true }, paragraph: { alignment: AlignmentType.JUSTIFIED, outlineLevel: 3 } }) },
     ],
   },
@@ -221,5 +222,7 @@ const doc = new Document({
   ],
 });
 
-const out = path.join(__dirname, 'BCTN_NguyenMinhTuyen_nhap.docx');
+// Bản thô; update-index.py mở bằng LibreOffice, cập nhật mục lục / danh mục rồi lưu thành bản cuối.
+const out = path.join(__dirname, 'build', 'raw.docx');
+fs.mkdirSync(path.dirname(out), { recursive: true });
 Packer.toBuffer(doc).then((buf) => { fs.writeFileSync(out, buf); console.log('Đã tạo', out); });
