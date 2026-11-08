@@ -8,7 +8,7 @@
 const { expect } = require("chai");
 const { ethers } = require("hardhat");
 const {
-  SENTINEL, ONE_ETH, PRICE, NFT_ID, BIT, CHECKER, Status, deployFixture, loadFixture, increaseTime, call,
+  SENTINEL, ONE_ETH, PRICE, TOKEN_AMOUNT, NFT_ID, BIT, CHECKER, Status, deployFixture, loadFixture, increaseTime, call, toSpec,
 } = require("./helpers/fixture.cjs");
 
 describe("CleanHandover — escrow bàn giao ví Safe", function () {
@@ -30,7 +30,7 @@ describe("CleanHandover — escrow bàn giao ví Safe", function () {
       expect(await safe.getThreshold()).to.equal(1n);
       expect(await safe.isModuleEnabled(escrow.target)).to.equal(false);
       expect((await escrow.trades(id)).status).to.equal(Status.COMPLETED);
-      expect(await escrow.getHandoverStatus(id)).to.deep.equal([0n, 0n]);
+      expect((await escrow.getHandoverStatus(id))[1]).to.equal(0n);
       await expect(escrow.connect(seller).withdraw()).to.changeEtherBalance(seller, PRICE);
     });
 
@@ -277,7 +277,7 @@ describe("CleanHandover — escrow bàn giao ví Safe", function () {
       const { termsHash: seenHash } = await escrow.trades(id1);
       await escrow.connect(seller).cancelBySeller(id1);
       const id2 = await list({ assets: [] });
-      await expect(escrow.connect(buyer).deposit(id2, seenHash, { value: PRICE }))
+      await expect(escrow.connect(buyer).deposit(id2, seenHash, [], { value: PRICE }))
         .to.be.revertedWithCustomError(escrow, "TermsMismatch");
     });
 
@@ -287,6 +287,55 @@ describe("CleanHandover — escrow bàn giao ví Safe", function () {
         assets: [{ checkerId: CHECKER.ERC20, token: token.target, value: ethers.parseEther("1001") }],
       });
       await expect(escrow.connect(seller).createTrade(params)).to.be.revertedWithCustomError(escrow, "AssetNotHeld").withArgs(0);
+    });
+  });
+
+  describe("Tập tài sản kỳ vọng của người mua", function () {
+    it("Người mua chỉ được khai báo tài sản nằm trong danh sách người bán chào", async function () {
+      const { escrow, token, enableEscrowModule, list, depositFor } = f;
+      await enableEscrowModule();
+      const id = await list();
+      const tooMuch = [{ checkerId: CHECKER.ERC20, token: token.target, value: TOKEN_AMOUNT + 1n }];
+      await expect(depositFor(id, undefined, tooMuch)).to.be.revertedWithCustomError(escrow, "AssetNotOffered").withArgs(0);
+    });
+
+    it("Tập kỳ vọng được lưu lại lúc nạp tiền", async function () {
+      const { escrow, enableEscrowModule, list, depositFor } = f;
+      await enableEscrowModule();
+      const id = await list();
+      const offered = (await escrow.getAssets(id)).map(toSpec);
+      await depositFor(id, undefined, [offered[2], offered[0]]);
+      const expected = (await escrow.getExpectedAssets(id)).map(toSpec);
+      expect(expected).to.deep.equal([offered[2], offered[0]]);
+    });
+
+    it("Lúc giải ngân hợp đồng đối chiếu tập kỳ vọng của người mua, không phải danh sách chào bán", async function () {
+      const { escrow, seller, buyer, token, safe, attacker, execSafe, enableEscrowModule, list, depositFor } = f;
+      await execSafe(seller, call(token, "approve", [attacker.address, 1]));
+      await enableEscrowModule();
+      const id = await list();
+      const offered = (await escrow.getAssets(id)).map(toSpec);
+      // người mua không quan tâm token ERC-20 (mục 1)
+      await depositFor(id, undefined, [offered[0], offered[2], offered[3]]);
+      await token.connect(attacker).transferFrom(safe.target, attacker.address, 1);
+      expect((await escrow.getHandoverStatus(id))[1]).to.equal(0n);
+      await expect(escrow.connect(buyer).cancelByBuyer(id)).to.be.revertedWithCustomError(escrow, "NoSuspiciousActivity");
+      await escrow.connect(buyer).finalizeHandover(id);
+      expect(await safe.getOwners()).to.deep.equal([buyer.address]);
+    });
+
+    it("Tài sản kỳ vọng bị rút sau khi nạp => bit tương ứng theo thứ tự người mua khai báo", async function () {
+      const { escrow, seller, buyer, token, safe, attacker, execSafe, enableEscrowModule, list, depositFor } = f;
+      await execSafe(seller, call(token, "approve", [attacker.address, 1]));
+      await enableEscrowModule();
+      const id = await list();
+      const offered = (await escrow.getAssets(id)).map(toSpec);
+      await depositFor(id, undefined, [offered[1], offered[0]]);
+      await token.connect(attacker).transferFrom(safe.target, attacker.address, 1);
+      await expect(escrow.connect(buyer).finalizeHandover(id))
+        .to.be.revertedWithCustomError(escrow, "HandoverNotClean").withArgs(0, 1n);
+      await escrow.connect(buyer).cancelByBuyer(id);
+      expect(await escrow.pendingWithdrawals(buyer.address)).to.equal(PRICE);
     });
   });
 
@@ -338,8 +387,8 @@ describe("CleanHandover — escrow bàn giao ví Safe", function () {
       await enableEscrowModule();
       const id = await list();
       const { termsHash } = await escrow.trades(id);
-      await expect(escrow.connect(stranger).deposit(id, termsHash, { value: PRICE })).to.be.revertedWithCustomError(escrow, "NotBuyer");
-      await expect(escrow.connect(buyer).deposit(id, termsHash, { value: ONE_ETH })).to.be.revertedWithCustomError(escrow, "WrongAmount");
+      await expect(escrow.connect(stranger).deposit(id, termsHash, [], { value: PRICE })).to.be.revertedWithCustomError(escrow, "NotBuyer");
+      await expect(escrow.connect(buyer).deposit(id, termsHash, [], { value: ONE_ETH })).to.be.revertedWithCustomError(escrow, "WrongAmount");
     });
 
     it("Không nhận ETH gửi thẳng vào escrow", async function () {

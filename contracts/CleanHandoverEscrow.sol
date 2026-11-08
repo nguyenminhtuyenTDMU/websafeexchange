@@ -7,7 +7,8 @@ import {IAssetChecker} from "./interfaces/IAssetChecker.sol";
 /**
  * @title CleanHandoverEscrow
  * @notice Ký quỹ cho việc chuyển giao quyền kiểm soát ví Safe. Người bán bật escrow làm module
- *         của ví; khi bàn giao, escrow tự đổi owner rồi kiểm tra ví sạch và tài sản còn đủ.
+ *         của ví; người bán chào bán tài sản lúc niêm yết, người mua khai báo tập tài sản kỳ vọng lúc
+ *         nạp tiền; khi bàn giao, escrow tự đổi owner rồi kiểm tra ví sạch và tập kỳ vọng còn đủ.
  */
 contract CleanHandoverEscrow {
 
@@ -55,7 +56,8 @@ contract CleanHandoverEscrow {
     uint256 public tradeCount;
     mapping(uint256 => Trade) public trades;
     mapping(uint256 => address[]) private _newOwners;
-    mapping(uint256 => AssetSpec[]) private _assets;
+    mapping(uint256 => AssetSpec[]) private _assets;          // người bán chào bán
+    mapping(uint256 => AssetSpec[]) private _expectedAssets;  // người mua kỳ vọng, chốt lúc nạp tiền
     mapping(address => uint256) public activeTradeOf; // wallet => tradeId
     mapping(address => uint256) public pendingWithdrawals;
 
@@ -82,6 +84,7 @@ contract CleanHandoverEscrow {
     error NotController();
     error WalletBusy();
     error AssetNotHeld(uint256 index);
+    error AssetNotOffered(uint256 index);
     error InvalidState();
     error NotSeller();
     error NotBuyer();
@@ -161,16 +164,36 @@ contract CleanHandoverEscrow {
         emit TradeCreated(id, msg.sender, p.buyer, p.wallet, p.price, p.deadline, termsHash);
     }
 
-    function deposit(uint256 id, bytes32 expectedTermsHash) external payable nonReentrant {
+    /// @param expectedAssets Tập tài sản người mua kỳ vọng, mỗi mục phải có trong danh sách người bán chào.
+    function deposit(uint256 id, bytes32 expectedTermsHash, AssetSpec[] calldata expectedAssets)
+        external payable nonReentrant
+    {
         Trade storage t = trades[id];
         if (t.status != Status.OPEN) revert InvalidState();
         if (msg.sender != t.buyer) revert NotBuyer();
         if (block.timestamp > t.deadline) revert DeadlinePassed();
         if (msg.value != t.price) revert WrongAmount();
         if (expectedTermsHash != t.termsHash) revert TermsMismatch();
+        if (expectedAssets.length > MAX_ASSETS) revert InvalidParams();
+
+        AssetSpec[] storage offered = _assets[id];
+        for (uint256 i = 0; i < expectedAssets.length; i++) {
+            AssetSpec calldata a = expectedAssets[i];
+            bool found = false;
+            for (uint256 j = 0; j < offered.length; j++) {
+                AssetSpec storage o = offered[j];
+                if (o.checkerId == a.checkerId && o.token == a.token && o.value == a.value) {
+                    found = true;
+                    break;
+                }
+            }
+            if (!found) revert AssetNotOffered(i);
+            _expectedAssets[id].push(a);
+        }
 
         // ví phải sẵn sàng trước khi nhận tiền, sau đó người bán không cần đụng vào ví nữa
-        (uint256 readinessMask, uint256 assetMask) = _readiness(id);
+        uint256 readinessMask = _verifiers[t.verifierId].checkReadiness(t.wallet, address(this), t.allowedFallbackHandler);
+        uint256 assetMask = _checkAssets(t.wallet, _expectedAssets[id]);
         if (readinessMask != 0 || assetMask != 0) revert WalletNotReady(readinessMask, assetMask);
 
         t.nonceAtFunding = _verifiers[t.verifierId].txNonce(t.wallet);
@@ -223,7 +246,7 @@ contract CleanHandoverEscrow {
         } else {
             if (t.status != Status.FUNDED) revert InvalidState();
             bool walletChanged = _verifiers[t.verifierId].txNonce(t.wallet) != t.nonceAtFunding;
-            if (!walletChanged && _assetStatus(id) == 0) revert NoSuspiciousActivity();
+            if (!walletChanged && _checkAssets(t.wallet, _expectedAssets[id]) == 0) revert NoSuspiciousActivity();
             _cancel(id, CancelReason.SUSPICIOUS_ACTIVITY);
         }
     }
@@ -244,13 +267,13 @@ contract CleanHandoverEscrow {
         emit Withdrawn(msg.sender, amount);
     }
 
-    /// @notice Bằng (0, 0) khi ví sẵn sàng để nạp tiền. Bit i của assetFailMask: tài sản thứ i bị thiếu.
+    /// @notice Bằng (0, 0) khi ví sẵn sàng để nạp tiền. Bit i của assetFailMask: tài sản chào bán thứ i bị thiếu.
     function getReadiness(uint256 id) external view returns (uint256 readinessFailMask, uint256 assetFailMask) {
         if (trades[id].status == Status.NONE) revert InvalidState();
         return _readiness(id);
     }
 
-    /// @notice Bằng (0, 0) khi ví đã bàn giao sạch.
+    /// @notice Bằng (0, 0) khi ví đã bàn giao sạch. Bit i của assetFailMask: tài sản kỳ vọng thứ i bị thiếu.
     function getHandoverStatus(uint256 id) external view returns (uint256 walletFailMask, uint256 assetFailMask) {
         if (trades[id].status == Status.NONE) revert InvalidState();
         return _handoverStatus(id);
@@ -258,6 +281,7 @@ contract CleanHandoverEscrow {
 
     function getNewOwners(uint256 id) external view returns (address[] memory) { return _newOwners[id]; }
     function getAssets(uint256 id) external view returns (AssetSpec[] memory) { return _assets[id]; }
+    function getExpectedAssets(uint256 id) external view returns (AssetSpec[] memory) { return _expectedAssets[id]; }
     function verifierCount() external view returns (uint256) { return _verifiers.length; }
     function verifierAt(uint256 i) external view returns (IWalletVerifier) { return _verifiers[i]; }
     function assetCheckerCount() external view returns (uint256) { return _assetCheckers.length; }
@@ -268,21 +292,19 @@ contract CleanHandoverEscrow {
         walletMask = _verifiers[t.verifierId].checkHandover(
             t.wallet, _newOwners[id], t.threshold, t.allowedFallbackHandler
         );
-        assetMask = _assetStatus(id);
+        assetMask = _checkAssets(t.wallet, _expectedAssets[id]);
     }
 
     function _readiness(uint256 id) internal view returns (uint256 readinessMask, uint256 assetMask) {
         Trade storage t = trades[id];
         readinessMask = _verifiers[t.verifierId].checkReadiness(t.wallet, address(this), t.allowedFallbackHandler);
-        assetMask = _assetStatus(id);
+        assetMask = _checkAssets(t.wallet, _assets[id]);
     }
 
-    function _assetStatus(uint256 id) internal view returns (uint256 assetMask) {
-        Trade storage t = trades[id];
-        AssetSpec[] storage assets = _assets[id];
+    function _checkAssets(address wallet, AssetSpec[] storage assets) internal view returns (uint256 assetMask) {
         for (uint256 i = 0; i < assets.length; i++) {
             AssetSpec storage a = assets[i];
-            if (!_assetCheckers[a.checkerId].holds(t.wallet, a.token, a.value)) assetMask |= (1 << i);
+            if (!_assetCheckers[a.checkerId].holds(wallet, a.token, a.value)) assetMask |= (1 << i);
         }
     }
 

@@ -76,8 +76,11 @@ Cần **hai tài khoản MetaMask**: người bán (S) và người mua (B).
       `signatures` = (bước 2). Xác nhận MetaMask.
    5. Kiểm tra `isModuleEnabled(<địa chỉ escrow>)` = true.
 4. **(S / trợ lý) Kiểm tra sẵn sàng**: gọi `getReadiness(tradeId)` trên Remix → phải trả về `0, 0`.
-5. **(B) Nạp tiền**: đổi tài khoản MetaMask sang B, đọc `trades(tradeId)` để lấy `termsHash`,
-   gọi `deposit(tradeId, termsHash)` với VALUE = giá.
+5. **(B) Nạp tiền**: đổi tài khoản MetaMask sang B, đọc `trades(tradeId)` để lấy `termsHash` và `getAssets(tradeId)`
+   để xem danh sách người bán chào. Gọi `deposit(tradeId, termsHash, expectedAssets)` với VALUE = giá, trong đó
+   `expectedAssets` là tập tài sản B kỳ vọng, mỗi mục phải trùng một mục trong danh sách chào bán, ví dụ
+   `[[0,"0x0000000000000000000000000000000000000000","1000000000000000"]]` (checkerId, token, value).
+   Muốn nhận đủ mọi thứ người bán chào thì dán lại nguyên danh sách đó; `[]` nghĩa là chỉ mua ví.
    Từ lúc này **S không được thực hiện thêm bất kỳ giao dịch nào với Safe** (nếu không, B sẽ hủy được và lấy lại tiền).
 6. **(B) Hoàn tất**: gọi `finalizeHandover(tradeId)`. Kiểm tra trên app.safe.global: owner duy nhất là B, không còn module.
 7. **(S) Rút tiền**: đổi sang S, gọi `withdraw()`.

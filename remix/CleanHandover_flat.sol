@@ -7,13 +7,8 @@
 // Original license: SPDX_License_Identifier: MIT
 pragma solidity ^0.8.24;
 
-/**
- * @title IAssetChecker
- * @notice Trục 2 của kiến trúc: kiểm tra MỘT LOẠI TÀI SẢN / QUYỀN KIỂM SOÁT mà ví đang nắm giữ.
- *         Mỗi loại tài sản (ETH, ERC-20, ERC-721, Ownable, ...) có một checker riêng.
- */
+/// @notice Mỗi loại tài sản (ETH, ERC-20, ERC-721, Ownable) có một checker riêng.
 interface IAssetChecker {
-    /// @notice true nếu `wallet` đang nắm giữ tài sản (`token`, `value`) đúng như đã khai báo.
     function holds(address wallet, address token, uint256 value) external view returns (bool);
 }
 
@@ -27,15 +22,9 @@ interface IERC20Balance { function balanceOf(address account) external view retu
 interface IERC721Owner  { function ownerOf(uint256 tokenId) external view returns (address); }
 interface IOwnableOwner { function owner() external view returns (address); }
 
-/*
- * Bốn checker tham chiếu cho trục tài sản. Mọi lỗi đọc dữ liệu đều trả về false (fail-closed).
- *
- * Giới hạn đã biết của phương pháp đối chiếu số dư:
- *  - token rebase / token thu phí khi chuyển có số dư tự thay đổi => không áp dụng được;
- *  - số tài sản khai báo bị giới hạn (MAX_ASSETS trong escrow) do gas tăng tuyến tính.
- */
+// đọc lỗi thì trả về false
 
-/// @notice ETH: số dư ví >= value. Tham số token bị bỏ qua.
+/// @notice Số dư ETH của ví >= value.
 contract EthBalanceChecker is IAssetChecker {
     function holds(address wallet, address, uint256 value) external view returns (bool) {
         return wallet.balance >= value;
@@ -54,7 +43,7 @@ contract Erc20BalanceChecker is IAssetChecker {
     }
 }
 
-/// @notice ERC-721: ownerOf(value) == wallet, với value là tokenId.
+/// @notice ERC-721: value là tokenId.
 contract Erc721OwnerChecker is IAssetChecker {
     function holds(address wallet, address token, uint256 value) external view returns (bool) {
         if (token.code.length == 0) return false;
@@ -66,7 +55,7 @@ contract Erc721OwnerChecker is IAssetChecker {
     }
 }
 
-/// @notice Ownable: owner() của hợp đồng `token` == wallet. Tham số value bị bỏ qua.
+/// @notice owner() của hợp đồng `token` là ví.
 contract OwnableOwnerChecker is IAssetChecker {
     function holds(address wallet, address token, uint256) external view returns (bool) {
         if (token.code.length == 0) return false;
@@ -84,44 +73,24 @@ contract OwnableOwnerChecker is IAssetChecker {
 // Original license: SPDX_License_Identifier: MIT
 pragma solidity ^0.8.24;
 
-/**
- * @title IWalletVerifier
- * @notice Trục 1 của kiến trúc: xác minh trạng thái quyền kiểm soát của MỘT LOẠI VÍ đa chữ ký.
- *         Mỗi loại ví (Safe, ...) có một adapter riêng cài đặt interface này.
- */
+/// @notice Mỗi loại ví đa chữ ký có một verifier riêng cài interface này.
 interface IWalletVerifier {
-    /// @notice Ví có phải loại ví mà adapter này hỗ trợ (vd: Safe chính thức) hay không.
     function isSupportedWallet(address wallet) external view returns (bool);
 
-    /// @notice `account` có đang nắm quyền kiểm soát `wallet` (là owner) hay không.
     function isController(address wallet, address account) external view returns (bool);
 
-    /**
-     * @notice Bộ đếm giao dịch của ví. Phải tăng TRƯỚC khi ví thực thi bất kỳ giao dịch nào do owner ký,
-     *         để escrow phát hiện được việc bị gọi từ bên trong một giao dịch của ví (xem finalizeHandover).
-     */
+    /// @notice Phải tăng trước khi ví chạy giao dịch của owner (escrow dựa vào điều này).
     function txNonce(address wallet) external view returns (uint256);
 
-    /**
-     * @notice Ví đã sẵn sàng cho escrow (`executor`) thực hiện bàn giao chưa: `executor` là đơn vị thực thi
-     *         DUY NHẤT được ví ủy quyền, và không còn cơ chế nào khác có thể tác động lên ví sau bàn giao.
-     * @return failMask 0 nếu sẵn sàng; mỗi bit là một điều kiện chưa đạt (xem adapter).
-     */
+    /// @notice 0 khi `executor` là bên duy nhất được ví ủy quyền và ví không còn guard/hook lạ.
     function checkReadiness(address wallet, address executor, address allowedFallbackHandler)
         external view returns (uint256 failMask);
 
-    /**
-     * @notice Danh sách lời gọi (gửi tới `wallet`, do `executor` thực hiện) để chuyển quyền kiểm soát sang
-     *         đúng tập `newOwners` với ngưỡng `threshold`, rồi thu hồi quyền của `executor`.
-     *         Mỗi lời gọi phải không revert và trả về abi-encoded `true`.
-     */
+    /// @notice Các lời gọi escrow gửi tới ví để đổi sang `newOwners` rồi tự gỡ quyền của mình.
     function handoverCalls(address wallet, address[] calldata newOwners, uint256 threshold, address executor)
         external view returns (bytes[] memory calls);
 
-    /**
-     * @notice Kiểm tra trạng thái "bàn giao sạch".
-     * @return failMask 0 nếu sạch; ngược lại mỗi bit là một điều kiện chưa đạt (xem adapter).
-     */
+    /// @notice 0 khi ví đã bàn giao sạch.
     function checkHandover(
         address wallet,
         address[] calldata newOwners,
@@ -139,29 +108,11 @@ pragma solidity ^0.8.24;
 
 /**
  * @title CleanHandoverEscrow
- * @notice Ký quỹ trustless cho việc chuyển giao quyền kiểm soát ví đa chữ ký.
- *
- * Vòng đời:  OPEN ──deposit──▶ FUNDED ──(bàn giao nguyên tử)──▶ COMPLETED
- *              │                 │
- *              └──── hủy / hết hạn / hoạt động bất thường ────▶ CANCELLED (hoàn tiền người mua)
- *
- *  1. createTrade  : người bán (đang là owner) niêm yết ví + điều kiện: tập owner mới, ngưỡng ký,
- *                    fallback handler chấp nhận, danh sách tài sản trong ví. Mọi điều kiện được băm thành termsHash.
- *     Trước đó người bán chuẩn bị ví: bật CHÍNH escrow này làm module duy nhất, gỡ guard, đặt fallback chuẩn.
- *  2. deposit      : người mua nạp đúng giá, kèm termsHash mình đã xem (chống người bán đổi điều kiện phút chót).
- *                    Hợp đồng kiểm tra ví đã sẵn sàng rồi chụp nonce của ví: từ đây ví bị "đóng băng".
- *  3. finalizeHandover (ai gọi cũng được): escrow — với tư cách module — tự thêm owner mới, xóa MỌI owner cũ,
- *     đặt ngưỡng ký, gỡ chính mình khỏi danh sách module, rồi xác minh bàn giao sạch + tài sản còn nguyên.
- *     Sai một điều kiện => revert toàn bộ, người bán vẫn giữ ví, tiền vẫn nằm trong escrow.
- *     Điều kiện nonce không đổi kể từ lúc nạp tiền bảo đảm finalizeHandover KHÔNG chạy bên trong một giao dịch
- *     của ví (ví luôn tăng nonce trước khi thực thi), nên sau khi kiểm tra không còn lệnh nào của người bán
- *     chạy tiếp được. Đây là lỗ hổng của thiết kế cũ (begin/complete trong MultiSend) mà fuzz test phát hiện.
- *  4. Tiền được ghi có (pull-payment) và rút bằng withdraw().
- *
- * Bất biến: không có owner/admin, không có hàm nâng cấp; danh sách verifier và asset checker cố định từ constructor.
+ * @notice Ký quỹ cho việc chuyển giao quyền kiểm soát ví Safe. Người bán bật escrow làm module
+ *         của ví; người bán chào bán tài sản lúc niêm yết, người mua khai báo tập tài sản kỳ vọng lúc
+ *         nạp tiền; khi bàn giao, escrow tự đổi owner rồi kiểm tra ví sạch và tập kỳ vọng còn đủ.
  */
 contract CleanHandoverEscrow {
-    // ─── Types ───────────────────────────────────────────────────────────────
 
     enum Status { NONE, OPEN, FUNDED, COMPLETED, CANCELLED }
     enum CancelReason { SELLER_CANCELLED, BUYER_CANCELLED, SUSPICIOUS_ACTIVITY, EXPIRED }
@@ -198,8 +149,6 @@ contract CleanHandoverEscrow {
         bytes32 termsHash;
     }
 
-    // ─── Storage ─────────────────────────────────────────────────────────────
-
     uint256 public constant MAX_OWNERS = 10;
     uint256 public constant MAX_ASSETS = 20;
 
@@ -209,13 +158,12 @@ contract CleanHandoverEscrow {
     uint256 public tradeCount;
     mapping(uint256 => Trade) public trades;
     mapping(uint256 => address[]) private _newOwners;
-    mapping(uint256 => AssetSpec[]) private _assets;
-    mapping(address => uint256) public activeTradeOf; // wallet => tradeId (0 = không có)
+    mapping(uint256 => AssetSpec[]) private _assets;          // người bán chào bán
+    mapping(uint256 => AssetSpec[]) private _expectedAssets;  // người mua kỳ vọng, chốt lúc nạp tiền
+    mapping(address => uint256) public activeTradeOf; // wallet => tradeId
     mapping(address => uint256) public pendingWithdrawals;
 
     bool private _locked;
-
-    // ─── Events (nguồn dữ liệu cho lớp giao diện tra cứu) ──────────────────────
 
     event TradeCreated(
         uint256 indexed tradeId,
@@ -231,8 +179,6 @@ contract CleanHandoverEscrow {
     event TradeCancelled(uint256 indexed tradeId, CancelReason reason, bool refunded);
     event Withdrawn(address indexed account, uint256 amount);
 
-    // ─── Errors ──────────────────────────────────────────────────────────────
-
     error InvalidParams();
     error UnknownVerifier();
     error UnknownAssetChecker(uint256 index);
@@ -240,6 +186,7 @@ contract CleanHandoverEscrow {
     error NotController();
     error WalletBusy();
     error AssetNotHeld(uint256 index);
+    error AssetNotOffered(uint256 index);
     error InvalidState();
     error NotSeller();
     error NotBuyer();
@@ -269,8 +216,6 @@ contract CleanHandoverEscrow {
         for (uint256 i = 0; i < assetCheckers.length; i++) _assetCheckers.push(assetCheckers[i]);
     }
 
-    // ─── Người bán: niêm yết ────────────────────────────────────────────────
-
     function createTrade(TradeParams calldata p) external nonReentrant returns (uint256 id) {
         if (p.verifierId >= _verifiers.length) revert UnknownVerifier();
         IWalletVerifier verifier = _verifiers[p.verifierId];
@@ -295,7 +240,6 @@ contract CleanHandoverEscrow {
         for (uint256 i = 0; i < p.assets.length; i++) {
             AssetSpec calldata a = p.assets[i];
             if (a.checkerId >= _assetCheckers.length) revert UnknownAssetChecker(i);
-            // Không cho niêm yết tài sản mà ví không thực sự nắm giữ.
             if (!_assetCheckers[a.checkerId].holds(p.wallet, a.token, a.value)) revert AssetNotHeld(i);
         }
 
@@ -322,18 +266,36 @@ contract CleanHandoverEscrow {
         emit TradeCreated(id, msg.sender, p.buyer, p.wallet, p.price, p.deadline, termsHash);
     }
 
-    // ─── Người mua: nạp tiền ─────────────────────────────────────────────────
-
-    function deposit(uint256 id, bytes32 expectedTermsHash) external payable nonReentrant {
+    /// @param expectedAssets Tập tài sản người mua kỳ vọng, mỗi mục phải có trong danh sách người bán chào.
+    function deposit(uint256 id, bytes32 expectedTermsHash, AssetSpec[] calldata expectedAssets)
+        external payable nonReentrant
+    {
         Trade storage t = trades[id];
         if (t.status != Status.OPEN) revert InvalidState();
         if (msg.sender != t.buyer) revert NotBuyer();
         if (block.timestamp > t.deadline) revert DeadlinePassed();
         if (msg.value != t.price) revert WrongAmount();
         if (expectedTermsHash != t.termsHash) revert TermsMismatch();
+        if (expectedAssets.length > MAX_ASSETS) revert InvalidParams();
 
-        // Chỉ nhận tiền khi ví đã sẵn sàng: sau thời điểm này người bán không cần (và không được) đụng vào ví nữa.
-        (uint256 readinessMask, uint256 assetMask) = _readiness(id);
+        AssetSpec[] storage offered = _assets[id];
+        for (uint256 i = 0; i < expectedAssets.length; i++) {
+            AssetSpec calldata a = expectedAssets[i];
+            bool found = false;
+            for (uint256 j = 0; j < offered.length; j++) {
+                AssetSpec storage o = offered[j];
+                if (o.checkerId == a.checkerId && o.token == a.token && o.value == a.value) {
+                    found = true;
+                    break;
+                }
+            }
+            if (!found) revert AssetNotOffered(i);
+            _expectedAssets[id].push(a);
+        }
+
+        // ví phải sẵn sàng trước khi nhận tiền, sau đó người bán không cần đụng vào ví nữa
+        uint256 readinessMask = _verifiers[t.verifierId].checkReadiness(t.wallet, address(this), t.allowedFallbackHandler);
+        uint256 assetMask = _checkAssets(t.wallet, _expectedAssets[id]);
         if (readinessMask != 0 || assetMask != 0) revert WalletNotReady(readinessMask, assetMask);
 
         t.nonceAtFunding = _verifiers[t.verifierId].txNonce(t.wallet);
@@ -342,19 +304,14 @@ contract CleanHandoverEscrow {
         emit TradeFunded(id, msg.sender, msg.value, t.nonceAtFunding);
     }
 
-    // ─── Bàn giao (escrow tự thực hiện với tư cách module của ví) ───────────────
-
-    /**
-     * @notice Ai cũng có thể gọi (thường là người mua). Toàn bộ việc chuyển quyền và kiểm tra nằm trong
-     *         MỘT lời gọi do escrow điều khiển từ đầu đến cuối.
-     */
+    /// @notice Ai cũng gọi được, thường là người mua.
     function finalizeHandover(uint256 id) external nonReentrant {
         Trade storage t = trades[id];
         if (t.status != Status.FUNDED) revert InvalidState();
         IWalletVerifier verifier = _verifiers[t.verifierId];
 
-        // Ví tăng nonce trước khi thực thi mọi giao dịch do owner ký. Nonce không đổi => không có giao dịch nào
-        // của ví đang chạy bao quanh lời gọi này, và ví không bị thay đổi kể từ lúc người mua nạp tiền.
+        // Safe tăng nonce trước khi chạy giao dịch của owner, nên nonce không đổi nghĩa là hàm này
+        // không bị gọi từ bên trong một giao dịch của ví và ví chưa bị đụng tới từ lúc nạp tiền
         if (verifier.txNonce(t.wallet) != t.nonceAtFunding) revert WalletChangedSinceFunding();
         if (!verifier.isController(t.wallet, t.seller)) revert NotController();
 
@@ -375,21 +332,14 @@ contract CleanHandoverEscrow {
         emit TradeCompleted(id, t.seller, t.buyer, t.price);
     }
 
-    // ─── Hủy / hoàn tiền ─────────────────────────────────────────────────────
-
-    /// @notice Người bán hủy bất cứ lúc nào trước khi hoàn tất; nếu đã nạp tiền thì hoàn cho người mua.
+    /// @notice Người bán hủy trước khi hoàn tất, tiền đã nạp được hoàn cho người mua.
     function cancelBySeller(uint256 id) external nonReentrant {
         Trade storage t = trades[id];
         if (msg.sender != t.seller) revert NotSeller();
         _cancel(id, CancelReason.SELLER_CANCELLED);
     }
 
-    /**
-     * @notice Người mua hủy:
-     *  - trước khi nạp tiền: tự do;
-     *  - sau khi nạp tiền: khi bàn giao không còn thực hiện được — ví đã thực thi giao dịch kể từ lúc nạp
-     *    (nonce thay đổi) hoặc tài sản đã niêm yết không còn nguyên (vd: bị rút qua allowance cũ).
-     */
+    /// @notice Người mua hủy: tự do khi chưa nạp tiền; sau khi nạp thì chỉ khi nonce ví đã đổi hoặc tài sản bị thiếu.
     function cancelByBuyer(uint256 id) external nonReentrant {
         Trade storage t = trades[id];
         if (msg.sender != t.buyer) revert NotBuyer();
@@ -398,12 +348,12 @@ contract CleanHandoverEscrow {
         } else {
             if (t.status != Status.FUNDED) revert InvalidState();
             bool walletChanged = _verifiers[t.verifierId].txNonce(t.wallet) != t.nonceAtFunding;
-            if (!walletChanged && _assetStatus(id) == 0) revert NoSuspiciousActivity();
+            if (!walletChanged && _checkAssets(t.wallet, _expectedAssets[id]) == 0) revert NoSuspiciousActivity();
             _cancel(id, CancelReason.SUSPICIOUS_ACTIVITY);
         }
     }
 
-    /// @notice Bất kỳ ai cũng có thể hủy giao dịch đã quá hạn; tiền (nếu có) được hoàn cho người mua.
+    /// @notice Ai cũng hủy được giao dịch quá hạn.
     function cancelExpired(uint256 id) external nonReentrant {
         Trade storage t = trades[id];
         if (block.timestamp <= t.deadline) revert DeadlineNotPassed();
@@ -419,19 +369,13 @@ contract CleanHandoverEscrow {
         emit Withdrawn(msg.sender, amount);
     }
 
-    // ─── View cho dapp / trợ lý hướng dẫn bàn giao ──────────────────────────
-
-    /**
-     * @notice Ví đã sẵn sàng để người mua nạp tiền / để bàn giao chưa. Dùng cho trợ lý hướng dẫn người bán.
-     * @return readinessFailMask bit điều kiện chưa đạt (ý nghĩa bit: xem verifier, hàm checkReadiness).
-     * @return assetFailMask     bit i = 1 nghĩa là tài sản thứ i không còn đúng như niêm yết.
-     */
+    /// @notice Bằng (0, 0) khi ví sẵn sàng để nạp tiền. Bit i của assetFailMask: tài sản chào bán thứ i bị thiếu.
     function getReadiness(uint256 id) external view returns (uint256 readinessFailMask, uint256 assetFailMask) {
         if (trades[id].status == Status.NONE) revert InvalidState();
         return _readiness(id);
     }
 
-    /// @notice Trạng thái ví so với điều kiện bàn giao sạch (bằng 0 sau khi hoàn tất).
+    /// @notice Bằng (0, 0) khi ví đã bàn giao sạch. Bit i của assetFailMask: tài sản kỳ vọng thứ i bị thiếu.
     function getHandoverStatus(uint256 id) external view returns (uint256 walletFailMask, uint256 assetFailMask) {
         if (trades[id].status == Status.NONE) revert InvalidState();
         return _handoverStatus(id);
@@ -439,33 +383,30 @@ contract CleanHandoverEscrow {
 
     function getNewOwners(uint256 id) external view returns (address[] memory) { return _newOwners[id]; }
     function getAssets(uint256 id) external view returns (AssetSpec[] memory) { return _assets[id]; }
+    function getExpectedAssets(uint256 id) external view returns (AssetSpec[] memory) { return _expectedAssets[id]; }
     function verifierCount() external view returns (uint256) { return _verifiers.length; }
     function verifierAt(uint256 i) external view returns (IWalletVerifier) { return _verifiers[i]; }
     function assetCheckerCount() external view returns (uint256) { return _assetCheckers.length; }
     function assetCheckerAt(uint256 i) external view returns (IAssetChecker) { return _assetCheckers[i]; }
-
-    // ─── Internal ────────────────────────────────────────────────────────────
 
     function _handoverStatus(uint256 id) internal view returns (uint256 walletMask, uint256 assetMask) {
         Trade storage t = trades[id];
         walletMask = _verifiers[t.verifierId].checkHandover(
             t.wallet, _newOwners[id], t.threshold, t.allowedFallbackHandler
         );
-        assetMask = _assetStatus(id);
+        assetMask = _checkAssets(t.wallet, _expectedAssets[id]);
     }
 
     function _readiness(uint256 id) internal view returns (uint256 readinessMask, uint256 assetMask) {
         Trade storage t = trades[id];
         readinessMask = _verifiers[t.verifierId].checkReadiness(t.wallet, address(this), t.allowedFallbackHandler);
-        assetMask = _assetStatus(id);
+        assetMask = _checkAssets(t.wallet, _assets[id]);
     }
 
-    function _assetStatus(uint256 id) internal view returns (uint256 assetMask) {
-        Trade storage t = trades[id];
-        AssetSpec[] storage assets = _assets[id];
+    function _checkAssets(address wallet, AssetSpec[] storage assets) internal view returns (uint256 assetMask) {
         for (uint256 i = 0; i < assets.length; i++) {
             AssetSpec storage a = assets[i];
-            if (!_assetCheckers[a.checkerId].holds(t.wallet, a.token, a.value)) assetMask |= (1 << i);
+            if (!_assetCheckers[a.checkerId].holds(wallet, a.token, a.value)) assetMask |= (1 << i);
         }
     }
 
@@ -480,8 +421,6 @@ contract CleanHandoverEscrow {
 
         emit TradeCancelled(id, reason, funded);
     }
-
-    // Không có receive(): ETH chỉ vào qua deposit().
 }
 
 
@@ -512,24 +451,7 @@ interface ISafeAdmin {
 
 /**
  * @title SafeWalletVerifier
- * @notice Adapter tham chiếu cho ví Safe (Gnosis Safe) v1.3.0 / v1.4.1 / v1.5.0.
- *
- * Các điều kiện "bàn giao sạch" (mỗi điều kiện là một bit trong failMask):
- *  - NOT_OFFICIAL_SAFE  : proxy không trỏ tới singleton Safe chính thức
- *                         (singleton bị thay => mọi hàm view khác đều có thể bị làm giả)
- *  - OWNERS_MISMATCH    : tập owner hiện tại KHÁC ĐÚNG tập owner đã thỏa thuận (còn owner ẩn / thiếu owner)
- *  - THRESHOLD_MISMATCH : ngưỡng ký khác ngưỡng đã thỏa thuận
- *  - MODULES_ENABLED    : còn module được bật (module thực thi giao dịch không cần chữ ký owner)
- *  - GUARD_SET          : còn transaction guard (có thể chặn / kiểm duyệt giao dịch của người mua)
- *  - MODULE_GUARD_SET   : còn module guard (Safe v1.5)
- *  - FALLBACK_HANDLER   : fallback handler khác 0 và khác handler đã thỏa thuận
- *                         (handler độc có thể giả mạo chữ ký EIP-1271 thay cho ví)
- *  - EXECUTOR_NOT_ENABLED : (chỉ checkReadiness) escrow chưa được bật làm module của ví
- *
- * Guard, module guard, fallback handler không có hàm getter => đọc trực tiếp khe lưu trữ
- * (storage slot) qua getStorageAt() của StorageAccessible.
- *
- * Hợp đồng bất biến: danh sách singleton chính thức chỉ đặt trong constructor, không có quản trị viên.
+ * @notice Kiểm tra ví Safe 1.3.0 / 1.4.1 / 1.5.0. Mỗi điều kiện chưa đạt là một bit trong failMask.
  */
 contract SafeWalletVerifier is IWalletVerifier {
     uint256 public constant NOT_OFFICIAL_SAFE  = 1 << 0;
@@ -541,7 +463,7 @@ contract SafeWalletVerifier is IWalletVerifier {
     uint256 public constant FALLBACK_HANDLER   = 1 << 6;
     uint256 public constant EXECUTOR_NOT_ENABLED = 1 << 7;
 
-    /// @dev Giới hạn số module đọc ra khi kiểm tra; ví "sẵn sàng" chỉ được có đúng 1 module (escrow).
+    // đọc 2 module là đủ biết ví có module nào khác ngoài escrow không
     uint256 internal constant MODULE_PAGE = 2;
 
     bytes32 internal constant GUARD_SLOT            = keccak256("guard_manager.guard.address");
@@ -557,11 +479,9 @@ contract SafeWalletVerifier is IWalletVerifier {
         }
     }
 
-    // ─── IWalletVerifier ─────────────────────────────────────────────────────
-
     function isSupportedWallet(address wallet) public view returns (bool) {
         if (wallet.code.length == 0) return false;
-        // masterCopy() được SafeProxy tự trả lời từ slot 0, không chuyển tiếp xuống singleton.
+        // proxy tự trả lời masterCopy() từ slot 0, singleton giả không can thiệp được
         try ISafeView(wallet).masterCopy() returns (address mc) {
             return isOfficialSingleton[mc];
         } catch {
@@ -585,7 +505,7 @@ contract SafeWalletVerifier is IWalletVerifier {
         uint256 threshold,
         address allowedFallbackHandler
     ) external view returns (uint256 failMask) {
-        // Singleton không chính thức => không tin bất kỳ kết quả view nào khác.
+        // singleton lạ thì các hàm view khác đều không đáng tin
         if (!isSupportedWallet(wallet)) return NOT_OFFICIAL_SAFE;
 
         ISafeView safe = ISafeView(wallet);
@@ -611,10 +531,7 @@ contract SafeWalletVerifier is IWalletVerifier {
         failMask |= _checkHooks(safe, allowedFallbackHandler);
     }
 
-    /**
-     * Sẵn sàng = singleton chính thức, module DUY NHẤT là `executor`, không guard / module guard,
-     * fallback handler hợp lệ. Owner và ngưỡng ký không cần đúng: escrow sẽ tự đặt lại khi bàn giao.
-     */
+    // owner và ngưỡng chưa cần đúng ở bước này, escrow sẽ đặt lại khi bàn giao
     function checkReadiness(address wallet, address executor, address allowedFallbackHandler)
         external view returns (uint256 failMask)
     {
@@ -635,14 +552,8 @@ contract SafeWalletVerifier is IWalletVerifier {
         failMask |= _checkHooks(safe, allowedFallbackHandler);
     }
 
-    /**
-     * Thứ tự lời gọi (đều qua execTransactionFromModule, do `executor` thực hiện):
-     *  1. addOwnerWithThreshold(newOwner_i, 1)  — owner mới được chèn vào đầu danh sách liên kết;
-     *  2. removeOwner(newOwners[0], oldOwner_j, 1) — sau bước 1, owner cũ đầu tiên luôn đứng ngay sau newOwners[0];
-     *  3. changeThreshold(threshold);
-     *  4. disableModule(SENTINEL, executor) — readiness bảo đảm executor là module duy nhất (đứng đầu danh sách).
-     * Owner ẩn do người bán cài thêm bị xóa ở bước 2 cùng mọi owner cũ.
-     */
+    // addOwner chèn owner mới vào đầu danh sách liên kết, nên owner cũ cần xóa luôn đứng ngay sau newOwners[0].
+    // escrow là module duy nhất nên prevModule là SENTINEL.
     function handoverCalls(address wallet, address[] calldata newOwners, uint256 threshold, address executor)
         external view returns (bytes[] memory calls)
     {
@@ -660,9 +571,7 @@ contract SafeWalletVerifier is IWalletVerifier {
         calls[k++] = _moduleCall(wallet, abi.encodeCall(ISafeAdmin.disableModule, (SENTINEL, executor)));
     }
 
-    // ─── Internal ────────────────────────────────────────────────────────────
-
-    /// @dev Guard, module guard, fallback handler: không có getter nên đọc thẳng storage slot.
+    // guard, module guard và fallback handler không có getter nên đọc thẳng storage slot
     function _checkHooks(ISafeView safe, address allowedFallbackHandler) internal view returns (uint256 failMask) {
         (bool okGuard, address guard) = _readAddress(safe, GUARD_SLOT);
         if (!okGuard || guard != address(0)) failMask |= GUARD_SET;
@@ -691,7 +600,7 @@ contract SafeWalletVerifier is IWalletVerifier {
         }
     }
 
-    /// @dev So sánh hai chiều để không bị đánh lừa bởi phần tử trùng lặp.
+    // so hai chiều để không bị lừa bởi phần tử trùng
     function _sameSet(address[] memory actual, address[] calldata expected) internal pure returns (bool) {
         if (actual.length != expected.length) return false;
         for (uint256 i = 0; i < expected.length; i++) {

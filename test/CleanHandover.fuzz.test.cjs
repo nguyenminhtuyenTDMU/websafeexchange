@@ -5,7 +5,8 @@
  *  A. Chuẩn bị (người bán, trước khi người mua nạp tiền): bật/không bật escrow làm module, cùng 0..4 hành vi
  *     ngẫu nhiên — có hại (cài module lạ, guard, fallback độc, owner phụ, rút ETH/ERC-20/NFT/Ownable, cấp allowance)
  *     hoặc vô hại / dọn dẹp (gỡ module lạ, gỡ guard, đặt fallback chuẩn).
- *  B. Người mua nạp tiền (có thể bị từ chối nếu ví chưa sẵn sàng).
+ *  B. Người mua nạp tiền kèm một tập con ngẫu nhiên của danh sách chào bán làm tập kỳ vọng
+ *     (có thể bị từ chối nếu ví chưa sẵn sàng).
  *  C. Sau khi nạp (người bán / kẻ tấn công): 0..2 hành vi, gồm cả hành vi có hại thực thi bằng giao dịch Safe,
  *     rút token qua allowance đã cấp ở pha A, và "finalize bọc": một MultiSend của người bán gọi
  *     finalizeHandover rồi chèn thêm lệnh có hại phía sau (lỗ hổng của thiết kế cũ).
@@ -13,7 +14,7 @@
  *
  * Bất biến kiểm tra sau mỗi lượt (không cần đoán trước kết quả):
  *  (I1) COMPLETED  => ví sạch hoàn toàn: owners == [buyer], threshold == 1, không module (kể cả escrow), không guard,
- *                     fallback handler ∈ {0, handler đã thỏa thuận}, mọi tài sản niêm yết còn nguyên,
+ *                     fallback handler ∈ {0, handler đã thỏa thuận}, mọi tài sản người mua kỳ vọng còn nguyên,
  *                     người bán được ghi có đúng giá.
  *  (I2) Chưa COMPLETED => người bán chưa được ghi có đồng nào và người bán vẫn là owner (ví chưa bị chuyển giao).
  *  (I3) Tiền của người mua không bao giờ bị kẹt: nếu đã nạp mà bàn giao thất bại thì người mua hủy được ngay.
@@ -26,7 +27,7 @@ const { expect } = require("chai");
 const { ethers } = require("hardhat");
 const fc = require("fast-check");
 const {
-  SENTINEL, ONE_ETH, PRICE, TOKEN_AMOUNT, NFT_ID, Status, deployFixture, call,
+  SENTINEL, ONE_ETH, PRICE, TOKEN_AMOUNT, NFT_ID, Status, deployFixture, call, toSpec,
 } = require("./helpers/fixture.cjs");
 
 const NUM_RUNS = Number(process.env.FUZZ_RUNS || 300);
@@ -50,7 +51,9 @@ const scenarioArb = fc.record({
   prep: fc.array(weighted([[fc.constantFrom(...PREP_BENIGN), 3], [fc.constantFrom(...PREP_HARMFUL), 2]]), { maxLength: 4 }),
   post: fc.array(weighted([[fc.constantFrom(...POST_HARMFUL), 1], [fc.constantFrom(...POST_WRAPPED), 1]]), { maxLength: 2 }),
   postEnabled: weighted([[fc.constant(false), 1], [fc.constant(true), 1]]),
+  expected: weighted([[fc.constant([0, 1, 2, 3]), 2], [fc.subarray([0, 1, 2, 3]), 1]]),
 }).map((s) => ({
+  expected: s.expected,
   enableEscrow: s.enableEscrow,
   prep: s.prep,
   post: s.postEnabled ? s.post : [],
@@ -172,7 +175,9 @@ describe("CleanHandover — fuzz bất biến toàn vòng đời giao dịch", f
 
         // Pha B: nạp tiền
         let funded = true;
-        try { await (await depositFor(id)).wait(); } catch { funded = false; stats.depositRejected++; }
+        const offered = (await escrow.getAssets(id)).map(toSpec);
+        const expected = sc.expected.map((i) => offered[i]);
+        try { await (await depositFor(id, buyer, expected)).wait(); } catch { funded = false; stats.depositRejected++; }
 
         if (funded) {
           // Pha C: hành vi sau khi nạp
@@ -204,10 +209,10 @@ describe("CleanHandover — fuzz bất biến toàn vòng đời giao dịch", f
           expect(st.modules).to.deep.equal([]);
           expect(st.guard).to.equal(ethers.ZeroAddress);
           expect([ethers.ZeroAddress, compatHandler.target]).to.include(st.fallback);
-          expect(st.eth >= ONE_ETH).to.equal(true);
-          expect(st.tokenBal >= TOKEN_AMOUNT).to.equal(true);
-          expect(st.nftOwner).to.equal(proxyAddress);
-          expect(st.ownableOwner).to.equal(proxyAddress);
+          if (sc.expected.includes(0)) expect(st.eth >= ONE_ETH).to.equal(true);
+          if (sc.expected.includes(1)) expect(st.tokenBal >= TOKEN_AMOUNT).to.equal(true);
+          if (sc.expected.includes(2)) expect(st.nftOwner).to.equal(proxyAddress);
+          if (sc.expected.includes(3)) expect(st.ownableOwner).to.equal(proxyAddress);
         } else {
           // I2
           expect(st.sellerCredit).to.equal(0n);

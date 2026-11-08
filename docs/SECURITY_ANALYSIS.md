@@ -24,16 +24,19 @@ slither remix/CleanHandover_flat.sol --solc <đường dẫn solc-0.8.24> \
   --solc-args "--evm-version cancun --optimize --optimize-runs 200" --compile-force-framework solc
 ```
 
-## Kết quả: 17 kết quả, không có mức High, không có lỗi cần sửa
+## Kết quả: 18 kết quả, không có mức High, không có lỗi cần sửa
+
+Chạy lại ngày 09/11/2026 sau khi thêm tập tài sản kỳ vọng của người mua vào `deposit`. So với lần trước chỉ thêm
+`deposit` vào `cyclomatic-complexity`; các vòng lặp mới đều bị chặn bởi `MAX_ASSETS`.
 
 | Detector | Mức | Số lượng | Vị trí | Đánh giá |
 |---|---|---|---|---|
 | `reentrancy-no-eth` | Medium | 1 | `finalizeHandover`: gọi sang ví rồi mới ghi `status` | **Đã chặn.** Mọi hàm ghi trạng thái (`createTrade`, `deposit`, `finalizeHandover`, ba hàm hủy, `withdraw`) đều có `nonReentrant`. Slither chỉ còn liệt kê các hàm **view** (`getReadiness`, `getHandoverStatus`) là có thể đọc trạng thái giữa chừng, vô hại vì không ghi gì. Ngoài ra ví đã được xác minh là Safe chính thức, và các lệnh bàn giao (`addOwner`, `removeOwner`, `changeThreshold`, `disableModule`) không gọi ra hợp đồng ngoài. |
 | `unused-return` | Medium | 2 | `checkHandover`, `checkReadiness`: bỏ qua giá trị `next` của `getModulesPaginated` | Cảnh báo nhầm. Chỉ cần danh sách module; `next` là con trỏ phân trang. |
-| `calls-loop` | Low | 7 | Gọi `holds()` của checker trong vòng lặp tài sản; gọi ví trong vòng lặp bàn giao | Chấp nhận được. Vòng lặp bị chặn (`MAX_ASSETS = 20`, `MAX_OWNERS = 10`), checker cố định từ constructor. Nếu một lời gọi lỗi thì chỉ làm bàn giao thất bại, người mua hủy được và lấy lại tiền. |
+| `calls-loop` | Low | 7 | Gọi `holds()` của checker trong vòng lặp tài sản (`createTrade`, `_checkAssets`); gọi ví trong vòng lặp bàn giao | Chấp nhận được. Vòng lặp bị chặn (`MAX_ASSETS = 20`, `MAX_OWNERS = 10`), checker cố định từ constructor. Nếu một lời gọi lỗi thì chỉ làm bàn giao thất bại, người mua hủy được và lấy lại tiền. |
 | `reentrancy-benign` | Low | 1 | `finalizeHandover`: ghi `activeTradeOf`, `pendingWithdrawals` sau lời gọi ví | Như dòng `reentrancy-no-eth`, đã có `nonReentrant`. |
 | `timestamp` | Low | 3 | So sánh `block.timestamp` với deadline | Chấp nhận được. Validator chỉ lệch được vài giây, deadline tính bằng giờ. |
-| `cyclomatic-complexity` | Info | 1 | `createTrade` (18 nhánh) | Mỗi nhánh là một kiểm tra đầu vào, đã có test phủ. |
+| `cyclomatic-complexity` | Info | 2 | `createTrade` (18 nhánh), `deposit` (12 nhánh) | Mỗi nhánh là một kiểm tra đầu vào, đã có test phủ. |
 | `low-level-calls` | Info | 2 | `withdraw()`: `call{value}`; `finalizeHandover`: `wallet.call(calls[i])` | Có chủ đích. `withdraw` theo checks-effects-interactions; lời gọi ví kiểm tra cả `ok` lẫn giá trị trả về `true`. |
 
 ---

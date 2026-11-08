@@ -19,7 +19,8 @@ và tài sản còn nguyên. Sai một điều kiện là revert toàn bộ. Esc
 ### 2.2 "Đóng băng" ví từ lúc người mua nạp tiền
 
 - `deposit` chỉ nhận tiền khi ví **đã sẵn sàng**: singleton chính thức, escrow là module **duy nhất**, không guard,
-  không module guard, fallback handler hợp lệ, đủ tài sản niêm yết. Sau đó escrow chụp lại **nonce** của Safe.
+  không module guard, fallback handler hợp lệ, đủ **tập tài sản người mua khai báo kỳ vọng** (tập này phải nằm trong
+  danh sách người bán chào lúc niêm yết). Sau đó escrow chụp lại **nonce** của Safe.
 - `finalizeHandover` yêu cầu nonce **không đổi**. Safe luôn tăng nonce **trước** khi thực thi mọi giao dịch do owner ký, nên:
   1. nếu `finalizeHandover` được gọi **từ bên trong** một giao dịch của Safe (người bán bọc nó trong MultiSend
      để chèn lệnh gian lận phía sau), nonce đã tăng nên lời gọi bị từ chối;

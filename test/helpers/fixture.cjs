@@ -155,9 +155,11 @@ async function deployFixture() {
     return escrow.tradeCount();
   };
 
-  const depositFor = async (id, signer = buyer) => {
+  /** Người mua nạp tiền; mặc định khai báo kỳ vọng đúng toàn bộ danh sách người bán chào. */
+  const depositFor = async (id, signer = buyer, expected) => {
     const { termsHash, price } = await escrow.trades(id);
-    return escrow.connect(signer).deposit(id, termsHash, { value: price });
+    const assets = expected ?? (await escrow.getAssets(id)).map(toSpec);
+    return escrow.connect(signer).deposit(id, termsHash, assets, { value: price });
   };
 
   /** Luồng chuẩn: chuẩn bị ví → niêm yết → nạp tiền. Trả về tradeId. */
@@ -176,6 +178,8 @@ async function deployFixture() {
   };
 }
 
+const toSpec = (a) => ({ checkerId: a.checkerId, token: a.token, value: a.value });
+
 /** Dựng môi trường một lần, các lần sau chỉ quay về snapshot (nhanh hơn nhiều so với deploy lại). */
 let cached;
 async function loadFixture(fn) {
@@ -192,5 +196,5 @@ async function loadFixture(fn) {
 module.exports = {
   loadFixture,
   SENTINEL, ONE_ETH, PRICE, TOKEN_AMOUNT, NFT_ID, BIT, CHECKER, Status,
-  deployFixture, latestTime, increaseTime, call, ownerSig, encodeMultiSend,
+  deployFixture, latestTime, increaseTime, call, ownerSig, encodeMultiSend, toSpec,
 };
