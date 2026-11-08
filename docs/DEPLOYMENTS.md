@@ -3,14 +3,15 @@
 Deployer: `0x1eA84610a5Ba8F52BCcD1367cACD3AF30C74408b`. Triển khai bằng Remix + MetaMask từ `remix/CleanHandover_flat.sol`.
 Cấu hình compiler: `v0.8.24+commit.e11b9ed9`, EVM version `cancun`, optimizer bật với 200 runs, không dùng viaIR.
 
-## Bản hiện hành (v2, thiết kế escrow-làm-module)
+## Bản hiện hành (v2.1, người mua khai báo tập tài sản kỳ vọng)
 
-Triển khai 07/11/2026. Đã kiểm tra on-chain: bytecode khớp mã nguồn (trừ metadata), escrow nối đúng verifier và 4 checker;
-bốn asset checker dùng lại từ lần triển khai đầu (mã không đổi).
+Escrow triển khai lại 09/11/2026 sau khi `deposit` nhận thêm tập tài sản kỳ vọng của người mua (commit `5d72a5f`).
+Đã kiểm tra on-chain: bytecode khớp `remix/CleanHandover_flat.sol` tại commit `5d72a5f` (trừ metadata), escrow nối đúng
+verifier và 4 checker. Verifier (07/11/2026) và bốn asset checker (30/10/2026) dùng lại, mã không đổi.
 
 | Hợp đồng | Vai trò | Địa chỉ |
 |---|---|---|
-| `CleanHandoverEscrow` | Hợp đồng ký quỹ lõi | [`0x256d891d310F76Fb8D2F9357CbEc987412f241A4`](https://sepolia.etherscan.io/address/0x256d891d310F76Fb8D2F9357CbEc987412f241A4) |
+| `CleanHandoverEscrow` | Hợp đồng ký quỹ lõi | [`0xD0a1fed458bDA47758137EC06aa72c297009c351`](https://sepolia.etherscan.io/address/0xD0a1fed458bDA47758137EC06aa72c297009c351) |
 | `SafeWalletVerifier` | Trục ví, `verifierId = 0` (8 singleton, gồm Safe 1.5.0) | [`0x4A6A1454CDBcA552F3ee414A6c726ee1E1ef43d2`](https://sepolia.etherscan.io/address/0x4A6A1454CDBcA552F3ee414A6c726ee1E1ef43d2) |
 | `EthBalanceChecker` | Trục tài sản, `checkerId = 0` | [`0x857b6a56F18e54a79c8C57d890314A92A1e2a633`](https://sepolia.etherscan.io/address/0x857b6a56F18e54a79c8C57d890314A92A1e2a633) |
 | `Erc20BalanceChecker` | Trục tài sản, `checkerId = 1` | [`0x924088D6cA89e008b64Bb4B68C522bd94bC9E8ed`](https://sepolia.etherscan.io/address/0x924088D6cA89e008b64Bb4B68C522bd94bC9E8ed) |
@@ -30,6 +31,7 @@ Tham số constructor:
 
 | Hợp đồng | Địa chỉ | Lý do |
 |---|---|---|
+| `CleanHandoverEscrow` v2 (07/11/2026) | [`0x256d891d310F76Fb8D2F9357CbEc987412f241A4`](https://sepolia.etherscan.io/address/0x256d891d310F76Fb8D2F9357CbEc987412f241A4) | Người bán khai báo tài sản, người mua chỉ xác nhận bằng `termsHash`. Thay bằng v2.1 cho đúng đề cương. Giao dịch thật #1 (`docs/SEPOLIA_DEMO.md`) chạy trên bản này. Đã verify (commit `274c61b`). |
 | `SafeWalletVerifier` v2, 6 singleton (07/11/2026) | [`0x7955EB43444C5c2a6f27d4Fc736F9Eb191Ad4532`](https://sepolia.etherscan.io/address/0x7955EB43444C5c2a6f27d4Fc736F9Eb191Ad4532) | Mã đúng (khớp bytecode), nhưng thiếu singleton Safe 1.5.0, là bản app.safe.global đang tạo. |
 
 ## Bản cũ (v1, 30/10/2026) — KHÔNG SỬ DỤNG
@@ -46,6 +48,7 @@ trong cùng MultiSend (chi tiết: `docs/SECURITY_ANALYSIS.md`, mục 3.3). Gi�
 
 Đã verify toàn bộ ngày 08/11/2026 (Solidity single file, cấu hình compiler như trên):
 
-- [x] `CleanHandoverEscrow` v2 và `SafeWalletVerifier` v2: dùng `remix/CleanHandover_flat.sol` tại commit `274c61b`.
+- [ ] `CleanHandoverEscrow` v2.1 (`0xD0a1…c351`): dùng `remix/CleanHandover_flat.sol` tại commit `5d72a5f`, constructor args như trên.
+- [x] `SafeWalletVerifier` v2 (và escrow v2 cũ): dùng `remix/CleanHandover_flat.sol` tại commit `274c61b`.
 - [x] 4 asset checker: không có constructor args. Phải dùng file gộp **ngày 30/10** (`git show 4f13d99:remix/CleanHandover_flat.sol`),
   vì hash metadata cuối bytecode tính trên toàn bộ file nguồn; file gộp hiện tại khác nên không khớp.
