@@ -93,6 +93,7 @@ export default function SellPage() {
   const [handler, setHandler] = useState("");
   const [assets, setAssets] = useState<AssetRow[]>([]);
   const [tried, setTried] = useState(false);
+  const [advancedOpen, setAdvancedOpen] = useState(false);
   const w = wallet.trim();
   const pre = usePreflight(w);
 
@@ -119,8 +120,9 @@ export default function SellPage() {
   const thresholdMax = Math.max(1, Math.min(ownerList.length, 10));
   useEffect(() => { if (Number(threshold) > thresholdMax) setThreshold(String(thresholdMax)); }, [thresholdMax]);
 
-  const blocker = !me ? "Kết nối ví owner để niêm yết."
-    : !formOk ? "Sửa các ô đang báo lỗi."
+  const errorCount = Object.values(errors).filter(Boolean).length + assetErrors.filter(Boolean).length;
+  const blocker = !me ? null
+    : !formOk ? `Còn ${errorCount} ô cần sửa.`
     : !p ? "Đang kiểm tra ví…"
     : !gateOk ? "Ví chưa qua bước kiểm tra ở trên." : null;
   const show = (k: string) => (tried || (k === "wallet" ? w.length > 0 : true) ? errors[k] : null);
@@ -128,6 +130,13 @@ export default function SellPage() {
   async function submit(e: React.FormEvent) {
     e.preventDefault();
     setTried(true);
+    if (!formOk) {
+      // đưa con trỏ tới ô sai đầu tiên; ô owner / handler nằm trong mục gập nên mở mục đó trước
+      const first = ["wallet", "buyer", "price", "deadline", "owners", "handler"].find((k) => errors[k]);
+      if (first === "owners" || first === "handler") setAdvancedOpen(true);
+      setTimeout(() => document.getElementById(first ?? "")?.focus(), 50);
+      return;
+    }
     if (blocker) return;
     const receipt = await send("createTrade", [{
       wallet: w as Address,
@@ -220,7 +229,7 @@ export default function SellPage() {
               )}
           </section>
 
-          <Collapsible defaultOpen={false} className="rounded-lg border bg-card">
+          <Collapsible open={advancedOpen} onOpenChange={setAdvancedOpen} className="rounded-lg border bg-card">
             <CollapsibleTrigger className="group flex w-full items-center justify-between gap-4 px-4 py-3 text-left">
               <span>
                 <span className="block font-semibold">Điều kiện bàn giao</span>
@@ -263,7 +272,7 @@ export default function SellPage() {
                 <Wallet className="mr-2 h-4 w-4" />{connecting ? "Đang kết nối…" : "Kết nối ví owner"}
               </Button>
             )}
-            {blocker && me && <p className={tried ? "text-sm text-destructive" : "text-sm text-muted-foreground"} role="status">{blocker}</p>}
+            {tried && blocker && <p className="text-sm text-destructive" role="status">{blocker}</p>}
           </div>
         </aside>
       </form>
