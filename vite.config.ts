@@ -28,6 +28,8 @@ export default defineConfig({
       "@assets": path.resolve(import.meta.dirname, "attached_assets"),
     },
   },
+  // đường dẫn tương đối để chạy được trên lưu trữ tĩnh ở thư mục con (GitHub Pages, IPFS)
+  base: "./",
   root: path.resolve(import.meta.dirname, "client"),
   build: {
     outDir: path.resolve(import.meta.dirname, "dist/public"),

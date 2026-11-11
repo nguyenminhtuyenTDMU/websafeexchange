@@ -9,7 +9,10 @@
     "start": "NODE_ENV=production node dist/index.cjs",
     "check": "tsc",
     "db:push": "drizzle-kit push",
-    "generate:docs": "npx tsc --declaration --emitDeclarationOnly --outDir type_stubs --noEmit false --noEmitOnError false && npx repomix --include \"type_stubs/**/*\" --output code-skeleton.txt && surya graph contracts/SafeExchangeEscrowSoftGuard.sol > contract_graph.dot && npx depcruise client/src server shared --include-only \"^(client/src|server|shared)\" --output-type json > architecture_graph.json"
+    "generate:docs": "npx tsc --declaration --emitDeclarationOnly --outDir type_stubs --noEmit false --noEmitOnError false && npx repomix --include \"type_stubs/**/*\" --output code-skeleton.txt && surya graph contracts/SafeExchangeEscrowSoftGuard.sol > contract_graph.dot && npx depcruise client/src server shared --include-only \"^(client/src|server|shared)\" --output-type json > architecture_graph.json",
+    "dapp:dev": "vite --port 5173",
+    "dapp:build": "vite build",
+    "dapp:abi": "hardhat compile --config hardhat.config.cjs && node script/export-abi.cjs"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.10.0",

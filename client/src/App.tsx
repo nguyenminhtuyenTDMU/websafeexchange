@@ -1,61 +1,47 @@
-import { Switch, Route } from "wouter";
-import { QueryClientProvider } from "@tanstack/react-query";
+import { Route, Router, Switch } from "wouter";
+import { useHashLocation } from "wouter/use-hash-location";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { WagmiProvider } from "wagmi";
-import { queryClient } from "./lib/queryClient";
 import { config } from "./lib/wagmi";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { ThemeProvider } from "@/components/theme-provider";
-import { WebSocketProvider } from "@/components/websocket-provider";
 import { Layout } from "@/components/layout";
-
 import Home from "@/pages/home";
-import Transfer from "@/pages/transfer/index";
-import Sell from "@/pages/transfer/sell";
-import Buy from "@/pages/transfer/buy";
-import WalletTransparency from "@/pages/wallet-transparency";
-import SafeControl from "@/pages/safe-control";
-import Dashboard from "@/pages/dashboard";
-import Forum from "@/pages/forum";
-import ForumPost from "@/pages/forum-post";
+import SellPage from "@/pages/sell";
+import TradesPage from "@/pages/trades";
+import TradePage from "@/pages/trade";
+import HistoryPage from "@/pages/history";
 import NotFound from "@/pages/not-found";
-import { UserProfileDialog } from "@/components/user-profile-dialog";
 
-function Router() {
-  return (
-    <Layout>
-      <Switch>
-        <Route path="/" component={Home} />
-        <Route path="/transfer" component={Transfer} />
-        <Route path="/transfer/sell" component={Sell} />
-        <Route path="/transfer/buy" component={Buy} />
-        <Route path="/wallet-transparency" component={WalletTransparency} />
-        <Route path="/safe-control" component={SafeControl} />
-        <Route path="/dashboard" component={Dashboard} />
-        <Route path="/forum" component={Forum} />
-        <Route path="/forum/:id" component={ForumPost} />
-        <Route component={NotFound} />
-      </Switch>
-    </Layout>
-  );
-}
+const queryClient = new QueryClient({
+  defaultOptions: { queries: { refetchOnWindowFocus: false, retry: 1 } },
+});
 
-function App() {
+// Định tuyến bằng dấu # để chạy được trên lưu trữ tĩnh (GitHub Pages, IPFS) mà không cần cấu hình máy chủ
+export default function App() {
   return (
     <WagmiProvider config={config}>
       <QueryClientProvider client={queryClient}>
-        <ThemeProvider defaultTheme="light" storageKey="safeexchange-theme">
+        <ThemeProvider defaultTheme="light" storageKey="cleanhandover-theme">
           <TooltipProvider>
-            <WebSocketProvider>
-              <Toaster />
-              <Router />
-              <UserProfileDialog />
-            </WebSocketProvider>
+            <Toaster />
+            <Router hook={useHashLocation}>
+              <Layout>
+                <Switch>
+                  <Route path="/" component={Home} />
+                  <Route path="/sell" component={SellPage} />
+                  <Route path="/trades" component={TradesPage} />
+                  <Route path="/trade/:id" component={TradePage} />
+                  <Route path="/history" component={HistoryPage} />
+                  <Route path="/history/:address" component={HistoryPage} />
+                  <Route component={NotFound} />
+                </Switch>
+              </Layout>
+            </Router>
           </TooltipProvider>
         </ThemeProvider>
       </QueryClientProvider>
     </WagmiProvider>
   );
 }
-
-export default App;

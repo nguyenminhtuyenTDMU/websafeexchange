@@ -1,21 +1,16 @@
-import { createConfig, http } from 'wagmi';
-import { mainnet, sepolia} from 'wagmi/chains';
-import { injected, walletConnect } from 'wagmi/connectors';
-
-const projectId = import.meta.env.VITE_WALLETCONNECT_PROJECT_ID || 'demo';
+import { createConfig, fallback, http } from "wagmi";
+import { injected } from "wagmi/connectors";
+import { CHAIN, RPC_URLS } from "./config";
 
 export const config = createConfig({
-  chains: [mainnet, sepolia],
-  connectors: [
-    injected(),
-  ],
+  chains: [CHAIN],
+  connectors: [injected()],
   transports: {
-    [mainnet.id]: http(),
-    [sepolia.id]: http(),
+    [CHAIN.id]: fallback(RPC_URLS.map((url) => http(url))),
   },
 });
 
-declare module 'wagmi' {
+declare module "wagmi" {
   interface Register {
     config: typeof config;
   }
