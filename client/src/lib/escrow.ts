@@ -118,7 +118,7 @@ export type TradeSummary = {
 export type Withdrawal = { account: Address; amount: bigint; block: bigint; tx: Hex };
 
 export async function scanEvents(client: PublicClient) {
-  const latest = await client.getBlockNumber();
+  const latest = await client.getBlockNumber({ cacheTime: 0 }); // không dùng số block lưu tạm, kẻo sót sự kiện vừa xảy ra
   const logs = await getLogsChunked(client, ESCROW_DEPLOY_BLOCK, latest);
   const trades = new Map<bigint, TradeSummary>();
   const withdrawals: Withdrawal[] = [];

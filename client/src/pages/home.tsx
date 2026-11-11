@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Addr, ExternalLinkText, InfoTip, StatusBadge } from "@/components/common";
 import { useEvents } from "@/hooks/use-escrow-data";
-import { ESCROW, explorerAddress } from "@/lib/config";
+import { CHAIN, ESCROW, explorerAddress } from "@/lib/config";
 import { eth } from "@/lib/format";
 
 const LIFECYCLE = [
@@ -25,7 +25,7 @@ function OpenTrades() {
   return (
     <section className="space-y-3">
       <div className="flex items-baseline justify-between">
-        <h2 className="text-lg font-semibold">Đang mở trên Sepolia</h2>
+        <h2 className="text-lg font-semibold">Đang mở trên {CHAIN.name}</h2>
         <Link href="/trades" className="text-sm font-medium text-primary hover:underline">Xem tất cả</Link>
       </div>
       {isLoading ? <p className="text-sm text-muted-foreground">Đang quét sự kiện của hợp đồng…</p>

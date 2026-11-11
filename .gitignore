@@ -8,3 +8,6 @@ vite.config.ts.*
 # Hardhat build output
 artifacts/
 cache/
+client/.env.e2e
+script/e2e/state.json
+script/e2e/out/

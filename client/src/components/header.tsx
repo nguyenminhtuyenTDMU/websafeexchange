@@ -6,6 +6,7 @@ import { ConnectWallet } from "./connect-wallet";
 import { ThemeToggle } from "./theme-toggle";
 import { Sheet, SheetContent, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { cn } from "@/lib/utils";
+import { CHAIN } from "@/lib/config";
 
 const navItems = [
   { href: "/trades", label: "Giao dịch đang mở" },
@@ -50,7 +51,7 @@ export function Header() {
 
         <div className="flex items-center gap-2">
           <span className="hidden items-center gap-1.5 rounded-full border border-shell-foreground/20 px-2.5 py-1 text-xs text-shell-muted sm:flex">
-            <span className="h-1.5 w-1.5 rounded-full bg-signal" aria-hidden />Sepolia
+            <span className="h-1.5 w-1.5 rounded-full bg-signal" aria-hidden />{CHAIN.name}
           </span>
           <button type="button" onClick={guide.open} aria-label="Xem hướng dẫn"
             className="flex items-center gap-1.5 rounded-md p-2 text-sm font-medium text-shell-muted hover:bg-shell-foreground/10 hover:text-shell-foreground">

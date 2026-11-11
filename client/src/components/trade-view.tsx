@@ -7,7 +7,7 @@ import {
   AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
-import { Addr, AssetLabel, AuditReport, CopyChip, InfoTip, LifecycleRail, stepsDone } from "@/components/common";
+import { Addr, AssetLabel, AuditReport, CopyChip, ExternalLinkText, InfoTip, LifecycleRail, stepsDone } from "@/components/common";
 import { completedChecks, fundedChecks, readinessChecks } from "@/lib/conditions";
 import type { AssetSpec, TradeData } from "@/lib/escrow";
 import { ESCROW, explorerTx } from "@/lib/config";
@@ -184,6 +184,16 @@ function NextAction({ t, role, send, busy }: { t: TradeData; role: Role; send: S
     </Confirm>);
 
   if (!primary && !withdraw && !cancels.length) {
+    if (t.status === "COMPLETED" && role === "buyer") {
+      return (
+        <section aria-label="Bước tiếp theo" className="space-y-2">
+          <h3 className="font-semibold">Ví đã thuộc về bạn</h3>
+          <ExternalLinkText href={`https://app.safe.global/home?safe=sep:${t.wallet}`}>Mở ví trong Safe{"{"}Wallet{"}"}</ExternalLinkText>
+        </section>
+      );
+    }
+    if (t.status === "COMPLETED" && role === "seller") return <p className="text-sm font-medium">Bạn đã rút {eth(t.price)}.</p>;
+    if (t.status === "CANCELLED" && role === "buyer") return <p className="text-sm font-medium">Khoản nạp (nếu có) đã được rút về ví của bạn.</p>;
     return <p className="text-sm text-muted-foreground">Không có thao tác nào cho bạn ở trạng thái này.</p>;
   }
   return (

@@ -1,10 +1,13 @@
-import { sepolia } from "wagmi/chains";
+import { hardhat, sepolia } from "wagmi/chains";
 
-export const CHAIN = sepolia;
+// VITE_CHAIN=local: chạy với node Hardhat trên máy để kiểm thử đầu-cuối (script/e2e). Mặc định là Sepolia.
+const LOCAL = import.meta.env.VITE_CHAIN === "local";
+
+export const CHAIN = LOCAL ? hardhat : sepolia;
 
 // Địa chỉ đã triển khai (docs/DEPLOYMENTS.md)
-export const ESCROW = "0xD0a1fed458bDA47758137EC06aa72c297009c351" as const;
-export const ESCROW_DEPLOY_BLOCK = 12093575n;
+export const ESCROW = (LOCAL ? import.meta.env.VITE_ESCROW : "0xD0a1fed458bDA47758137EC06aa72c297009c351") as `0x${string}`;
+export const ESCROW_DEPLOY_BLOCK = LOCAL ? 0n : 12093575n;
 
 export const CHECKERS = [
   { id: 0, name: "ETH", valueLabel: "Số lượng tối thiểu (ETH)", needsToken: false },
@@ -14,7 +17,7 @@ export const CHECKERS = [
 ] as const;
 
 // RPC công khai: Tenderly quét được dải block dài cho eth_getLogs, publicnode làm dự phòng
-export const RPC_URLS = [
+export const RPC_URLS = LOCAL ? ["http://127.0.0.1:8545"] : [
   "https://sepolia.gateway.tenderly.co",
   "https://ethereum-sepolia-rpc.publicnode.com",
 ];
