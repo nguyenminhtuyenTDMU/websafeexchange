@@ -261,7 +261,23 @@ export default function SellPage() {
 
         <aside className="lg:sticky lg:top-20 lg:self-start">
           <div className="space-y-4 rounded-lg border bg-card px-5 py-5 shadow-sm">
-            <h2 className="font-semibold">Niêm yết</h2>
+            <h2 className="font-semibold">Điều kiện bạn sắp ký</h2>
+            <dl className="divide-y text-sm">
+              {([
+                ["Ví Safe", isAddress(w) ? <span className="font-mono text-[13px]">{shortAddr(w)}</span> : null],
+                ["Kiểm tra ví", !isAddress(w) ? null : !p ? "Đang đọc…" : gateOk ? <span className="font-medium text-success">Đạt</span> : <span className="font-medium text-destructive">Chưa đạt</span>],
+                ["Người mua", isAddress(buyer.trim()) ? <span className="font-mono text-[13px]">{shortAddr(buyer.trim())}</span> : null],
+                ["Giá", errors.price ? null : <span className="font-mono">{price} ETH</span>],
+                ["Hạn chót", errors.deadline ? null : <span className="tabular">{new Date(deadline).toLocaleString("vi-VN", { dateStyle: "short", timeStyle: "short" })}</span>],
+                ["Owner mới", errors.owners ? null : <span className="tabular">{ownerList.length} owner, ngưỡng {threshold}/{ownerList.length}</span>],
+                ["Tài sản", assets.length ? <span className="tabular">{assets.length} tài sản</span> : "Chỉ bán ví"],
+              ] as [string, React.ReactNode][]).map(([k, v]) => (
+                <div key={k} className="flex justify-between gap-3 py-2">
+                  <dt className="text-muted-foreground">{k}</dt>
+                  <dd className="min-w-0 truncate text-right">{v ?? <span className="text-muted-foreground">—</span>}</dd>
+                </div>
+              ))}
+            </dl>
             {me ? (
               <Button type="submit" size="lg" className="w-full" disabled={!!busy}>
                 {busy === "createTrade" && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}Niêm yết ví

@@ -1,7 +1,7 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { Check as CheckIcon, ChevronDown, CircleCheck, CircleX, Clock, Copy, ExternalLink, Info, Lock, ShieldAlert, ShieldCheck } from "lucide-react";
 import { formatEther } from "viem";
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { explorerAddress } from "@/lib/config";
 import { THREATS, type Check } from "@/lib/conditions";
@@ -51,16 +51,30 @@ export function CopyChip({ value }: { value: string }) {
   );
 }
 
+/** Giải thích theo yêu cầu: mở khi rê chuột hoặc khi bấm (dùng được trên máy chiếu, màn hình cảm ứng). */
+export function HoverPop({ trigger, children, label }: { trigger: React.ReactElement; children: React.ReactNode; label: string }) {
+  const [open, setOpen] = useState(false);
+  const timer = useRef<ReturnType<typeof setTimeout>>();
+  const enter = () => { clearTimeout(timer.current); setOpen(true); };
+  const leave = () => { timer.current = setTimeout(() => setOpen(false), 120); };
+  return (
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger asChild onMouseEnter={enter} onMouseLeave={leave} aria-label={label}>{trigger}</PopoverTrigger>
+      <PopoverContent side="top" className="w-auto max-w-xs px-3 py-2 text-[13px] leading-relaxed"
+        onMouseEnter={enter} onMouseLeave={leave} onOpenAutoFocus={(e) => e.preventDefault()}>
+        {children}
+      </PopoverContent>
+    </Popover>
+  );
+}
+
 export function InfoTip({ text, label, className }: { text: React.ReactNode; label: string; className?: string }) {
   return (
-    <Tooltip>
-      <TooltipTrigger asChild>
-        <button type="button" aria-label={label} className={cn("text-muted-foreground hover:text-foreground", className)}>
-          <Info className="h-3.5 w-3.5" />
-        </button>
-      </TooltipTrigger>
-      <TooltipContent className="max-w-xs text-xs">{text}</TooltipContent>
-    </Tooltip>
+    <HoverPop label={label} trigger={
+      <button type="button" className={cn("-m-1 inline-flex h-6 w-6 items-center justify-center rounded-full text-muted-foreground hover:bg-muted hover:text-foreground", className)}>
+        <Info className="h-4 w-4" />
+      </button>
+    }>{text}</HoverPop>
   );
 }
 
@@ -113,11 +127,11 @@ export function LifecycleRail({ done, cancelled, frozen, blocked }: { done: numb
         return (
           <li key={s} aria-current={isCurrent ? "step" : undefined} className="min-w-0">
             <div className={cn("h-1.5 rounded-full transition-colors duration-500",
-              isCurrent ? (blocked ? "bg-destructive" : "bg-shell-foreground ring-2 ring-shell-foreground/30 ring-offset-1 ring-offset-shell") : isDone ? "bg-shell-foreground/55" : "bg-shell-foreground/15")} />
+              isCurrent ? (blocked ? "bg-shell-foreground/30" : "bg-shell-foreground ring-2 ring-shell-foreground/30 ring-offset-1 ring-offset-shell") : isDone ? "bg-shell-foreground/55" : "bg-shell-foreground/15")} />
             <div className={cn("mt-2 flex items-center gap-1.5 truncate text-xs sm:text-[13px]",
               isCurrent ? "font-semibold text-shell-foreground" : isDone ? "font-medium text-shell-foreground/85" : "text-shell-muted")}>
               {isDone && (i === 2 && frozen ? <Lock className="h-3.5 w-3.5 shrink-0" aria-hidden /> : <CheckIcon className="h-3.5 w-3.5 shrink-0" aria-hidden />)}
-              {isCurrent && <span className={cn("h-1.5 w-1.5 shrink-0 rounded-full", blocked ? "bg-destructive" : "bg-shell-foreground")} aria-hidden />}
+              {isCurrent && (blocked ? <Lock className="h-3.5 w-3.5 shrink-0" aria-hidden /> : <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-shell-foreground" aria-hidden />)}
               <span className="truncate">{isCurrent && blocked ? `${s} (bị khóa)` : s}</span>
               <span className="sr-only">{isDone ? " (đã xong)" : isCurrent ? " (bước hiện tại)" : ""}</span>
             </div>
@@ -142,7 +156,7 @@ export function AssetLabel({ a }: { a: AssetSpec }) {
 function Verdict({ c }: { c: Check }) {
   const base = "inline-flex items-center gap-1 justify-self-start rounded px-1.5 py-0.5 text-[11px] font-bold tracking-wide";
   if (c.ok) return <span className={cn(base, "bg-signal/30 text-foreground")}><CircleCheck className="h-3.5 w-3.5" aria-hidden />ĐẠT</span>;
-  if (c.pending) return <span title="Hợp đồng sẽ tự đặt lại khi hoàn tất bàn giao" className={cn(base, "bg-st-prepare/10 text-st-prepare")}><Clock className="h-3.5 w-3.5" aria-hidden />TỰ XỬ LÝ</span>;
+  if (c.pending) return <span className={cn(base, "bg-st-prepare/10 text-st-prepare")}><Clock className="h-3.5 w-3.5" aria-hidden />TỰ XỬ LÝ</span>;
   return <span className={cn(base, "bg-destructive/10 text-destructive")}><CircleX className="h-3.5 w-3.5" aria-hidden />CHƯA ĐẠT</span>;
 }
 
@@ -155,17 +169,19 @@ function Finding({ c, open }: { c: Check; open?: boolean }) {
           <span className={cn("text-[15px]", !c.ok && !c.pending ? "font-semibold" : "font-medium")}>
             {c.label}{c.asset && <> <AssetLabel a={c.asset} /></>}
           </span>
-          {(c.hint || (c.detail && (c.ok || c.pending))) && (
-            <InfoTip label={`Giải thích: ${c.label}`}
-              text={<>{c.hint}{c.hint && c.detail && (c.ok || c.pending) && <br />}{(c.ok || c.pending) && c.detail}</>} />
+          {(c.hint || c.pending || (c.detail && c.ok)) && (
+            <InfoTip label={`Giải thích: ${c.label}`} text={
+              <span className="flex flex-col gap-1">
+                {c.pending && <span>Hợp đồng sẽ tự đặt lại điều kiện này khi hoàn tất bàn giao.</span>}
+                {c.hint && <span>{c.hint}</span>}
+                {(c.ok || c.pending) && c.detail && <span>{c.detail}</span>}
+              </span>
+            } />
           )}
           {c.threat && (
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <span tabIndex={0} className="cursor-help rounded border px-1.5 py-px text-[11px] font-medium text-muted-foreground tabular">{c.threat}</span>
-              </TooltipTrigger>
-              <TooltipContent className="text-xs">Kịch bản {c.threat}: {THREATS[c.threat] ?? ""}</TooltipContent>
-            </Tooltip>
+            <HoverPop label={`Kịch bản ${c.threat}`} trigger={
+              <button type="button" className="rounded border px-1.5 py-0.5 text-[11px] font-medium text-muted-foreground tabular hover:bg-muted">{c.threat}</button>
+            }>Kịch bản {c.threat}: {THREATS[c.threat] ?? ""}</HoverPop>
           )}
         </div>
         {c.detail && !c.ok && !c.pending && <p className="mt-0.5 break-words text-[13px] text-muted-foreground tabular">{c.detail.split(/(0x[0-9a-fA-F]+…[0-9a-fA-F]+|0x[0-9a-fA-F]{40})/).map((part, i) => i % 2 ? <span key={i} className="whitespace-nowrap font-mono text-[12px]">{part}</span> : part)}</p>}
@@ -187,11 +203,11 @@ function Finding({ c, open }: { c: Check; open?: boolean }) {
 /** Con dấu kết luận: khối đặc, có biểu tượng và số liệu, không trông như nút bấm. */
 function Seal({ clean, label, failing }: { clean: boolean; label: string; failing: number }) {
   return (
-    <div role="status" aria-live="polite"
-      className={cn("flex items-center gap-2.5 rounded-lg px-3.5 py-2 transition-colors duration-500",
-        clean ? "bg-signal text-foreground" : "bg-destructive/10 text-destructive")}>
-      {clean ? <ShieldCheck className="h-6 w-6" aria-hidden /> : <ShieldAlert className="h-6 w-6" aria-hidden />}
-      <span className="text-[15px] font-bold">{clean ? label : `${failing} điểm chưa đạt`}</span>
+    <div role="status" className={cn("flex items-center gap-2 transition-colors duration-500", clean ? "text-success" : "text-destructive")}>
+      {clean
+        ? <span className="flex h-8 w-8 items-center justify-center rounded-full bg-signal/25"><ShieldCheck className="h-5 w-5" aria-hidden /></span>
+        : <span className="flex h-8 w-8 items-center justify-center rounded-full bg-destructive/10"><ShieldAlert className="h-5 w-5" aria-hidden /></span>}
+      <span className="text-lg font-bold tracking-tight">{clean ? label : `${failing} điểm chưa đạt`}</span>
     </div>
   );
 }

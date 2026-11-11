@@ -56,7 +56,7 @@ export default function Home() {
   const valid = /^\d+$/.test(id);
   return (
     <div className="mx-auto max-w-6xl px-4 py-10 lg:py-14">
-      <div className="grid gap-12 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.05fr)] lg:gap-16">
+      <div className="grid grid-cols-[minmax(0,1fr)] gap-12 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.05fr)] lg:gap-16">
         <div className="space-y-8">
           <div className="space-y-4">
             <h1 className="text-[32px] font-semibold leading-[1.15] tracking-tight sm:text-[40px]">
@@ -95,7 +95,7 @@ export default function Home() {
           <div className="mt-8 space-y-1 border-t border-shell-foreground/15 pt-5 text-sm">
             <p className="flex items-center gap-1.5 text-shell-muted">Hợp đồng ký quỹ
               <InfoTip text="Không có owner, không nâng cấp được: không ai sửa được luật sau khi triển khai." label="Về hợp đồng ký quỹ" className="text-shell-muted hover:text-shell-foreground" /></p>
-            <Addr a={ESCROW} full className="text-shell-foreground [&_a]:text-shell-foreground [&_button]:text-shell-muted [&_button:hover]:bg-shell-foreground/10" />
+            <Addr a={ESCROW} full className="max-w-full text-shell-foreground [&_a]:text-shell-foreground [&_button]:text-shell-muted [&_button:hover]:bg-shell-foreground/10" />
             <p className="pt-1 text-shell-muted [&_a]:text-shell-foreground">
               <ExternalLinkText href={`${explorerAddress(ESCROW)}#code`}>Mã nguồn đã xác minh trên Etherscan</ExternalLinkText>
             </p>

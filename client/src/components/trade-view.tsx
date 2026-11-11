@@ -110,7 +110,7 @@ function NextAction({ t, role, send, busy }: { t: TradeData; role: Role; send: S
             ["Owner sau bàn giao", <div className="flex flex-col gap-1">{t.newOwners.map((o) => <Addr key={o} a={o} />)}</div>],
             ["Ngưỡng ký", `${t.threshold} / ${t.newOwners.length}`],
             ["Tài sản kỳ vọng", assetList(expected, "Chỉ mua ví")],
-            ["Hạn chót", dateTime(t.deadline)],
+            ["Hạn chót", <span>{dateTime(t.deadline)}<span className="block text-xs text-muted-foreground">Quá hạn mà chưa hoàn tất: ai cũng hủy được, tiền về bạn.</span></span>],
           ]} />
         </Confirm>
         {expired && <p className="text-sm text-destructive">Giao dịch đã quá hạn.</p>}
@@ -128,6 +128,7 @@ function NextAction({ t, role, send, busy }: { t: TradeData; role: Role; send: S
   } else if (t.status === "FUNDED") {
     primary = (
       <div className="space-y-3">
+        {role === "buyer" && <h3 className="font-semibold">Bạn có thể tự hoàn tất ngay</h3>}
         <Confirm
           title="Hợp đồng sẽ làm gì khi hoàn tất"
           action="Hoàn tất bàn giao"
@@ -158,7 +159,10 @@ function NextAction({ t, role, send, busy }: { t: TradeData; role: Role; send: S
   if (role === "buyer" && t.status === "FUNDED" && suspicious) {
     primary = (
       <div className="space-y-3">
-        <h3 className="font-semibold text-destructive">Bàn giao bị khóa</h3>
+        <div>
+          <h3 className="font-semibold">Tiền của bạn vẫn an toàn trong hợp đồng</h3>
+          <p className="mt-0.5 text-sm text-muted-foreground">Hủy giao dịch để nhận lại {eth(t.price)}.</p>
+        </div>
         <Confirm destructive title="Hủy và lấy lại tiền?" action="Hủy và lấy lại tiền" onConfirm={() => send("cancelByBuyer", [t.id])}
           trigger={<Button size="lg" variant="destructive" disabled={!!busy}>{spin("cancelByBuyer")}Hủy và lấy lại {eth(t.price)}</Button>}>
           <p>Hợp đồng đã ghi nhận ví bị thay đổi hoặc thiếu tài sản kỳ vọng. {refund}</p>

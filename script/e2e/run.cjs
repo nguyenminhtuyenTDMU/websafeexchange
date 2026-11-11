@@ -64,8 +64,8 @@ async function connect(page) {
   await page.getByRole("button", { name: "Kết nối ví", exact: true }).click();
   await page.getByRole("button", { name: /0x[0-9a-fA-F]{4}…/ }).waitFor();
 }
-async function txSucceeded(page) {
-  await page.getByText("Giao dịch thành công").first().waitFor({ timeout: 30_000 });
+async function txSucceeded(page, title) {
+  await page.getByText(title).first().waitFor({ timeout: 30_000 });
 }
 
 /** Việc người bán làm trong Safe{Wallet}: bật escrow làm module (chữ ký "approved by msg.sender", v = 1). */
@@ -119,7 +119,7 @@ async function enableModuleAsSeller() {
     await shot(buyer, "mua-hop-xac-nhan-nap");
     await dep.getByRole("checkbox").click();
     await dep.getByRole("button", { name: `Nạp ${PRICE} ETH` }).click();
-    await txSucceeded(buyer);
+    await txSucceeded(buyer, `Đã nạp ${PRICE} ETH`);
     await buyer.getByText("Ví đang được đóng băng").waitFor({ timeout: 30_000 });
     await shot(buyer, "mua-da-nap");
 
@@ -129,14 +129,14 @@ async function enableModuleAsSeller() {
     await fin.waitFor();
     await shot(buyer, "mua-hop-xac-nhan-hoan-tat");
     await fin.getByRole("button", { name: "Hoàn tất bàn giao" }).click();
-    await txSucceeded(buyer);
+    await txSucceeded(buyer, "Đã bàn giao ví");
     await buyer.getByText("Ví đã được bàn giao sạch").waitFor({ timeout: 30_000 });
     await shot(buyer, "mua-da-hoan-tat");
 
     console.log("Người bán rút tiền");
     await seller.reload();
     await seller.getByRole("button", { name: `Rút ${PRICE} ETH` }).click();
-    await txSucceeded(seller);
+    await txSucceeded(seller, "Đã rút tiền về ví");
     await shot(seller, "ban-da-rut");
 
     console.log("Tra cứu");

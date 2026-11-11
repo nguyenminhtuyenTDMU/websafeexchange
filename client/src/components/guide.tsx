@@ -38,7 +38,7 @@ const STEPS: { title: string; body: React.ReactNode; visual: React.ReactNode }[]
   },
   {
     title: "Đọc báo cáo kiểm tra",
-    body: "Mỗi giao dịch có một báo cáo đọc thẳng từ ví. Điểm chưa đạt nằm trên cùng, kèm từng bước khắc phục. Mã T1–T10 là kịch bản gian lận mà điểm đó chặn.",
+    body: "Mỗi giao dịch có một báo cáo đọc thẳng từ ví. Điểm chưa đạt nằm trên cùng, kèm từng bước khắc phục. Mã T1–T8 là kịch bản gian lận mà điểm đó chặn.",
     visual: (
       <ul className="space-y-2.5 rounded-lg border bg-card px-5 py-4 text-sm">
         <li className="flex items-center gap-3"><Pill tone="bg-signal/30 text-foreground" icon={CircleCheck}>ĐẠT</Pill>ví đúng như yêu cầu</li>
@@ -96,10 +96,13 @@ export function GuideProvider({ children }: { children: React.ReactNode }) {
             <div className="flex gap-2">
               {step === 0
                 ? <Button variant="ghost" onClick={close}>Bỏ qua</Button>
-                : <Button variant="ghost" onClick={() => setStep(step - 1)}>Quay lại</Button>}
-              {last
-                ? <Button asChild onClick={close}><Link href="/trades">Bắt đầu</Link></Button>
-                : <Button onClick={() => setStep(step + 1)}>Tiếp</Button>}
+                : !last && <Button variant="ghost" onClick={() => setStep(step - 1)}>Quay lại</Button>}
+              {last ? (
+                <>
+                  <Button asChild variant="outline" onClick={close}><Link href="/sell">Niêm yết ví</Link></Button>
+                  <Button asChild onClick={close}><Link href="/trades">Xem giao dịch</Link></Button>
+                </>
+              ) : <Button onClick={() => setStep(step + 1)}>Tiếp</Button>}
             </div>
           </div>
         </DialogContent>
