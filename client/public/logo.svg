@@ -1,3 +1,6 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-  <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" fill="none">
+  <!-- Cùng dấu với header: ô két viền sáng, dấu tích xanh tín hiệu, đặt trên nền xanh két -->
+  <rect width="32" height="32" rx="8" fill="#10322a"/>
+  <rect x="5.5" y="5.5" width="21" height="21" rx="5.5" stroke="#eef6f1" stroke-width="2.2"/>
+  <path d="M10.5 16.5l3.6 3.6 7.4-8.6" stroke="#2fde7a" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"/>
 </svg>
