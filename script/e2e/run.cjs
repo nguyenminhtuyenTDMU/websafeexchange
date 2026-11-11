@@ -120,7 +120,7 @@ async function enableModuleAsSeller() {
     await dep.getByRole("checkbox").click();
     await dep.getByRole("button", { name: `Nạp ${PRICE} ETH` }).click();
     await txSucceeded(buyer, `Đã nạp ${PRICE} ETH`);
-    await buyer.getByText("Ví đang được đóng băng").waitFor({ timeout: 30_000 });
+    await buyer.getByText("Ví đã khóa để bảo vệ tiền của bạn").waitFor({ timeout: 30_000 });
     await shot(buyer, "mua-da-nap");
 
     console.log("Người mua hoàn tất bàn giao");

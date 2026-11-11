@@ -11,7 +11,7 @@ import { Addr, AssetLabel, AuditReport, CopyChip, ExternalLinkText, InfoTip, Lif
 import { completedChecks, fundedChecks, readinessChecks } from "@/lib/conditions";
 import type { AssetSpec, TradeData } from "@/lib/escrow";
 import { ESCROW, explorerTx } from "@/lib/config";
-import { dateTime, eth, isExpired, STATUS_LABEL } from "@/lib/format";
+import { dateTime, eth, isExpired, shortAddr, STATUS_LABEL } from "@/lib/format";
 import { cn } from "@/lib/utils";
 
 export type Role = "seller" | "buyer" | "viewer";
@@ -140,6 +140,7 @@ function NextAction({ t, role, send, busy }: { t: TradeData; role: Role; send: S
             <li>Kiểm tra lại toàn bộ điều kiện bàn giao sạch và tài sản kỳ vọng.</li>
             <li>Chỉ khi mọi điều kiện đạt: ghi có {eth(t.price)} cho người bán.</li>
           </ol>
+          <p className="rounded-md bg-muted px-3 py-2"><span className="font-semibold">Kết quả:</span> {t.newOwners.length === 1 ? "người mua" : `${t.newOwners.length} owner mới`} là chủ duy nhất của ví {shortAddr(t.wallet)}. Nếu một điều kiện sai, mọi thay đổi bị hoàn tác, bạn chỉ mất phí gas.</p>
         </Confirm>
       </div>
     );
@@ -163,8 +164,8 @@ function NextAction({ t, role, send, busy }: { t: TradeData; role: Role; send: S
           <h3 className="font-semibold">Tiền của bạn vẫn an toàn trong hợp đồng</h3>
           <p className="mt-0.5 text-sm text-muted-foreground">Hủy giao dịch để nhận lại {eth(t.price)}.</p>
         </div>
-        <Confirm destructive title="Hủy và lấy lại tiền?" action="Hủy và lấy lại tiền" onConfirm={() => send("cancelByBuyer", [t.id])}
-          trigger={<Button size="lg" variant="destructive" disabled={!!busy}>{spin("cancelByBuyer")}Hủy và lấy lại {eth(t.price)}</Button>}>
+        <Confirm title="Lấy lại tiền?" action={`Lấy lại ${eth(t.price)}`} onConfirm={() => send("cancelByBuyer", [t.id])}
+          trigger={<Button size="lg" disabled={!!busy}>{spin("cancelByBuyer")}Lấy lại {eth(t.price)}</Button>}>
           <p>Hợp đồng đã ghi nhận ví bị thay đổi hoặc thiếu tài sản kỳ vọng. {refund}</p>
         </Confirm>
       </div>
@@ -230,7 +231,7 @@ function StateBand({ t, role }: { t: TradeData; role: Role }) {
     return (
       <div className="flex items-center gap-3 border-b bg-st-funded/10 px-5 py-3.5 text-sm sm:px-7">
         <Lock className="h-5 w-5 shrink-0 text-st-funded" aria-hidden />
-        <p className="flex items-center gap-1.5 font-semibold text-st-funded">{role === "seller" ? "Ví đang được đóng băng: đừng động vào ví" : "Ví đang được đóng băng"}
+        <p className="flex items-center gap-1.5 font-semibold text-st-funded">{role === "seller" ? "Ví đang khóa: đừng thực hiện giao dịch nào với ví" : "Ví đã khóa để bảo vệ tiền của bạn"}
           <InfoTip label="Chi tiết" text={`Hợp đồng đã ghi lại nonce ${t.nonceAtFunding} của ví lúc nạp tiền. Một giao dịch bất kỳ của người bán sẽ khóa việc bàn giao và cho người mua quyền hủy.`} /></p>
       </div>
     );
@@ -260,7 +261,10 @@ export function TradeView({ t, role, timeline, timelineLoaded, send, busy }: {
   t: TradeData; role: Role; timeline: TimelineEvent[]; timelineLoaded: boolean; send: Send; busy: string | null;
 }) {
   const ready = t.readinessMask === 0n && t.readinessAssetMask === 0n;
-  const done = stepsDone(t.status, ready);
+  const blocked = t.status === "FUNDED" && (t.currentNonce !== t.nonceAtFunding || t.handoverAssetMask !== 0n);
+  // giao dịch đã hủy: giữ lại các bước đã đi qua, đánh dấu chỗ dừng
+  const fundedBefore = timeline.some((e) => e.kind === "Người mua nạp tiền");
+  const done = t.status === "CANCELLED" ? (fundedBefore ? 3 : 1) : stepsDone(t.status, ready);
   const audit = t.status === "OPEN"
     ? { title: "Báo cáo kiểm tra ví trước khi nạp tiền", items: readinessChecks(t), clean: "Ví sẵn sàng",
         note: undefined }
@@ -277,32 +281,40 @@ export function TradeView({ t, role, timeline, timelineLoaded, send, busy }: {
           <div className="flex flex-wrap items-baseline justify-between gap-x-6 gap-y-2">
             <div className="flex flex-wrap items-baseline gap-x-4 gap-y-1">
               <h1 className="text-2xl font-semibold tracking-tight">Giao dịch #{t.id.toString()}</h1>
-              <span className={cn("rounded-full px-2.5 py-0.5 text-sm font-semibold text-white dark:text-primary-foreground", STATUS_FILL[t.status])}>{STATUS_LABEL[t.status]}</span>
+              <span className={cn("rounded-full px-2.5 py-0.5 text-sm font-semibold text-white dark:text-primary-foreground", blocked ? "bg-destructive" : STATUS_FILL[t.status])}>{blocked ? "Bàn giao bị khóa" : STATUS_LABEL[t.status]}</span>
             </div>
             <p className="text-sm text-shell-muted tabular">
               {ROLE_LABEL[role]} · {eth(t.price)} · hạn {dateTime(t.deadline)}
               {isExpired(t.deadline) && (t.status === "OPEN" || t.status === "FUNDED") && <span className="ml-1 font-semibold text-shell-foreground">(đã quá hạn)</span>}
             </p>
           </div>
-          <LifecycleRail done={done} cancelled={t.status === "CANCELLED"} frozen={t.status === "FUNDED"}
-            blocked={t.status === "FUNDED" && (t.currentNonce !== t.nonceAtFunding || t.handoverAssetMask !== 0n)} />
+          <LifecycleRail done={done} cancelledAt={t.status === "CANCELLED" ? done : undefined} frozen={t.status === "FUNDED"} blocked={blocked} />
         </header>
 
         <StateBand t={t} role={role} />
 
         <div className="grid lg:grid-cols-[minmax(0,1fr)_360px]">
           <div className="min-w-0 space-y-8 px-5 py-6 sm:px-7">
-            {audit && <AuditReport title={audit.title} items={audit.items} cleanLabel={audit.clean} note={audit.note} />}
-            <NextAction t={t} role={role} send={send} busy={busy} />
+            {audit && <AuditReport title={audit.title} items={audit.items} cleanLabel={audit.clean} blocked={blocked} expandPassed={t.status === "COMPLETED"} />}
+            {t.status === "CANCELLED" ? (
+              <section aria-label="Tóm tắt" className="space-y-1">
+                <h2 className="text-lg font-semibold">Giao dịch dừng ở bước {fundedBefore ? "hoàn tất" : "chuẩn bị ví"}</h2>
+                <p className="text-sm text-muted-foreground">
+                  {timeline.find((e) => e.kind === "Hủy giao dịch")?.detail ?? "Đã hủy"}.{" "}
+                  {fundedBefore ? `Khoản nạp ${eth(t.price)} đã được ghi có lại cho người mua.` : "Chưa có khoản nạp nào."}
+                </p>
+                {role !== "viewer" && t.myCredit > 0n && <NextAction t={t} role={role} send={send} busy={busy} />}
+              </section>
+            ) : <NextAction t={t} role={role} send={send} busy={busy} />}
           </div>
 
           <aside className="min-w-0 space-y-8 border-t bg-muted/30 px-5 py-6 sm:px-7 lg:border-l lg:border-t-0">
             <section>
               <h2 className="mb-1 font-semibold">Điều kiện giao dịch</h2>
               <Ledger rows={[
-                ["Ví Safe", <Addr a={t.wallet} />],
-                ["Người bán", <Addr a={t.seller} />],
-                ["Người mua", <Addr a={t.buyer} />],
+                ["Ví Safe", <Addr a={t.wallet} history />],
+                ["Người bán", <Addr a={t.seller} history />],
+                ["Người mua", <Addr a={t.buyer} history />],
                 ["Giá", <span className="font-mono">{eth(t.price)}</span>],
                 ["Owner sau bàn giao", <div className="flex flex-col gap-1">{t.newOwners.map((o) => <Addr key={o} a={o} />)}</div>],
                 ["Ngưỡng ký", <span className="tabular">{t.threshold.toString()} / {t.newOwners.length}</span>],

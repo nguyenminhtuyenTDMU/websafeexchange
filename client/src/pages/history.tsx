@@ -42,7 +42,6 @@ export default function HistoryPage({ params }: { params: { address?: string } }
 
       {target && (
         <section className="space-y-4">
-          <h2 className="break-all font-mono text-sm text-muted-foreground">{target}</h2>
           {isLoading ? <div className="flex justify-center py-10"><Loader2 className="h-6 w-6 animate-spin" aria-label="Đang quét sự kiện" /></div>
             : <TradeTable trades={trades} empty="Địa chỉ này chưa tham gia giao dịch nào." />}
           {withdrawals.length > 0 && (

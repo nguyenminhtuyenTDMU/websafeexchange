@@ -1,6 +1,6 @@
 import { createContext, useContext, useEffect, useState } from "react";
 import { Link } from "wouter";
-import { CircleCheck, CircleX, Clock, Lock } from "lucide-react";
+import { CircleCheck, CircleX, Cog, Lock } from "lucide-react";
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { LifecycleRail } from "@/components/common";
@@ -43,7 +43,7 @@ const STEPS: { title: string; body: React.ReactNode; visual: React.ReactNode }[]
       <ul className="space-y-2.5 rounded-lg border bg-card px-5 py-4 text-sm">
         <li className="flex items-center gap-3"><Pill tone="bg-signal/30 text-foreground" icon={CircleCheck}>ĐẠT</Pill>ví đúng như yêu cầu</li>
         <li className="flex items-center gap-3"><Pill tone="bg-destructive/10 text-destructive" icon={CircleX}>CHƯA ĐẠT</Pill>người bán cần xử lý</li>
-        <li className="flex items-center gap-3"><Pill tone="bg-st-prepare/10 text-st-prepare" icon={Clock}>TỰ XỬ LÝ</Pill>hợp đồng sẽ tự đặt lại</li>
+        <li className="flex items-center gap-3"><Pill tone="bg-muted text-foreground/80" icon={Cog}>HỢP ĐỒNG LÀM</Pill>hợp đồng tự làm khi hoàn tất</li>
       </ul>
     ),
   },
@@ -53,7 +53,7 @@ const STEPS: { title: string; body: React.ReactNode; visual: React.ReactNode }[]
     visual: (
       <div className="flex gap-3 rounded-lg bg-st-funded/10 px-5 py-4 text-sm ring-1 ring-st-funded/25">
         <Lock className="mt-0.5 h-5 w-5 shrink-0 text-st-funded" aria-hidden />
-        <p><span className="font-semibold text-st-funded">Ví đang được đóng băng.</span> Một giao dịch bất kỳ của người bán sẽ mở quyền hủy cho người mua.</p>
+        <p><span className="font-semibold text-st-funded">Ví đã khóa để bảo vệ tiền của người mua.</span> Một giao dịch bất kỳ của người bán sẽ mở quyền hủy cho người mua.</p>
       </div>
     ),
   },

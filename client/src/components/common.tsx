@@ -1,5 +1,6 @@
 import { useRef, useState } from "react";
-import { Check as CheckIcon, ChevronDown, CircleCheck, CircleX, Clock, Copy, ExternalLink, Info, Lock, ShieldAlert, ShieldCheck } from "lucide-react";
+import { Check as CheckIcon, ChevronDown, CircleCheck, CircleX, Cog, Copy, ExternalLink, History, Info, Lock, ShieldAlert, ShieldCheck, X } from "lucide-react";
+import { Link } from "wouter";
 import { formatEther } from "viem";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
@@ -20,7 +21,7 @@ function useCopy() {
 }
 
 /** Địa chỉ rút gọn, sao chép được, mở Etherscan. */
-export function Addr({ a, full = false, className }: { a: string; full?: boolean; className?: string }) {
+export function Addr({ a, full = false, className, history }: { a: string; full?: boolean; className?: string; history?: boolean }) {
   const { copied, copy } = useCopy();
   return (
     <span className={cn("inline-flex min-w-0 items-center gap-1.5 font-mono text-[13px]", className)}>
@@ -28,9 +29,15 @@ export function Addr({ a, full = false, className }: { a: string; full?: boolean
         {full ? a : shortAddr(a)}
       </a>
       <button type="button" aria-label="Sao chép địa chỉ" onClick={() => copy(a)}
-        className="shrink-0 rounded p-0.5 text-muted-foreground hover:bg-muted hover:text-foreground">
+        className="-my-1 inline-flex h-6 w-6 shrink-0 items-center justify-center rounded text-muted-foreground hover:bg-muted hover:text-foreground">
         {copied ? <CheckIcon className="h-3.5 w-3.5 text-success" /> : <Copy className="h-3.5 w-3.5" />}
       </button>
+      {history && (
+        <Link href={`/history/${a}`} aria-label="Lịch sử giao dịch của địa chỉ này" title="Lịch sử giao dịch"
+          className="-my-1 inline-flex h-6 w-6 shrink-0 items-center justify-center rounded text-muted-foreground hover:bg-muted hover:text-foreground">
+          <History className="h-3.5 w-3.5" />
+        </Link>
+      )}
       <span className="sr-only" aria-live="polite">{copied ? "Đã sao chép" : ""}</span>
     </span>
   );
@@ -54,12 +61,22 @@ export function CopyChip({ value }: { value: string }) {
 /** Giải thích theo yêu cầu: mở khi rê chuột hoặc khi bấm (dùng được trên máy chiếu, màn hình cảm ứng). */
 export function HoverPop({ trigger, children, label }: { trigger: React.ReactElement; children: React.ReactNode; label: string }) {
   const [open, setOpen] = useState(false);
+  const pinned = useRef(false);
   const timer = useRef<ReturnType<typeof setTimeout>>();
   const enter = () => { clearTimeout(timer.current); setOpen(true); };
-  const leave = () => { timer.current = setTimeout(() => setOpen(false), 120); };
+  const leave = () => { if (!pinned.current) timer.current = setTimeout(() => setOpen(false), 120); };
+  const close = () => { pinned.current = false; setOpen(false); };
   return (
-    <Popover open={open} onOpenChange={setOpen}>
-      <PopoverTrigger asChild onMouseEnter={enter} onMouseLeave={leave} aria-label={label}>{trigger}</PopoverTrigger>
+    <Popover open={open} onOpenChange={(o) => (o ? setOpen(true) : close())}>
+      <PopoverTrigger asChild aria-label={label}
+        onPointerEnter={(e) => { if (e.pointerType === "mouse") enter(); }}
+        onPointerLeave={(e) => { if (e.pointerType === "mouse") leave(); }}
+        onFocus={(e) => { if (e.currentTarget.matches(":focus-visible")) enter(); }}
+        onBlur={() => { if (!pinned.current) setOpen(false); }}
+        onClick={(e) => {
+          e.preventDefault(); // tự xử lý thay cho cơ chế bật/tắt của Popover
+          if (pinned.current) close(); else { pinned.current = true; clearTimeout(timer.current); setOpen(true); }
+        }}>{trigger}</PopoverTrigger>
       <PopoverContent side="top" className="w-auto max-w-xs px-3 py-2 text-[13px] leading-relaxed"
         onMouseEnter={enter} onMouseLeave={leave} onOpenAutoFocus={(e) => e.preventDefault()}>
         {children}
@@ -117,23 +134,27 @@ export function stepsDone(status: string, ready: boolean): number {
   return 0;
 }
 
-/** Thanh vòng đời trên dải xanh két: bước đã xong cùng một tông, bước hiện tại sáng màu tín hiệu. */
-export function LifecycleRail({ done, cancelled, frozen, blocked }: { done: number; cancelled?: boolean; frozen?: boolean; blocked?: boolean }) {
+/** Thanh vòng đời trên dải xanh két. cancelledAt: bước mà giao dịch dừng lại; blocked: bước hoàn tất bị khóa. */
+export function LifecycleRail({ done, cancelledAt, frozen, blocked }: { done: number; cancelledAt?: number; frozen?: boolean; blocked?: boolean }) {
   return (
     <ol className="grid grid-cols-4 gap-2" aria-label="Tiến trình giao dịch">
       {STEPS.map((s, i) => {
         const isDone = i < done;
-        const isCurrent = !cancelled && i === done;
+        const isStop = cancelledAt === i;
+        const isCurrent = cancelledAt === undefined && i === done;
         return (
           <li key={s} aria-current={isCurrent ? "step" : undefined} className="min-w-0">
             <div className={cn("h-1.5 rounded-full transition-colors duration-500",
-              isCurrent ? (blocked ? "bg-shell-foreground/30" : "bg-shell-foreground ring-2 ring-shell-foreground/30 ring-offset-1 ring-offset-shell") : isDone ? "bg-shell-foreground/55" : "bg-shell-foreground/15")} />
+              isStop ? "bg-shell-foreground/30"
+                : isCurrent ? (blocked ? "bg-shell-foreground/30" : "bg-shell-foreground ring-2 ring-shell-foreground/30 ring-offset-1 ring-offset-shell")
+                : isDone ? "bg-shell-foreground/55" : "bg-shell-foreground/15")} />
             <div className={cn("mt-2 flex items-center gap-1.5 truncate text-xs sm:text-[13px]",
-              isCurrent ? "font-semibold text-shell-foreground" : isDone ? "font-medium text-shell-foreground/85" : "text-shell-muted")}>
+              isCurrent || isStop ? "font-semibold text-shell-foreground" : isDone ? "font-medium text-shell-foreground/85" : "text-shell-muted")}>
               {isDone && (i === 2 && frozen ? <Lock className="h-3.5 w-3.5 shrink-0" aria-hidden /> : <CheckIcon className="h-3.5 w-3.5 shrink-0" aria-hidden />)}
+              {isStop && <X className="h-3.5 w-3.5 shrink-0" aria-hidden />}
               {isCurrent && (blocked ? <Lock className="h-3.5 w-3.5 shrink-0" aria-hidden /> : <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-shell-foreground" aria-hidden />)}
-              <span className="truncate">{isCurrent && blocked ? `${s} (bị khóa)` : s}</span>
-              <span className="sr-only">{isDone ? " (đã xong)" : isCurrent ? " (bước hiện tại)" : ""}</span>
+              <span className="truncate">{isStop ? "Đã hủy" : isCurrent && blocked ? "Bị khóa" : s}</span>
+              <span className="sr-only">{isDone ? " (đã xong)" : isStop ? " (dừng ở đây)" : isCurrent ? " (bước hiện tại)" : ""}</span>
             </div>
           </li>
         );
@@ -153,26 +174,29 @@ export function AssetLabel({ a }: { a: AssetSpec }) {
 
 // ───────── Báo cáo kiểm định (trợ lý bàn giao) ─────────
 
+const PILL = "inline-flex items-center gap-1 justify-self-start rounded px-1.5 py-0.5 text-[11px] font-bold tracking-wide";
+const PassPill = () => <span className={cn(PILL, "bg-signal/30 text-foreground")}><CircleCheck className="h-3.5 w-3.5" aria-hidden />ĐẠT</span>;
+const FailPill = () => <span className={cn(PILL, "bg-destructive/10 text-destructive")}><CircleX className="h-3.5 w-3.5" aria-hidden />CHƯA ĐẠT</span>;
+const ContractPill = () => <span className={cn(PILL, "bg-muted text-foreground/80")}><Cog className="h-3.5 w-3.5" aria-hidden />HỢP ĐỒNG LÀM</span>;
+
 function Verdict({ c }: { c: Check }) {
-  const base = "inline-flex items-center gap-1 justify-self-start rounded px-1.5 py-0.5 text-[11px] font-bold tracking-wide";
-  if (c.ok) return <span className={cn(base, "bg-signal/30 text-foreground")}><CircleCheck className="h-3.5 w-3.5" aria-hidden />ĐẠT</span>;
-  if (c.pending) return <span className={cn(base, "bg-st-prepare/10 text-st-prepare")}><Clock className="h-3.5 w-3.5" aria-hidden />TỰ XỬ LÝ</span>;
-  return <span className={cn(base, "bg-destructive/10 text-destructive")}><CircleX className="h-3.5 w-3.5" aria-hidden />CHƯA ĐẠT</span>;
+  if (c.ok) return <PassPill />;
+  if (c.pending) return <ContractPill />;
+  return <FailPill />;
 }
 
 function Finding({ c, open }: { c: Check; open?: boolean }) {
   return (
-    <li className="grid items-start gap-x-3 gap-y-1.5 py-3 sm:grid-cols-[92px_1fr]">
+    <li className="grid items-start gap-x-3 gap-y-1.5 py-3 sm:grid-cols-[112px_1fr]">
       <Verdict c={c} />
       <div className="min-w-0">
         <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
           <span className={cn("text-[15px]", !c.ok && !c.pending ? "font-semibold" : "font-medium")}>
             {c.label}{c.asset && <> <AssetLabel a={c.asset} /></>}
           </span>
-          {(c.hint || c.pending || (c.detail && c.ok)) && (
+          {(c.hint || (c.detail && (c.ok || c.pending))) && (
             <InfoTip label={`Giải thích: ${c.label}`} text={
               <span className="flex flex-col gap-1">
-                {c.pending && <span>Hợp đồng sẽ tự đặt lại điều kiện này khi hoàn tất bàn giao.</span>}
                 {c.hint && <span>{c.hint}</span>}
                 {(c.ok || c.pending) && c.detail && <span>{c.detail}</span>}
               </span>
@@ -180,11 +204,12 @@ function Finding({ c, open }: { c: Check; open?: boolean }) {
           )}
           {c.threat && (
             <HoverPop label={`Kịch bản ${c.threat}`} trigger={
-              <button type="button" className="rounded border px-1.5 py-0.5 text-[11px] font-medium text-muted-foreground tabular hover:bg-muted">{c.threat}</button>
+              <button type="button" className="inline-flex h-6 min-w-6 items-center justify-center rounded border px-1.5 text-[11px] font-medium text-muted-foreground tabular hover:bg-muted">{c.threat}</button>
             }>Kịch bản {c.threat}: {THREATS[c.threat] ?? ""}</HoverPop>
           )}
         </div>
         {c.detail && !c.ok && !c.pending && <p className="mt-0.5 break-words text-[13px] text-muted-foreground tabular">{c.detail.split(/(0x[0-9a-fA-F]+…[0-9a-fA-F]+|0x[0-9a-fA-F]{40})/).map((part, i) => i % 2 ? <span key={i} className="whitespace-nowrap font-mono text-[12px]">{part}</span> : part)}</p>}
+        {!c.ok && !c.pending && c.cause && <p className="mt-1 text-sm">{c.cause}</p>}
         {open && !c.ok && !c.pending && c.fix && (
           <ol className="mt-2 space-y-2 border-l border-border pl-3 text-sm">
             {c.fix.map((f, i) => (
@@ -200,20 +225,34 @@ function Finding({ c, open }: { c: Check; open?: boolean }) {
   );
 }
 
-/** Con dấu kết luận: khối đặc, có biểu tượng và số liệu, không trông như nút bấm. */
-function Seal({ clean, label, failing }: { clean: boolean; label: string; failing: number }) {
+/** Con dấu kết luận: biểu tượng tròn nhạt và chữ lớn, không phải khối bấm được. */
+function Seal({ clean, label, failing, blocked }: { clean: boolean; label: string; failing: number; blocked?: boolean }) {
   return (
     <div role="status" className={cn("flex items-center gap-2 transition-colors duration-500", clean ? "text-success" : "text-destructive")}>
       {clean
         ? <span className="flex h-8 w-8 items-center justify-center rounded-full bg-signal/25"><ShieldCheck className="h-5 w-5" aria-hidden /></span>
         : <span className="flex h-8 w-8 items-center justify-center rounded-full bg-destructive/10"><ShieldAlert className="h-5 w-5" aria-hidden /></span>}
-      <span className="text-lg font-bold tracking-tight">{clean ? label : `${failing} điểm chưa đạt`}</span>
+      <span className="text-lg font-bold tracking-tight">{clean ? label : blocked ? "Không thể hoàn tất" : `${failing} điểm chưa đạt`}</span>
     </div>
   );
 }
 
-/** Kết luận kiểm định: lỗi lên đầu và mở sẵn hướng dẫn, mục đạt gộp lại. Nằm trong hồ sơ giao dịch, không phải thẻ riêng. */
-export function AuditReport({ title, items, cleanLabel, note }: { title: string; items: Check[]; cleanLabel: string; note?: string }) {
+function GroupToggle({ children }: { children: React.ReactNode }) {
+  return (
+    <CollapsibleTrigger className="group flex w-full items-center justify-between py-3 text-sm font-medium text-muted-foreground hover:text-foreground">
+      <span className="flex items-center gap-1.5">{children}</span>
+      <ChevronDown className="h-4 w-4 transition-transform group-data-[state=open]:rotate-180" />
+    </CollapsibleTrigger>
+  );
+}
+
+/**
+ * Kết luận kiểm định: điểm chưa đạt lên đầu và mở sẵn hướng dẫn; điểm đã đạt và việc hợp đồng sẽ làm gộp lại
+ * để thao tác chính nằm gần. Chú giải ngay dưới tiêu đề, không phải nhớ từ phần hướng dẫn.
+ */
+export function AuditReport({ title, items, cleanLabel, blocked, expandPassed }: {
+  title: string; items: Check[]; cleanLabel: string; blocked?: boolean; expandPassed?: boolean;
+}) {
   const failing = items.filter((c) => !c.ok && !c.pending);
   const pending = items.filter((c) => !c.ok && c.pending);
   const passed = items.filter((c) => c.ok);
@@ -223,26 +262,34 @@ export function AuditReport({ title, items, cleanLabel, note }: { title: string;
       <header className="flex flex-wrap items-center justify-between gap-4 pb-3">
         <div>
           <h2 id="audit-title" className="text-lg font-semibold">{title}</h2>
-          <p className="mt-0.5 text-sm text-muted-foreground tabular">
-            {passed.length}/{items.length} điều kiện đạt{pending.length ? `, ${pending.length} do hợp đồng tự xử lý` : ""}
-          </p>
+          <p className="mt-0.5 text-sm text-muted-foreground tabular">{passed.length}/{items.length} điều kiện đạt</p>
         </div>
-        <Seal clean={clean} label={cleanLabel} failing={failing.length} />
+        <Seal clean={clean} label={cleanLabel} failing={failing.length} blocked={blocked} />
       </header>
+      <p className="flex flex-wrap items-center gap-x-3 gap-y-1.5 pb-3 text-xs text-muted-foreground" aria-label="Chú giải">
+        <span className="flex items-center gap-1"><PassPill /> ví đúng yêu cầu</span>
+        <span className="flex items-center gap-1"><FailPill /> cần xử lý</span>
+        {pending.length > 0 && <span className="flex items-center gap-1"><ContractPill /> hợp đồng tự làm khi hoàn tất</span>}
+        <span className="flex items-center gap-1"><span className="rounded border px-1.5 py-px text-[11px] font-medium">T1–T8</span> kịch bản gian lận bị chặn</span>
+      </p>
       <div className="border-y">
-        {failing.length > 0 && <ul className="divide-y">{failing.map((c) => <Finding key={c.key} c={c} open />)}</ul>}
-        {pending.length > 0 && <ul className={cn("divide-y", failing.length > 0 && "border-t")}>{pending.map((c) => <Finding key={c.key} c={c} />)}</ul>}
+        {failing.length > 0 && <ul className="divide-y">{failing.map((c) => <Finding key={c.key} c={c} open={!blocked} />)}</ul>}
         {passed.length > 0 && (
-          <Collapsible defaultOpen={clean} className={cn((failing.length > 0 || pending.length > 0) && "border-t")}>
-            <CollapsibleTrigger className="group flex w-full items-center justify-between py-3 text-sm font-medium text-muted-foreground hover:text-foreground">
-              <span className="flex items-center gap-1.5"><span className="flex h-4 w-4 items-center justify-center rounded-full bg-signal text-foreground"><CheckIcon className="h-3 w-3" aria-hidden /></span>{passed.length} điều kiện đã đạt</span>
-              <ChevronDown className="h-4 w-4 transition-transform group-data-[state=open]:rotate-180" />
-            </CollapsibleTrigger>
+          <Collapsible defaultOpen={expandPassed} className={cn(failing.length > 0 && "border-t")}>
+            <GroupToggle>
+              <span className="flex h-4 w-4 items-center justify-center rounded-full bg-signal text-foreground"><CheckIcon className="h-3 w-3" aria-hidden /></span>
+              {passed.length} điều kiện đã đạt
+            </GroupToggle>
             <CollapsibleContent><ul className="divide-y border-t">{passed.map((c) => <Finding key={c.key} c={c} />)}</ul></CollapsibleContent>
           </Collapsible>
         )}
+        {pending.length > 0 && (
+          <Collapsible className="border-t">
+            <GroupToggle><Cog className="h-4 w-4" aria-hidden />{pending.length} việc hợp đồng sẽ làm khi hoàn tất</GroupToggle>
+            <CollapsibleContent><ul className="divide-y border-t">{pending.map((c) => <Finding key={c.key} c={c} />)}</ul></CollapsibleContent>
+          </Collapsible>
+        )}
       </div>
-      {note && <p className="pt-3 text-sm text-muted-foreground">{note}</p>}
     </section>
   );
 }

@@ -53,6 +53,7 @@ export type Check = {
   pending?: boolean;  // chưa đạt nhưng hợp đồng tự xử lý khi hoàn tất bàn giao
   detail?: string;
   fix?: FixStep[];
+  cause?: string;  // điểm không còn sửa được: một dòng nguyên nhân thay cho các bước
 };
 
 const SAFE_APP = "Mở app.safe.global, chọn ví này → Apps → Transaction Builder, ô địa chỉ nhập chính địa chỉ ví Safe.";
@@ -75,7 +76,8 @@ function assetChecks(list: readonly AssetSpec[], mask: bigint, side: "seller" | 
       key: `asset-${i}`, threat: "T6", label: "Ví giữ", asset: a, ok,
       fix: ok ? undefined : side === "seller"
         ? [{ text: "Chuyển lại tài sản này vào ví Safe, hoặc hủy giao dịch rồi niêm yết lại với danh sách đúng." }]
-        : [{ text: "Tài sản đã rời khỏi ví sau khi bạn nạp tiền. Hủy giao dịch để lấy lại tiền." }],
+        : undefined,
+      cause: ok || side === "seller" ? undefined : "Tài sản đã rời khỏi ví sau khi bạn nạp tiền.",
     };
   });
 }
@@ -135,11 +137,11 @@ export function fundedChecks(t: TradeData): Check[] {
     {
       key: "nonce", threat: "T8", label: "Ví không có giao dịch nào kể từ lúc nạp tiền", hint: TERMS.nonce, ok: unchanged,
       detail: `Nonce lúc nạp ${t.nonceAtFunding}, hiện tại ${t.currentNonce}`,
-      fix: [{ text: "Người bán đã thực hiện giao dịch với ví sau khi bạn nạp tiền. Bàn giao bị khóa; hủy giao dịch để lấy lại tiền." }],
+      cause: "Người bán đã thực hiện giao dịch với ví sau khi bạn nạp tiền.",
     },
     {
       key: "sellerOwner", label: "Người bán vẫn là owner của ví", ok: t.sellerIsOwner,
-      fix: [{ text: "Người bán không còn là owner nên không thể bàn giao. Hủy giao dịch để lấy lại tiền." }],
+      cause: "Người bán không còn là owner của ví.",
     },
     { key: "guard", threat: "T4", label: "Không có guard", hint: TERMS.guard, ok: !has(BIT.GUARD_SET) },
     { key: "moduleGuard", threat: "T4b", label: "Không có module guard", hint: TERMS.moduleGuard, ok: !has(BIT.MODULE_GUARD_SET) },
