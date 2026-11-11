@@ -75,11 +75,18 @@ export default {
           foreground: "hsl(var(--sidebar-accent-foreground) / <alpha-value>)",
           border: "var(--sidebar-accent-border)"
         },
-        status: {
-          online: "rgb(34 197 94)",
-          away: "rgb(245 158 11)",
-          busy: "rgb(239 68 68)",
-          offline: "rgb(156 163 175)",
+        shell: {
+          DEFAULT: "hsl(var(--shell) / <alpha-value>)",
+          foreground: "hsl(var(--shell-foreground) / <alpha-value>)",
+          muted: "hsl(var(--shell-muted) / <alpha-value>)",
+        },
+        signal: "hsl(var(--signal) / <alpha-value>)",
+        st: {
+          listed: "hsl(var(--st-listed) / <alpha-value>)",
+          prepare: "hsl(var(--st-prepare) / <alpha-value>)",
+          funded: "hsl(var(--st-funded) / <alpha-value>)",
+          done: "hsl(var(--st-done) / <alpha-value>)",
+          cancel: "hsl(var(--st-cancel) / <alpha-value>)",
         },
         success: {
           DEFAULT: "hsl(var(--success) / <alpha-value>)",

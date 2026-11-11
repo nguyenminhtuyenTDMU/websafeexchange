@@ -3,9 +3,9 @@ import { useLocation } from "wouter";
 import { useAccount } from "wagmi";
 import { isAddress } from "viem";
 import { Loader2 } from "lucide-react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { PageHeader } from "@/components/common";
 import { TradeTable } from "@/components/trade-table";
 import { useEvents } from "@/hooks/use-escrow-data";
 import { sameAddr } from "@/lib/conditions";
@@ -19,52 +19,46 @@ export default function HistoryPage({ params }: { params: { address?: string } }
   const [input, setInput] = useState(params.address ?? "");
   const target = params.address && isAddress(params.address) ? params.address : null;
   const { data, isLoading } = useEvents();
+  const value = input.trim();
+  const invalid = value.length > 0 && !isAddress(value);
 
   const trades = target ? (data?.trades ?? []).filter((t) => [t.seller, t.buyer, t.wallet].some((a) => sameAddr(a, target))) : [];
   const withdrawals = target ? (data?.withdrawals ?? []).filter((w) => sameAddr(w.account, target)) : [];
 
   return (
-    <div className="container mx-auto max-w-6xl space-y-6 px-4 py-8">
-      <Card>
-        <CardHeader>
-          <CardTitle>Lịch sử bàn giao theo địa chỉ</CardTitle>
-          <CardDescription>Nhập địa chỉ người bán, người mua hoặc địa chỉ ví Safe.</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <form
-            className="flex flex-col gap-2 sm:flex-row"
-            onSubmit={(e) => { e.preventDefault(); if (isAddress(input.trim())) navigate(`/history/${input.trim()}`); }}
-          >
-            <Input value={input} onChange={(e) => setInput(e.target.value)} placeholder="0x…" className="font-mono" />
-            <Button type="submit" disabled={!isAddress(input.trim())}>Tra cứu</Button>
-            {me && <Button type="button" variant="outline" onClick={() => { setInput(me); navigate(`/history/${me}`); }}>Ví của tôi</Button>}
-          </form>
-        </CardContent>
-      </Card>
+    <div className="mx-auto max-w-6xl space-y-6 px-4 py-8">
+      <PageHeader title="Lịch sử theo địa chỉ">Mọi giao dịch mà một địa chỉ đã tham gia, với vai trò người bán, người mua hoặc là ví được bán.</PageHeader>
+
+      <form className="space-y-1.5" onSubmit={(e) => { e.preventDefault(); if (isAddress(value)) navigate(`/history/${value}`); }}>
+        <label htmlFor="addr" className="text-sm font-medium">Địa chỉ</label>
+        <div className="flex flex-col gap-2 sm:flex-row">
+          <Input id="addr" value={input} onChange={(e) => setInput(e.target.value)} placeholder="0x…" aria-invalid={invalid}
+            className="font-mono sm:max-w-xl" />
+          <Button type="submit" disabled={!isAddress(value)}>Tra cứu</Button>
+          {me && <Button type="button" variant="outline" onClick={() => { setInput(me); navigate(`/history/${me}`); }}>Ví của tôi</Button>}
+        </div>
+        {invalid && <p className="text-sm text-destructive">Địa chỉ phải có dạng 0x và 40 ký tự hex.</p>}
+      </form>
 
       {target && (
-        <Card>
-          <CardHeader>
-            <CardTitle>Giao dịch liên quan</CardTitle>
-            <CardDescription className="font-mono break-all">{target}</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-6">
-            {isLoading ? <Loader2 className="animate-spin" /> : <TradeTable trades={trades} empty="Địa chỉ này chưa tham gia giao dịch nào." />}
-            {withdrawals.length > 0 && (
-              <div>
-                <h3 className="mb-2 font-semibold">Các lần rút tiền</h3>
-                <ul className="space-y-1 text-sm">
-                  {withdrawals.map((w) => (
-                    <li key={w.tx}>
-                      <a href={explorerTx(w.tx)} target="_blank" rel="noreferrer" className="hover:underline">{eth(w.amount)}</a>
-                      <span className="text-muted-foreground"> · block {w.block.toString()}</span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            )}
-          </CardContent>
-        </Card>
+        <section className="space-y-4">
+          <h2 className="break-all font-mono text-sm text-muted-foreground">{target}</h2>
+          {isLoading ? <div className="flex justify-center py-10"><Loader2 className="h-6 w-6 animate-spin" aria-label="Đang quét sự kiện" /></div>
+            : <TradeTable trades={trades} empty="Địa chỉ này chưa tham gia giao dịch nào." />}
+          {withdrawals.length > 0 && (
+            <div className="rounded-lg border bg-card px-5 py-4 shadow-sm">
+              <h3 className="mb-2 font-semibold">Các lần rút tiền</h3>
+              <ul className="divide-y text-sm">
+                {withdrawals.map((w) => (
+                  <li key={w.tx} className="flex items-center justify-between py-2">
+                    <a href={explorerTx(w.tx)} target="_blank" rel="noreferrer" className="font-mono hover:underline">{eth(w.amount)}</a>
+                    <span className="font-mono text-xs text-muted-foreground">block {w.block.toString()}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+        </section>
       )}
     </div>
   );

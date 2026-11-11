@@ -1,17 +1,10 @@
-import { useAccount, useConnect, useDisconnect } from "wagmi";
-import { Button } from "@/components/ui/button";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { Wallet, LogOut, Copy, Check } from "lucide-react";
 import { useState } from "react";
+import { useAccount, useConnect, useDisconnect } from "wagmi";
+import { Check, Copy, LogOut, Wallet } from "lucide-react";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { shortAddr } from "@/lib/format";
 
-function shortenAddress(address: string): string {
-  return `${address.slice(0, 6)}...${address.slice(-4)}`;
-}
+const btn = "inline-flex items-center gap-2 rounded-md px-3 py-1.5 text-sm font-semibold transition-colors";
 
 export function ConnectWallet() {
   const { address, isConnected } = useAccount();
@@ -19,38 +12,21 @@ export function ConnectWallet() {
   const { disconnect } = useDisconnect();
   const [copied, setCopied] = useState(false);
 
-  const copyAddress = () => {
-    if (address) {
-      navigator.clipboard.writeText(address);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-    }
-  };
-
   if (isConnected && address) {
     return (
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <Button variant="outline" data-testid="button-wallet-connected">
-            <Wallet className="mr-2 h-4 w-4" />
-            {shortenAddress(address)}
-          </Button>
+          <button type="button" className={`${btn} border border-shell-foreground/25 font-mono text-shell-foreground hover:bg-shell-foreground/10`}>
+            <span className="h-2 w-2 rounded-full bg-signal" aria-hidden />{shortAddr(address)}
+          </button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end">
-          <DropdownMenuItem onClick={copyAddress} data-testid="button-copy-address">
-            {copied ? (
-              <Check className="mr-2 h-4 w-4" />
-            ) : (
-              <Copy className="mr-2 h-4 w-4" />
-            )}
+          <DropdownMenuItem onClick={() => { navigator.clipboard.writeText(address); setCopied(true); setTimeout(() => setCopied(false), 1500); }}>
+            {copied ? <Check className="mr-2 h-4 w-4" /> : <Copy className="mr-2 h-4 w-4" />}
             {copied ? "Đã sao chép" : "Sao chép địa chỉ"}
           </DropdownMenuItem>
-          <DropdownMenuItem
-            onClick={() => disconnect()}
-            data-testid="button-disconnect-wallet"
-          >
-            <LogOut className="mr-2 h-4 w-4" />
-            Ngắt kết nối
+          <DropdownMenuItem onClick={() => disconnect()}>
+            <LogOut className="mr-2 h-4 w-4" />Ngắt kết nối
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
@@ -58,13 +34,9 @@ export function ConnectWallet() {
   }
 
   return (
-    <Button
-      onClick={() => connect({ connector: connectors[0] })}
-      disabled={isPending}
-      data-testid="button-connect-wallet"
-    >
-      <Wallet className="mr-2 h-4 w-4" />
-      {isPending ? "Đang kết nối..." : "Kết nối ví"}
-    </Button>
+    <button type="button" onClick={() => connect({ connector: connectors[0] })} disabled={isPending}
+      className={`${btn} bg-shell-foreground text-shell hover:bg-shell-foreground/90 disabled:opacity-60`}>
+      <Wallet className="h-4 w-4" />{isPending ? "Đang kết nối…" : "Kết nối ví"}
+    </button>
   );
 }

@@ -13,6 +13,10 @@ import TradesPage from "@/pages/trades";
 import TradePage from "@/pages/trade";
 import HistoryPage from "@/pages/history";
 import NotFound from "@/pages/not-found";
+import { lazy, Suspense } from "react";
+
+// Trang xem trước giao diện bằng dữ liệu mẫu: chỉ có khi chạy dev, bị loại khỏi bản build.
+const Preview = import.meta.env.DEV ? lazy(() => import("@/pages/preview")) : null;
 
 const queryClient = new QueryClient({
   defaultOptions: { queries: { refetchOnWindowFocus: false, retry: 1 } },
@@ -35,6 +39,7 @@ export default function App() {
                   <Route path="/trade/:id" component={TradePage} />
                   <Route path="/history" component={HistoryPage} />
                   <Route path="/history/:address" component={HistoryPage} />
+                  {Preview && <Route path="/__preview/:state">{(p) => <Suspense fallback={null}><Preview params={p as { state: string }} /></Suspense>}</Route>}
                   <Route component={NotFound} />
                 </Switch>
               </Layout>

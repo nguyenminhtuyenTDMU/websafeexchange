@@ -1,10 +1,12 @@
 import { useState } from "react";
+import { Link } from "wouter";
 import { Loader2 } from "lucide-react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
+import { PageHeader } from "@/components/common";
 import { TradeTable } from "@/components/trade-table";
 import { useEvents } from "@/hooks/use-escrow-data";
+import { errorMessage } from "@/lib/format";
 
 /** Màn hình tra cứu 1: danh sách giao dịch đang mở, dựng từ sự kiện của hợp đồng. */
 export default function TradesPage() {
@@ -13,25 +15,23 @@ export default function TradesPage() {
   const trades = (data?.trades ?? []).filter((t) => all || t.status === "OPEN" || t.status === "FUNDED");
 
   return (
-    <div className="container mx-auto max-w-6xl px-4 py-8">
-      <Card>
-        <CardHeader>
-          <CardTitle>{all ? "Tất cả giao dịch" : "Giao dịch đang mở"}</CardTitle>
-          <CardDescription>
-            Đọc trực tiếp từ sự kiện của hợp đồng ký quỹ trên Sepolia, không qua máy chủ.
-            {data && ` Cập nhật đến block ${data.latest.toString()}.`}
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
+    <div className="mx-auto max-w-6xl space-y-6 px-4 py-8">
+      <PageHeader title="Giao dịch đang mở"
+        actions={
           <div className="flex items-center gap-2">
             <Switch id="all" checked={all} onCheckedChange={setAll} />
-            <Label htmlFor="all">Hiện cả giao dịch đã hoàn tất hoặc đã hủy</Label>
+            <Label htmlFor="all">Gồm cả đã hoàn tất và đã hủy</Label>
           </div>
-          {isLoading ? <Loader2 className="animate-spin" />
-            : error ? <p className="text-red-600">Không quét được sự kiện: {String(error)}</p>
-            : <TradeTable trades={trades} empty="Chưa có giao dịch nào." />}
-        </CardContent>
-      </Card>
+        }>
+        Đọc trực tiếp từ sự kiện của hợp đồng ký quỹ trên Sepolia, không qua máy chủ.
+        {data && <span className="tabular"> Đã quét đến block {data.latest.toString()}.</span>}
+      </PageHeader>
+      {isLoading ? <div className="flex justify-center py-12"><Loader2 className="h-6 w-6 animate-spin" aria-label="Đang quét sự kiện" /></div>
+        : error ? <p className="text-destructive">Không quét được sự kiện: {errorMessage(error)}</p>
+        : <TradeTable trades={trades} empty={
+            <>{all ? "Hợp đồng chưa ghi nhận giao dịch nào." : "Không có giao dịch nào đang mở."}{" "}
+              <Link href="/sell" className="font-medium text-primary hover:underline">Niêm yết ví</Link></>
+          } />}
     </div>
   );
 }

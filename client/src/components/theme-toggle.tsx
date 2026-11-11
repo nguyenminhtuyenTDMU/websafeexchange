@@ -1,20 +1,14 @@
 import { Moon, Sun } from "lucide-react";
-import { Button } from "@/components/ui/button";
 import { useTheme } from "@/components/theme-provider";
 
 export function ThemeToggle() {
   const { theme, setTheme } = useTheme();
-
+  const dark = theme === "dark";
   return (
-    <Button
-      variant="ghost"
-      size="icon"
-      onClick={() => setTheme(theme === "light" ? "dark" : "light")}
-      data-testid="button-theme-toggle"
-    >
-      <Sun className="h-5 w-5 rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
-      <Moon className="absolute h-5 w-5 rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
-      <span className="sr-only">Chuyển đổi giao diện</span>
-    </Button>
+    <button type="button" onClick={() => setTheme(dark ? "light" : "dark")}
+      aria-label={dark ? "Chuyển sang giao diện sáng" : "Chuyển sang giao diện tối"}
+      className="rounded-md p-2 text-shell-muted hover:bg-shell-foreground/10 hover:text-shell-foreground">
+      {dark ? <Sun className="h-[18px] w-[18px]" /> : <Moon className="h-[18px] w-[18px]" />}
+    </button>
   );
 }
