@@ -142,7 +142,7 @@ export function AssetLabel({ a }: { a: AssetSpec }) {
 function Verdict({ c }: { c: Check }) {
   const base = "inline-flex items-center gap-1 justify-self-start rounded px-1.5 py-0.5 text-[11px] font-bold tracking-wide";
   if (c.ok) return <span className={cn(base, "bg-signal/30 text-foreground")}><CircleCheck className="h-3.5 w-3.5" aria-hidden />ĐẠT</span>;
-  if (c.pending) return <span className={cn(base, "bg-st-prepare/10 text-st-prepare")}><Clock className="h-3.5 w-3.5" aria-hidden />TỰ XỬ LÝ</span>;
+  if (c.pending) return <span title="Hợp đồng sẽ tự đặt lại khi hoàn tất bàn giao" className={cn(base, "bg-st-prepare/10 text-st-prepare")}><Clock className="h-3.5 w-3.5" aria-hidden />TỰ XỬ LÝ</span>;
   return <span className={cn(base, "bg-destructive/10 text-destructive")}><CircleX className="h-3.5 w-3.5" aria-hidden />CHƯA ĐẠT</span>;
 }
 
@@ -166,7 +166,6 @@ function Finding({ c, open }: { c: Check; open?: boolean }) {
           )}
         </div>
         {c.detail && <p className="mt-0.5 break-words text-[13px] text-muted-foreground tabular">{c.detail.split(/(0x[0-9a-fA-F]+…[0-9a-fA-F]+|0x[0-9a-fA-F]{40})/).map((part, i) => i % 2 ? <span key={i} className="whitespace-nowrap font-mono text-[12px]">{part}</span> : part)}</p>}
-        {c.pending && !c.ok && <p className="mt-0.5 text-sm text-muted-foreground">Hợp đồng sẽ tự đặt lại khi hoàn tất bàn giao.</p>}
         {open && !c.ok && !c.pending && c.fix && (
           <ol className="mt-2 space-y-2 border-l border-border pl-3 text-sm">
             {c.fix.map((f, i) => (

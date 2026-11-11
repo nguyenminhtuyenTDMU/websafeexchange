@@ -10,13 +10,13 @@ import { eth } from "@/lib/format";
 
 const LIFECYCLE = [
   { step: "Niêm yết", color: "bg-st-listed", who: "Người bán",
-    checks: "Hợp đồng kiểm tra ví là Safe chính thức, người gọi là owner, và ví đang giữ từng tài sản chào bán." },
+    checks: "Ví là Safe chính thức, người gọi là owner, tài sản chào bán có thật." },
   { step: "Chuẩn bị ví", color: "bg-st-prepare", who: "Người bán",
-    checks: "Bật hợp đồng ký quỹ làm module duy nhất, gỡ guard và handler lạ. Trợ lý chỉ ra từng điểm chưa đạt." },
+    checks: "Hợp đồng ký quỹ là module duy nhất; không guard, không handler lạ." },
   { step: "Nạp tiền", color: "bg-st-funded", who: "Người mua",
-    checks: "Người mua khai báo tài sản kỳ vọng và nạp tiền. Hợp đồng ghi lại nonce: từ đây ví bị đóng băng." },
+    checks: "Tài sản người mua kỳ vọng đang có trong ví. Ví bị đóng băng từ đây." },
   { step: "Hoàn tất", color: "bg-st-done", who: "Bất kỳ ai",
-    checks: "Hợp đồng tự đổi owner, kiểm tra ví sạch và tài sản còn đủ, rồi mới ghi có tiền cho người bán, trong một giao dịch." },
+    checks: "Tự đổi owner, kiểm tra ví sạch, rồi mới trả tiền, trong một giao dịch." },
 ];
 
 function OpenTrades() {
@@ -63,8 +63,7 @@ export default function Home() {
               Mua bán quyền kiểm soát ví Safe, tiền chỉ giải ngân khi ví đã sạch
             </h1>
             <p className="max-w-xl text-[17px] leading-relaxed text-muted-foreground">
-              Hợp đồng ký quỹ tự chuyển ví cho người mua và tự kiểm tra không còn cửa hậu nào, trong cùng giao dịch trả tiền cho người bán.
-              Không trung gian, không máy chủ.
+              Hợp đồng ký quỹ tự chuyển ví và tự kiểm tra không còn cửa hậu, trong cùng giao dịch trả tiền cho người bán.
             </p>
           </div>
           <div className="flex flex-wrap gap-3">

@@ -7,7 +7,7 @@ import {
   AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
-import { Addr, AssetLabel, AuditReport, CopyChip, LifecycleRail, stepsDone } from "@/components/common";
+import { Addr, AssetLabel, AuditReport, CopyChip, InfoTip, LifecycleRail, stepsDone } from "@/components/common";
 import { completedChecks, fundedChecks, readinessChecks } from "@/lib/conditions";
 import type { AssetSpec, TradeData } from "@/lib/escrow";
 import { ESCROW, explorerTx } from "@/lib/config";
@@ -83,8 +83,8 @@ function NextAction({ t, role, send, busy }: { t: TradeData; role: Role; send: S
     primary = (
       <div className="space-y-4">
         <div>
-          <h3 className="font-semibold">Tài sản bạn kỳ vọng nhận cùng ví</h3>
-          <p className="mt-1 text-sm text-muted-foreground">Hợp đồng đối chiếu đúng những tài sản này lúc giải ngân. Bỏ chọn hết nghĩa là chỉ mua ví.</p>
+          <h3 className="flex items-center gap-1.5 font-semibold">Tài sản bạn kỳ vọng nhận cùng ví
+            <InfoTip text="Lúc giải ngân, hợp đồng kiểm tra đúng những tài sản bạn chọn. Bỏ chọn hết nghĩa là chỉ mua ví." label="Giải thích tài sản kỳ vọng" /></h3>
           {t.assets.length ? (
             <div className="mt-3 space-y-2">
               {t.assets.map((a, i) => (
@@ -121,9 +121,7 @@ function NextAction({ t, role, send, busy }: { t: TradeData; role: Role; send: S
     primary = (
       <div className="space-y-2">
         <h3 className="font-semibold">{ready ? "Ví đã sẵn sàng, chờ người mua nạp tiền" : "Đưa ví về trạng thái sẵn sàng"}</h3>
-        <p className="text-sm text-muted-foreground">
-          {ready ? "Từ lúc người mua nạp tiền, đừng thực hiện thêm giao dịch nào với ví, nếu không người mua được hủy." : "Làm theo từng điểm chưa đạt trong báo cáo. Trang tự cập nhật sau mỗi block."}
-        </p>
+        {ready && <p className="text-sm">Từ lúc người mua nạp tiền, đừng thực hiện giao dịch nào với ví.</p>}
         <p className="pt-1 text-sm">Gửi đường dẫn giao dịch cho người mua:</p>
         <CopyChip value={typeof window !== "undefined" ? window.location.href : ""} />
       </div>
@@ -132,7 +130,6 @@ function NextAction({ t, role, send, busy }: { t: TradeData; role: Role; send: S
     primary = (
       <div className="space-y-3">
         <h3 className="font-semibold">Hoàn tất bàn giao</h3>
-        <p className="text-sm text-muted-foreground">Ai gọi cũng được, kết quả do hợp đồng quyết định. Nếu một điều kiện sai, mọi thay đổi bị hoàn tác và tiền vẫn nằm trong hợp đồng.</p>
         <Confirm
           title="Hợp đồng sẽ làm gì khi hoàn tất"
           action="Hoàn tất bàn giao"
@@ -266,11 +263,11 @@ export function TradeView({ t, role, timeline, timelineLoaded, send, busy }: {
   const done = stepsDone(t.status, ready);
   const audit = t.status === "OPEN"
     ? { title: "Báo cáo kiểm tra ví trước khi nạp tiền", items: readinessChecks(t), clean: "Ví sẵn sàng",
-        note: role === "buyer" ? "Bạn chỉ nạp được tiền khi mọi điều kiện đều đạt." : undefined }
+        note: undefined }
     : t.status === "FUNDED"
     ? { title: "Báo cáo kiểm tra trước khi hoàn tất", items: fundedChecks(t), clean: "Có thể hoàn tất", note: undefined }
     : t.status === "COMPLETED"
-    ? { title: "Kiểm tra lại ví sau bàn giao", items: completedChecks(t), clean: "Ví sạch", note: "Đọc trực tiếp từ ví tại thời điểm hiện tại." }
+    ? { title: "Kiểm tra lại ví sau bàn giao", items: completedChecks(t), clean: "Ví sạch", note: undefined }
     : null;
 
   return (

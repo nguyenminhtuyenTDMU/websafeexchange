@@ -147,9 +147,7 @@ export default function SellPage() {
 
   return (
     <div className="mx-auto max-w-6xl space-y-8 px-4 py-8">
-      <PageHeader title="Niêm yết ví Safe">
-        Bạn phải là owner của ví. Sau khi niêm yết, trang giao dịch sẽ hướng dẫn bạn chuẩn bị ví để người mua nạp tiền.
-      </PageHeader>
+      <PageHeader title="Niêm yết ví Safe" />
 
       <form onSubmit={submit} noValidate className="grid gap-10 lg:grid-cols-[minmax(0,1fr)_320px]">
         <div className="space-y-10">
@@ -181,7 +179,7 @@ export default function SellPage() {
               <Field id="price" label="Giá (ETH)" error={errors.price}>
                 <Input id="price" value={price} onChange={(e) => setPrice(e.target.value)} inputMode="decimal" className="font-mono" />
               </Field>
-              <Field id="deadline" label="Hạn chót" hint="Quá hạn, bất kỳ ai cũng hủy được và tiền về người mua." error={errors.deadline}>
+              <Field id="deadline" label={<>Hạn chót <InfoTip text="Quá hạn mà chưa hoàn tất, bất kỳ ai cũng hủy được và tiền về người mua." label="Giải thích hạn chót" /></>} error={errors.deadline}>
                 <Input id="deadline" type="datetime-local" value={deadline} onChange={(e) => setDeadline(e.target.value)} />
               </Field>
             </div>
@@ -195,7 +193,7 @@ export default function SellPage() {
               </Button>
             </div>
             {assets.length === 0
-              ? <p className="text-sm text-muted-foreground">Không kèm tài sản: chỉ bán quyền kiểm soát ví. Hợp đồng kiểm tra ngay lúc niêm yết rằng ví đang giữ đủ từng tài sản bạn thêm.</p>
+              ? <p className="text-sm text-muted-foreground">Chỉ bán quyền kiểm soát ví.</p>
               : (
                 <ul className="divide-y rounded-lg border bg-card">
                   {assets.map((a, i) => {
@@ -234,8 +232,8 @@ export default function SellPage() {
               <ChevronDown className="h-4 w-4 shrink-0 transition-transform group-data-[state=open]:rotate-180" />
             </CollapsibleTrigger>
             <CollapsibleContent className="space-y-4 border-t px-4 py-4">
-              <Field id="owners" label="Owner sau bàn giao" hint="Mỗi địa chỉ cách nhau bởi dấu phẩy hoặc xuống dòng." error={errors.owners}>
-                <Input id="owners" value={owners} onChange={(e) => { setOwnersTouched(true); setOwners(e.target.value); }} className="font-mono" />
+              <Field id="owners" label="Owner sau bàn giao" error={errors.owners}>
+                <Input id="owners" value={owners} onChange={(e) => { setOwnersTouched(true); setOwners(e.target.value); }} placeholder="0x…, 0x…" className="font-mono" />
               </Field>
               <div className="grid gap-4 sm:grid-cols-2">
                 <Field id="threshold" label={<>Ngưỡng ký sau bàn giao <InfoTip text={TERMS.threshold} label="Giải thích ngưỡng ký" /></>}>
@@ -245,7 +243,7 @@ export default function SellPage() {
                   </Select>
                 </Field>
                 <Field id="handler" label={<>Fallback handler chấp nhận <InfoTip text={TERMS.fallback} label="Giải thích fallback handler" /></>}
-                  hint="Mặc định lấy handler hiện tại của ví." error={errors.handler}>
+                  error={errors.handler}>
                   <Input id="handler" value={handler} onChange={(e) => setHandler(e.target.value)} placeholder={ZERO} className="font-mono" />
                 </Field>
               </div>
@@ -256,7 +254,6 @@ export default function SellPage() {
         <aside className="lg:sticky lg:top-20 lg:self-start">
           <div className="space-y-4 rounded-lg border bg-card px-5 py-5 shadow-sm">
             <h2 className="font-semibold">Niêm yết</h2>
-            <p className="text-sm text-muted-foreground">Ứng dụng mô phỏng giao dịch createTrade trước khi gửi. Nếu hợp đồng sẽ từ chối, bạn thấy lý do ngay và không mất phí gas.</p>
             {me ? (
               <Button type="submit" size="lg" className="w-full" disabled={!!busy}>
                 {busy === "createTrade" && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}Niêm yết ví
@@ -266,7 +263,7 @@ export default function SellPage() {
                 <Wallet className="mr-2 h-4 w-4" />{connecting ? "Đang kết nối…" : "Kết nối ví owner"}
               </Button>
             )}
-            {blocker && <p className={tried ? "text-sm text-destructive" : "text-sm text-muted-foreground"} role="status">{blocker}</p>}
+            {blocker && me && <p className={tried ? "text-sm text-destructive" : "text-sm text-muted-foreground"} role="status">{blocker}</p>}
           </div>
         </aside>
       </form>

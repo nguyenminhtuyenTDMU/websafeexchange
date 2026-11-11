@@ -27,10 +27,10 @@ export default function HistoryPage({ params }: { params: { address?: string } }
 
   return (
     <div className="mx-auto max-w-6xl space-y-6 px-4 py-8">
-      <PageHeader title="Lịch sử theo địa chỉ">Mọi giao dịch mà một địa chỉ đã tham gia, với vai trò người bán, người mua hoặc là ví được bán.</PageHeader>
+      <PageHeader title="Lịch sử theo địa chỉ" />
 
       <form className="space-y-1.5" onSubmit={(e) => { e.preventDefault(); if (isAddress(value)) navigate(`/history/${value}`); }}>
-        <label htmlFor="addr" className="text-sm font-medium">Địa chỉ</label>
+        <label htmlFor="addr" className="text-sm font-medium">Địa chỉ người bán, người mua hoặc ví Safe</label>
         <div className="flex flex-col gap-2 sm:flex-row">
           <Input id="addr" value={input} onChange={(e) => setInput(e.target.value)} placeholder="0x…" aria-invalid={invalid}
             className="font-mono sm:max-w-xl" />

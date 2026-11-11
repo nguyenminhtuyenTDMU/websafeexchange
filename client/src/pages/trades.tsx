@@ -23,8 +23,7 @@ export default function TradesPage() {
             <Label htmlFor="all">Gồm cả đã hoàn tất và đã hủy</Label>
           </div>
         }>
-        Đọc trực tiếp từ sự kiện của hợp đồng ký quỹ trên Sepolia, không qua máy chủ.
-        {data && <span className="tabular"> Đã quét đến block {data.latest.toString()}.</span>}
+        {data && <span className="tabular">Đồng bộ đến block {data.latest.toString()}</span>}
       </PageHeader>
       {isLoading ? <div className="flex justify-center py-12"><Loader2 className="h-6 w-6 animate-spin" aria-label="Đang quét sự kiện" /></div>
         : error ? <p className="text-destructive">Không quét được sự kiện: {errorMessage(error)}</p>

@@ -7,6 +7,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { ThemeProvider } from "@/components/theme-provider";
 import { Layout } from "@/components/layout";
+import { GuideProvider } from "@/components/guide";
 import Home from "@/pages/home";
 import SellPage from "@/pages/sell";
 import TradesPage from "@/pages/trades";
@@ -31,6 +32,7 @@ export default function App() {
           <TooltipProvider>
             <Toaster />
             <Router hook={useHashLocation}>
+              <GuideProvider>
               <Layout>
                 <Switch>
                   <Route path="/" component={Home} />
@@ -43,6 +45,7 @@ export default function App() {
                   <Route component={NotFound} />
                 </Switch>
               </Layout>
+              </GuideProvider>
             </Router>
           </TooltipProvider>
         </ThemeProvider>

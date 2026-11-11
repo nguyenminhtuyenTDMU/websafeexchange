@@ -1,6 +1,7 @@
 import { Link, useLocation } from "wouter";
 import { useState } from "react";
-import { Menu } from "lucide-react";
+import { CircleHelp, Menu } from "lucide-react";
+import { useGuide } from "./guide";
 import { ConnectWallet } from "./connect-wallet";
 import { ThemeToggle } from "./theme-toggle";
 import { Sheet, SheetContent, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
@@ -25,6 +26,7 @@ export function Mark({ className }: { className?: string }) {
 export function Header() {
   const [location] = useLocation();
   const [open, setOpen] = useState(false);
+  const guide = useGuide();
   const active = (href: string) => location === href || location.startsWith(href + "/") || (href === "/trades" && location.startsWith("/trade/"));
 
   return (
@@ -50,6 +52,10 @@ export function Header() {
           <span className="hidden items-center gap-1.5 rounded-full border border-shell-foreground/20 px-2.5 py-1 text-xs text-shell-muted sm:flex">
             <span className="h-1.5 w-1.5 rounded-full bg-signal" aria-hidden />Sepolia
           </span>
+          <button type="button" onClick={guide.open} aria-label="Xem hướng dẫn"
+            className="flex items-center gap-1.5 rounded-md p-2 text-sm font-medium text-shell-muted hover:bg-shell-foreground/10 hover:text-shell-foreground">
+            <CircleHelp className="h-[18px] w-[18px]" /><span className="hidden lg:inline">Hướng dẫn</span>
+          </button>
           <ThemeToggle />
           <ConnectWallet />
           <Sheet open={open} onOpenChange={setOpen}>
