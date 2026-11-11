@@ -51,11 +51,11 @@ export function CopyChip({ value }: { value: string }) {
   );
 }
 
-export function InfoTip({ text, label }: { text: string; label: string }) {
+export function InfoTip({ text, label, className }: { text: React.ReactNode; label: string; className?: string }) {
   return (
     <Tooltip>
       <TooltipTrigger asChild>
-        <button type="button" aria-label={label} className="text-muted-foreground hover:text-foreground">
+        <button type="button" aria-label={label} className={cn("text-muted-foreground hover:text-foreground", className)}>
           <Info className="h-3.5 w-3.5" />
         </button>
       </TooltipTrigger>
@@ -155,7 +155,10 @@ function Finding({ c, open }: { c: Check; open?: boolean }) {
           <span className={cn("text-[15px]", !c.ok && !c.pending ? "font-semibold" : "font-medium")}>
             {c.label}{c.asset && <> <AssetLabel a={c.asset} /></>}
           </span>
-          {c.hint && <InfoTip text={c.hint} label={`Giải thích: ${c.label}`} />}
+          {(c.hint || (c.detail && (c.ok || c.pending))) && (
+            <InfoTip label={`Giải thích: ${c.label}`}
+              text={<>{c.hint}{c.hint && c.detail && (c.ok || c.pending) && <br />}{(c.ok || c.pending) && c.detail}</>} />
+          )}
           {c.threat && (
             <Tooltip>
               <TooltipTrigger asChild>
@@ -165,7 +168,7 @@ function Finding({ c, open }: { c: Check; open?: boolean }) {
             </Tooltip>
           )}
         </div>
-        {c.detail && <p className="mt-0.5 break-words text-[13px] text-muted-foreground tabular">{c.detail.split(/(0x[0-9a-fA-F]+…[0-9a-fA-F]+|0x[0-9a-fA-F]{40})/).map((part, i) => i % 2 ? <span key={i} className="whitespace-nowrap font-mono text-[12px]">{part}</span> : part)}</p>}
+        {c.detail && !c.ok && !c.pending && <p className="mt-0.5 break-words text-[13px] text-muted-foreground tabular">{c.detail.split(/(0x[0-9a-fA-F]+…[0-9a-fA-F]+|0x[0-9a-fA-F]{40})/).map((part, i) => i % 2 ? <span key={i} className="whitespace-nowrap font-mono text-[12px]">{part}</span> : part)}</p>}
         {open && !c.ok && !c.pending && c.fix && (
           <ol className="mt-2 space-y-2 border-l border-border pl-3 text-sm">
             {c.fix.map((f, i) => (

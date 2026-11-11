@@ -102,7 +102,7 @@ function NextAction({ t, role, send, busy }: { t: TradeData; role: Role; send: S
           needsAck="Tôi hiểu: tiền chỉ đến người bán khi hợp đồng xác nhận ví sạch; nếu người bán động vào ví sau lúc này, tôi được hủy và lấy lại tiền."
           onConfirm={() => send("deposit", [t.id, t.termsHash, expected.map((a) => ({ checkerId: a.checkerId, token: a.token, value: a.value }))], t.price)}
           trigger={
-            <Button size="lg" disabled={!ready || expired || !!busy}>{spin("deposit")}Xem lại và nạp {eth(t.price)}</Button>
+            <Button size="lg" disabled={!ready || expired || !!busy}>{spin("deposit")}{ready ? `Xem lại và nạp ${eth(t.price)}` : "Chờ ví sẵn sàng"}</Button>
           }>
           <Ledger rows={[
             ["Bạn trả", <span className="font-mono font-semibold">{eth(t.price)}</span>],
@@ -113,23 +113,21 @@ function NextAction({ t, role, send, busy }: { t: TradeData; role: Role; send: S
             ["Hạn chót", dateTime(t.deadline)],
           ]} />
         </Confirm>
-        {!ready && <p className="text-sm text-muted-foreground">Chưa nạp được: ví chưa đạt mọi điều kiện trong báo cáo kiểm tra.</p>}
         {expired && <p className="text-sm text-destructive">Giao dịch đã quá hạn.</p>}
       </div>
     );
   } else if (role === "seller" && t.status === "OPEN") {
     primary = (
       <div className="space-y-2">
-        <h3 className="font-semibold">{ready ? "Ví đã sẵn sàng, chờ người mua nạp tiền" : "Đưa ví về trạng thái sẵn sàng"}</h3>
-        {ready && <p className="text-sm">Từ lúc người mua nạp tiền, đừng thực hiện giao dịch nào với ví.</p>}
-        <p className="pt-1 text-sm">Gửi đường dẫn giao dịch cho người mua:</p>
+        <h3 className="flex items-center gap-1.5 font-semibold">{ready ? "Ví đã sẵn sàng, chờ người mua nạp tiền" : "Đưa ví về trạng thái sẵn sàng"}
+          {ready && <InfoTip text="Từ lúc người mua nạp tiền, đừng thực hiện giao dịch nào với ví: một giao dịch bất kỳ sẽ cho người mua quyền hủy." label="Lưu ý cho người bán" />}</h3>
+        <p className="pt-1 text-sm font-medium">Đường dẫn cho người mua</p>
         <CopyChip value={typeof window !== "undefined" ? window.location.href : ""} />
       </div>
     );
   } else if (t.status === "FUNDED") {
     primary = (
       <div className="space-y-3">
-        <h3 className="font-semibold">Hoàn tất bàn giao</h3>
         <Confirm
           title="Hợp đồng sẽ làm gì khi hoàn tất"
           action="Hoàn tất bàn giao"
@@ -160,8 +158,7 @@ function NextAction({ t, role, send, busy }: { t: TradeData; role: Role; send: S
   if (role === "buyer" && t.status === "FUNDED" && suspicious) {
     primary = (
       <div className="space-y-3">
-        <h3 className="font-semibold text-destructive">Ví đã bị thay đổi sau khi bạn nạp tiền</h3>
-        <p className="text-sm text-muted-foreground">Bàn giao không thể hoàn tất. Hủy giao dịch để {eth(t.price)} được ghi có lại cho bạn, rồi rút về ví.</p>
+        <h3 className="font-semibold text-destructive">Bàn giao bị khóa</h3>
         <Confirm destructive title="Hủy và lấy lại tiền?" action="Hủy và lấy lại tiền" onConfirm={() => send("cancelByBuyer", [t.id])}
           trigger={<Button size="lg" variant="destructive" disabled={!!busy}>{spin("cancelByBuyer")}Hủy và lấy lại {eth(t.price)}</Button>}>
           <p>Hợp đồng đã ghi nhận ví bị thay đổi hoặc thiếu tài sản kỳ vọng. {refund}</p>
@@ -208,48 +205,37 @@ function NextAction({ t, role, send, busy }: { t: TradeData; role: Role; send: S
 function StateBand({ t, role }: { t: TradeData; role: Role }) {
   if (t.status === "FUNDED" && (t.currentNonce !== t.nonceAtFunding || t.handoverAssetMask !== 0n)) {
     return (
-      <div role="alert" className="flex gap-3 border-b bg-destructive/10 px-5 py-4 text-sm sm:px-7">
-        <Lock className="mt-0.5 h-5 w-5 shrink-0 text-destructive" aria-hidden />
-        <div>
-          <p className="font-semibold text-destructive">Ví đã bị động vào sau khi nạp tiền</p>
-          <p className="mt-0.5">
-            {t.currentNonce !== t.nonceAtFunding ? `Nonce của ví đổi từ ${t.nonceAtFunding} thành ${t.currentNonce}. ` : "Ví thiếu tài sản kỳ vọng. "}
-            {role === "buyer" ? "Hợp đồng khóa việc bàn giao; bạn được hủy để lấy lại tiền." : "Hợp đồng khóa việc bàn giao; người mua được hủy để lấy lại tiền."}
-          </p>
-        </div>
+      <div role="alert" className="flex items-center gap-3 border-b bg-destructive/10 px-5 py-3.5 text-sm sm:px-7">
+        <Lock className="h-5 w-5 shrink-0 text-destructive" aria-hidden />
+        <p className="flex items-center gap-1.5 font-semibold text-destructive">Ví đã bị động vào sau khi nạp tiền
+          <InfoTip label="Chi tiết" text={`${t.currentNonce !== t.nonceAtFunding ? `Nonce của ví đổi từ ${t.nonceAtFunding} thành ${t.currentNonce}.` : "Ví thiếu tài sản kỳ vọng."} Hợp đồng khóa việc bàn giao; ${role === "buyer" ? "bạn" : "người mua"} được hủy để lấy lại tiền.`} /></p>
       </div>
     );
   }
   if (t.status === "FUNDED") {
     return (
-      <div className="flex gap-3 border-b bg-st-funded/10 px-5 py-4 text-sm sm:px-7">
-        <Lock className="mt-0.5 h-5 w-5 shrink-0 text-st-funded" aria-hidden />
-        <div>
-          <p className="font-semibold text-st-funded">Ví đang được đóng băng</p>
-          <p className="mt-0.5">
-            {role === "seller" ? "Người mua đã nạp tiền. Đừng thực hiện thêm giao dịch nào với ví: một giao dịch bất kỳ sẽ khóa việc bàn giao và cho phép người mua hủy."
-              : `Hợp đồng đã ghi lại nonce ${t.nonceAtFunding} của ví lúc nạp tiền. Nonce đổi nghĩa là người bán đã động vào ví.`}
-          </p>
-        </div>
+      <div className="flex items-center gap-3 border-b bg-st-funded/10 px-5 py-3.5 text-sm sm:px-7">
+        <Lock className="h-5 w-5 shrink-0 text-st-funded" aria-hidden />
+        <p className="flex items-center gap-1.5 font-semibold text-st-funded">{role === "seller" ? "Ví đang được đóng băng: đừng động vào ví" : "Ví đang được đóng băng"}
+          <InfoTip label="Chi tiết" text={`Hợp đồng đã ghi lại nonce ${t.nonceAtFunding} của ví lúc nạp tiền. Một giao dịch bất kỳ của người bán sẽ khóa việc bàn giao và cho người mua quyền hủy.`} /></p>
       </div>
     );
   }
   if (t.status === "COMPLETED") {
     return (
-      <div className="flex gap-3 border-b bg-st-done/10 px-5 py-4 text-sm sm:px-7">
-        <CircleCheck className="mt-0.5 h-5 w-5 shrink-0 text-st-done" aria-hidden />
-        <div>
-          <p className="font-semibold text-st-done">Ví đã được bàn giao sạch</p>
-          <p className="mt-0.5">{role === "buyer" ? "Bạn là owner duy nhất cùng tập owner đã thỏa thuận; hợp đồng ký quỹ đã tự gỡ khỏi ví." : "Hợp đồng đã chuyển quyền kiểm soát và ghi có tiền cho người bán."}</p>
-        </div>
+      <div className="flex items-center gap-3 border-b bg-st-done/10 px-5 py-3.5 text-sm sm:px-7">
+        <CircleCheck className="h-5 w-5 shrink-0 text-st-done" aria-hidden />
+        <p className="flex items-center gap-1.5 font-semibold text-st-done">Ví đã được bàn giao sạch
+          <InfoTip label="Chi tiết" text="Chỉ còn tập owner đã thỏa thuận; hợp đồng ký quỹ đã tự gỡ khỏi ví và ghi có tiền cho người bán." /></p>
       </div>
     );
   }
   if (t.status === "CANCELLED") {
     return (
-      <div className="flex gap-3 border-b bg-muted px-5 py-4 text-sm sm:px-7">
-        <Ban className="mt-0.5 h-5 w-5 shrink-0 text-st-cancel" aria-hidden />
-        <p><span className="font-semibold">Giao dịch đã hủy.</span> Ví đã được giải phóng; khoản nạp (nếu có) đã ghi có cho người mua để rút.</p>
+      <div className="flex items-center gap-3 border-b bg-muted px-5 py-3.5 text-sm sm:px-7">
+        <Ban className="h-5 w-5 shrink-0 text-st-cancel" aria-hidden />
+        <p className="flex items-center gap-1.5 font-semibold">Giao dịch đã hủy
+          <InfoTip label="Chi tiết" text="Ví đã được giải phóng; khoản nạp (nếu có) đã ghi có cho người mua để rút." /></p>
       </div>
     );
   }

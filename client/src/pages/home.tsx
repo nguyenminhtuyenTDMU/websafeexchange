@@ -3,7 +3,7 @@ import { Link, useLocation } from "wouter";
 import { ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Addr, ExternalLinkText, StatusBadge } from "@/components/common";
+import { Addr, ExternalLinkText, InfoTip, StatusBadge } from "@/components/common";
 import { useEvents } from "@/hooks/use-escrow-data";
 import { ESCROW, explorerAddress } from "@/lib/config";
 import { eth } from "@/lib/format";
@@ -62,9 +62,6 @@ export default function Home() {
             <h1 className="text-[32px] font-semibold leading-[1.15] tracking-tight sm:text-[40px]">
               Mua bán quyền kiểm soát ví Safe, tiền chỉ giải ngân khi ví đã sạch
             </h1>
-            <p className="max-w-xl text-[17px] leading-relaxed text-muted-foreground">
-              Hợp đồng ký quỹ tự chuyển ví và tự kiểm tra không còn cửa hậu, trong cùng giao dịch trả tiền cho người bán.
-            </p>
           </div>
           <div className="flex flex-wrap gap-3">
             <Button asChild size="lg"><Link href="/sell">Niêm yết ví của bạn</Link></Button>
@@ -84,21 +81,20 @@ export default function Home() {
           <h2 id="how" className="text-lg font-semibold">Hợp đồng kiểm tra gì ở mỗi bước</h2>
           <ol className="mt-6 space-y-0">
             {LIFECYCLE.map((s, i) => (
-              <li key={s.step} className="relative grid grid-cols-[1.25rem_1fr] gap-4 pb-7 last:pb-0">
+              <li key={s.step} className="relative grid grid-cols-[1.25rem_1fr] gap-4 pb-6 last:pb-0">
                 {i < LIFECYCLE.length - 1 && <span className="absolute left-[9px] top-6 h-[calc(100%-1rem)] w-px bg-shell-foreground/20" aria-hidden />}
                 <span className={`mt-1 h-[18px] w-[18px] rounded-full ring-4 ring-shell ${s.color}`} aria-hidden />
-                <div>
-                  <div className="flex flex-wrap items-baseline gap-x-2">
-                    <span className="font-semibold">{s.step}</span>
-                    <span className="text-sm text-shell-muted">{s.who}</span>
-                  </div>
-                  <p className="mt-1 text-[15px] leading-relaxed text-shell-foreground/85">{s.checks}</p>
+                <div className="flex flex-wrap items-center gap-x-2">
+                  <span className="font-semibold">{s.step}</span>
+                  <span className="rounded-full border border-shell-foreground/20 px-2 py-px text-xs text-shell-muted">{s.who}</span>
+                  <InfoTip text={s.checks} label={`Hợp đồng kiểm tra gì ở bước ${s.step}`} className="text-shell-muted hover:text-shell-foreground" />
                 </div>
               </li>
             ))}
           </ol>
           <div className="mt-8 space-y-1 border-t border-shell-foreground/15 pt-5 text-sm">
-            <p className="text-shell-muted">Hợp đồng ký quỹ (không có owner, không nâng cấp được)</p>
+            <p className="flex items-center gap-1.5 text-shell-muted">Hợp đồng ký quỹ
+              <InfoTip text="Không có owner, không nâng cấp được: không ai sửa được luật sau khi triển khai." label="Về hợp đồng ký quỹ" className="text-shell-muted hover:text-shell-foreground" /></p>
             <Addr a={ESCROW} full className="text-shell-foreground [&_a]:text-shell-foreground [&_button]:text-shell-muted [&_button:hover]:bg-shell-foreground/10" />
             <p className="pt-1 text-shell-muted [&_a]:text-shell-foreground">
               <ExternalLinkText href={`${explorerAddress(ESCROW)}#code`}>Mã nguồn đã xác minh trên Etherscan</ExternalLinkText>

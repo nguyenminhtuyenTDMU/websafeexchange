@@ -165,9 +165,9 @@ export default function SellPage() {
             <Field id="wallet" label="Địa chỉ ví Safe" error={show("wallet")}>
               <Input id="wallet" value={wallet} onChange={(e) => setWallet(e.target.value)} placeholder="0x…" className="font-mono" aria-invalid={!!show("wallet")} />
             </Field>
-            <div className="rounded-lg border bg-card px-4 py-3">
+            <div className={`rounded-lg border bg-card px-4 py-3 ${isAddress(w) ? "" : "hidden"}`}>
               <h3 className="mb-2 text-sm font-semibold">Kiểm tra ví</h3>
-              {!isAddress(w) ? <p className="text-sm text-muted-foreground">Nhập địa chỉ ví để kiểm tra.</p>
+              {!isAddress(w) ? null
                 : pre.isFetching && !p ? <p className="text-sm text-muted-foreground"><Loader2 className="mr-1.5 inline h-4 w-4 animate-spin" aria-hidden />Đang đọc ví trên Sepolia…</p>
                 : p ? (
                   <ul className="space-y-1.5">
@@ -196,14 +196,13 @@ export default function SellPage() {
 
           <section className="space-y-4">
             <div className="flex items-center justify-between gap-4">
-              <h2 className="text-lg font-semibold">Tài sản chào bán kèm ví</h2>
+              <h2 className="flex items-center gap-1.5 text-lg font-semibold">Tài sản chào bán kèm ví
+                <InfoTip text="Không thêm tài sản nghĩa là chỉ bán quyền kiểm soát ví. Với mỗi tài sản bạn thêm, hợp đồng kiểm tra ngay rằng ví đang giữ đủ." label="Giải thích tài sản chào bán" /></h2>
               <Button type="button" variant="outline" size="sm" onClick={() => setAssets((a) => [...a, { checkerId: 0, token: "", value: "" }])}>
                 <Plus className="mr-1 h-4 w-4" />Thêm tài sản
               </Button>
             </div>
-            {assets.length === 0
-              ? <p className="text-sm text-muted-foreground">Chỉ bán quyền kiểm soát ví.</p>
-              : (
+            {assets.length > 0 && (
                 <ul className="divide-y rounded-lg border bg-card">
                   {assets.map((a, i) => {
                     const c = CHECKERS[a.checkerId];
