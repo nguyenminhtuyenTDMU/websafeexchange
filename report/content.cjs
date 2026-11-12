@@ -710,13 +710,48 @@ const placeholders = [
   { p: 'Chương 5 đã trình bày năm lớp kiểm chứng của hệ thống. Kiểm thử theo kịch bản xác nhận từng cơ chế phòng thủ; kiểm thử fuzz xác nhận các bất biến an toàn trên không gian kịch bản rộng hơn và đã chứng minh giá trị khi tìm ra lỗ hổng thiết kế ở phương án ban đầu; Slither và Mythril không phát hiện lớp lỗi nào nằm ngoài mô hình nguy cơ; kiểm thử đầu-cuối và thực nghiệm trên Sepolia xác nhận hệ thống hoạt động trọn vòng đời trên giao diện và trên mạng thật.' },
   { h1: 'KẾT LUẬN VÀ ĐỀ NGHỊ' },
   { h2: '1. Kết quả đạt được' },
-  { p: '[Viết cuối cùng.]' },
+  { p: 'Đề tài đã xây dựng hoàn chỉnh hệ thống CleanHandover theo các mục tiêu của đề cương. Đối chiếu với từng mục tiêu cụ thể:' },
+  { ul: [
+    '**Nghiên cứu kiến trúc Safe:** đã phân tích cơ chế owner, ngưỡng ký, module, guard, module guard, fallback handler và các khe lưu trữ ẩn của Safe 1.3.0, 1.4.1 và 1.5.0, từ đó xác định các bề mặt tấn công trong quá trình chuyển giao (Chương 1, Chương 2).',
+    '**Hợp đồng ký quỹ xác minh nguyên tử:** hàm `finalizeHandover` đổi tập owner, tự gỡ quyền module của hợp đồng, kiểm tra lại toàn bộ điều kiện bàn giao sạch và tài sản rồi mới ghi có cho người bán, tất cả trong một giao dịch. Một điều kiện sai thì mọi thay đổi bị hoàn tác (Chương 3).',
+    '**Xác minh tài sản:** bốn bộ kiểm tra cho ETH, ERC-20, ERC-721 và quyền owner theo Ownable; người mua tự khai báo tập tài sản kỳ vọng khi nạp tiền, và hợp đồng đối chiếu đúng tập đó lúc giải ngân.',
+    '**Kiến trúc hai trục:** hợp đồng ký quỹ chỉ phụ thuộc vào giao diện `IWalletVerifier` và `IAssetChecker`, kèm adapter tham chiếu `SafeWalletVerifier`. Hợp đồng không có khóa quản trị và không thể nâng cấp.',
+    '**Mô hình nguy cơ và kiểm thử:** 13 kịch bản tấn công, mỗi kịch bản có cơ chế phòng thủ và bằng chứng kiểm chứng hoặc được xác định rõ là giới hạn. Hệ thống vượt qua 38 ca kiểm thử theo kịch bản và 7.000 kịch bản fuzz trên ba biến thể Safe mà không vi phạm bất biến nào; Slither và Mythril không phát hiện lỗi nằm ngoài mô hình nguy cơ (Chương 5).',
+    '**Dapp và trợ lý hướng dẫn bàn giao:** dapp chạy hoàn toàn trong trình duyệt, cho phép người bán và người mua thực hiện trọn quy trình qua ví; trợ lý hiển thị đạt / chưa đạt của từng điều kiện theo thời gian thực, mỗi điều kiện gắn với một kịch bản tấn công và một hướng dẫn khắc phục (Chương 4).',
+    '**Giao diện tra cứu:** ba màn hình danh sách giao dịch, chi tiết giao dịch và lịch sử theo địa chỉ, đọc từ sự kiện của hợp đồng, không cần máy chủ hay hợp đồng bổ sung.',
+    '**Triển khai công khai:** các hợp đồng chạy trên Sepolia với mã nguồn đã xác minh trên Etherscan; một giao dịch thật đã chạy trọn vòng đời trên mạng này; dapp truy cập được tại https://nguyenminhtuyentdmu.github.io/websafeexchange/; mã nguồn kèm hướng dẫn cài đặt, sử dụng và tự kiểm chứng được công bố trên GitHub.',
+  ] },
+  { p: 'Kết quả đáng chú ý nhất về mặt phương pháp là vai trò của kiểm thử fuzz. Phương án thiết kế ban đầu, trong đó người bán tự thực hiện bàn giao còn hợp đồng chỉ kiểm tra, đã vượt qua toàn bộ kiểm thử viết tay nhưng bị kiểm thử fuzz tìm ra phản ví dụ. Từ đó đề tài rút ra nguyên tắc thiết kế: chỉ bên giữ quyền điều khiển tới cuối giao dịch mới bảo đảm được trạng thái cuối, và chuyển sang phương án hợp đồng ký quỹ tự bàn giao (mục 2.5).' },
+
   { h2: '2. Hạn chế' },
-  { p: '[Viết cuối cùng. Nguồn: mục 2.7 Giới hạn đã biết.]' },
+  { ul: [
+    '**Quyền đã ủy thác ra ngoài ví** như allowance ERC-20, chữ ký đã lưu, lệnh đã ký trên sàn hay Permit2 vẫn còn hiệu lực sau bàn giao; phương pháp đối chiếu trạng thái ví không phát hiện được các quyền này.',
+    '**Token tự thay đổi số dư** (rebase, thu phí khi chuyển) làm phép so sánh số dư không chính xác.',
+    '**Số lượng giới hạn:** tối đa 10 owner mới và 20 tài sản mỗi giao dịch để chặn chi phí gas.',
+    '**Loại tài sản:** chưa xác minh được tài sản không đọc trực tiếp từ ví như vị thế DeFi, tài sản đang stake hay quyền biểu quyết DAO.',
+    '**Một mạng cho mỗi giao dịch:** cùng địa chỉ ví trên mạng khác không được xét.',
+    '**Phạm vi thực nghiệm:** giao dịch thật trên Sepolia mới chạy với một cấu hình (một owner mới, một tài sản ETH) và trên phiên bản hợp đồng trước; luồng đầy đủ qua dapp được kiểm thử tự động trên mạng cục bộ. Mythril phủ thấp ở các nhánh phụ thuộc lời gọi ra hợp đồng ngoài.',
+    '**Dapp:** chỉ kết nối ví cài trong trình duyệt (MetaMask và ví tương thích EIP-1193), chưa hỗ trợ ví di động qua WalletConnect; giao diện tra cứu quét lại toàn bộ sự kiện mỗi lần tải nên chỉ phù hợp quy mô thử nghiệm.',
+    '**Chưa được kiểm toán độc lập:** các kết quả kiểm chứng do tác giả tự thực hiện.',
+  ] },
+
   { h2: '3. Hướng phát triển' },
-  { p: '[Viết cuối cùng.]' },
+  { ul: [
+    '**Hồ sơ uy tín on-chain và khu vực niêm yết, cộng đồng** như đề cương đã định hướng: tổng hợp lịch sử giao dịch của từng địa chỉ từ sự kiện của hợp đồng để người mua đánh giá người bán, và nơi niêm yết ví công khai.',
+    '**Mở rộng trục tài sản:** viết thêm bộ kiểm tra cho vị thế DeFi, tài sản đang stake, quyền quản trị DAO và các loại token khác. Kiến trúc hai trục cho phép thêm mà không sửa hợp đồng ký quỹ hiện có, chỉ cần triển khai một phiên bản mới.',
+    '**Mở rộng trục ví:** adapter cho các loại ví hợp đồng khác ngoài Safe, ví dụ các tài khoản theo chuẩn ERC-4337.',
+    '**Giảm rủi ro quyền đã ủy thác:** kiểm tra allowance đối với các địa chỉ chi tiêu phổ biến, trạng thái Permit2 và vô hiệu hóa chữ ký đã lưu trong ví Safe như một phần của bàn giao.',
+    '**Bàn giao đa mạng:** điều phối việc bàn giao đồng thời cùng một địa chỉ ví trên nhiều mạng.',
+    '**Hạ tầng và trải nghiệm:** dùng subgraph trên The Graph cho giao diện tra cứu, hỗ trợ WalletConnect cho ví di động.',
+    '**Kiểm chứng sâu hơn:** kiểm chứng hình thức (formal verification) các bất biến an toàn và kiểm toán độc lập trước khi triển khai trên mạng chính.',
+  ] },
+
   { h2: '4. Đề nghị' },
-  { p: '[Viết cuối cùng.]' },
+  { ul: [
+    'Hệ thống hiện là sản phẩm nghiên cứu chạy trên mạng thử nghiệm. Trước khi dùng với tài sản thật trên mạng chính, cần kiểm toán độc lập và thử nghiệm với nhiều cấu hình ví, nhiều loại tài sản hơn.',
+    'Đề tài có thể dùng làm tài liệu tham khảo cho học phần về blockchain và an toàn hợp đồng thông minh, đặc biệt ở phần mô hình hóa nguy cơ và kiểm thử fuzz dựa trên bất biến.',
+    'Mã nguồn được công bố công khai; tôi mong nhận được góp ý của quý thầy cô và người dùng để tiếp tục hoàn thiện hệ thống theo các hướng phát triển nêu trên.',
+  ] },
 ];
 
 // Phụ lục (đánh số bảng theo chữ cái phụ lục: Bảng A.1, B.1, ...)
