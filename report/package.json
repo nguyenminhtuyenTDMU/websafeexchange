@@ -12,5 +12,8 @@
   "type": "commonjs",
   "dependencies": {
     "docx": "^9.5.1"
+  },
+  "devDependencies": {
+    "pptxgenjs": "^4.0.1"
   }
 }
