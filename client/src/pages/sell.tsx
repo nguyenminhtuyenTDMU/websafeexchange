@@ -4,6 +4,7 @@ import { useAccount, useConnect, usePublicClient } from "wagmi";
 import { useQuery } from "@tanstack/react-query";
 import { isAddress, parseEther, parseEventLogs, type Address } from "viem";
 import { ChevronDown, CircleCheck, CircleX, Loader2, Plus, Trash2, Wallet } from "lucide-react";
+import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -214,8 +215,15 @@ export default function SellPage() {
                             <SelectTrigger aria-label="Loại tài sản"><SelectValue /></SelectTrigger>
                             <SelectContent>{CHECKERS.map((x) => <SelectItem key={x.id} value={String(x.id)}>{x.name}</SelectItem>)}</SelectContent>
                           </Select>
-                          {c.needsToken ? <Input aria-label="Địa chỉ hợp đồng token" placeholder="Địa chỉ hợp đồng 0x…" value={a.token} onChange={(e) => set({ token: e.target.value })} className="font-mono placeholder:font-sans" /> : <span className="hidden sm:block" />}
-                          {c.valueLabel ? <Input aria-label={c.valueLabel} placeholder={c.valueLabel} value={a.value} onChange={(e) => set({ value: e.target.value })} className="font-mono placeholder:font-sans" /> : <span className="hidden sm:block" />}
+                          {c.needsToken && <Input aria-label="Địa chỉ hợp đồng token" placeholder="Địa chỉ hợp đồng 0x…" value={a.token} onChange={(e) => set({ token: e.target.value })} className={cn("font-mono placeholder:font-sans", !c.valueLabel && "sm:col-span-2")} />}
+                          {c.valueLabel && (
+                            // ETH không cần địa chỉ token: ô số lượng chiếm cả hai cột và có đơn vị ngay trong ô
+                            <div className={cn("relative", !c.needsToken && "sm:col-span-2")}>
+                              <Input aria-label={c.valueLabel} placeholder={c.id === 0 ? "Số lượng tối thiểu, ví dụ 0.5" : c.valueLabel} value={a.value} onChange={(e) => set({ value: e.target.value })}
+                                className={cn("font-mono placeholder:font-sans", c.id === 0 && "pr-12")} />
+                              {c.id === 0 && <span className="pointer-events-none absolute inset-y-0 right-3 flex items-center text-sm font-medium text-muted-foreground" aria-hidden>ETH</span>}
+                            </div>
+                          )}
                           <Button type="button" variant="ghost" size="icon" aria-label="Xóa tài sản" onClick={() => setAssets((all) => all.filter((_, j) => j !== i))}>
                             <Trash2 className="h-4 w-4" />
                           </Button>

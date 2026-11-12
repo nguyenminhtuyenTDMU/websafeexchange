@@ -267,8 +267,8 @@ export function AuditReport({ title, items, cleanLabel, blocked, expandPassed }:
         <Seal clean={clean} label={cleanLabel} failing={failing.length} blocked={blocked} />
       </header>
       <p className="flex flex-wrap items-center gap-x-3 gap-y-1.5 pb-3 text-xs text-muted-foreground" aria-label="Chú giải">
-        <span className="flex items-center gap-1"><PassPill /> ví đúng yêu cầu</span>
-        <span className="flex items-center gap-1"><FailPill /> cần xử lý</span>
+        {passed.length > 0 && <span className="flex items-center gap-1"><PassPill /> ví đúng yêu cầu</span>}
+        {failing.length > 0 && <span className="flex items-center gap-1"><FailPill /> cần xử lý</span>}
         {pending.length > 0 && <span className="flex items-center gap-1"><ContractPill /> hợp đồng tự làm khi hoàn tất</span>}
         <span className="flex items-center gap-1"><span className="rounded border px-1.5 py-px text-[11px] font-medium">T1–T8</span> kịch bản gian lận bị chặn</span>
       </p>
