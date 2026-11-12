@@ -5,8 +5,8 @@ Cấu hình compiler: `v0.8.24+commit.e11b9ed9`, EVM version `cancun`, optimizer
 
 ## Bản hiện hành (v2.1, người mua khai báo tập tài sản kỳ vọng)
 
-Escrow triển khai lại 09/11/2026 sau khi `deposit` nhận thêm tập tài sản kỳ vọng của người mua (commit `e5cb946`).
-Đã kiểm tra on-chain: bytecode khớp `remix/CleanHandover_flat.sol` tại commit `e5cb946` (trừ metadata), escrow nối đúng
+Escrow triển khai lại 09/11/2026 sau khi `deposit` nhận thêm tập tài sản kỳ vọng của người mua (commit `c245e0d`).
+Đã kiểm tra on-chain: bytecode khớp `remix/CleanHandover_flat.sol` tại commit `c245e0d` (trừ metadata), escrow nối đúng
 verifier và 4 checker. Verifier (07/11/2026) và bốn asset checker (30/10/2026) dùng lại, mã không đổi.
 
 | Hợp đồng | Vai trò | Địa chỉ |
@@ -31,7 +31,7 @@ Tham số constructor:
 
 | Hợp đồng | Địa chỉ | Lý do |
 |---|---|---|
-| `CleanHandoverEscrow` v2 (07/11/2026) | [`0x256d891d310F76Fb8D2F9357CbEc987412f241A4`](https://sepolia.etherscan.io/address/0x256d891d310F76Fb8D2F9357CbEc987412f241A4) | Người bán khai báo tài sản, người mua chỉ xác nhận bằng `termsHash`. Thay bằng v2.1 cho đúng đề cương. Giao dịch thật #1 (`docs/SEPOLIA_DEMO.md`) chạy trên bản này. Đã verify (commit `7bfa486`). |
+| `CleanHandoverEscrow` v2 (07/11/2026) | [`0x256d891d310F76Fb8D2F9357CbEc987412f241A4`](https://sepolia.etherscan.io/address/0x256d891d310F76Fb8D2F9357CbEc987412f241A4) | Người bán khai báo tài sản, người mua chỉ xác nhận bằng `termsHash`. Thay bằng v2.1 cho đúng đề cương. Giao dịch thật #1 (`docs/SEPOLIA_DEMO.md`) chạy trên bản này. Đã verify (commit `bdfcb48`). |
 | `SafeWalletVerifier` v2, 6 singleton (07/11/2026) | [`0x7955EB43444C5c2a6f27d4Fc736F9Eb191Ad4532`](https://sepolia.etherscan.io/address/0x7955EB43444C5c2a6f27d4Fc736F9Eb191Ad4532) | Mã đúng (khớp bytecode), nhưng thiếu singleton Safe 1.5.0, là bản app.safe.global đang tạo. |
 
 ## Bản cũ (v1, 30/10/2026) — KHÔNG SỬ DỤNG
@@ -48,7 +48,7 @@ trong cùng MultiSend (chi tiết: `docs/SECURITY_ANALYSIS.md`, mục 3.3). Gi�
 
 Đã verify toàn bộ ngày 08/11/2026 (Solidity single file, cấu hình compiler như trên):
 
-- [x] `CleanHandoverEscrow` v2.1 (`0xD0a1…c351`, Exact Match, 09/11/2026): dùng `remix/CleanHandover_flat.sol` tại commit `e5cb946`, constructor args như trên.
-- [x] `SafeWalletVerifier` v2 (và escrow v2 cũ): dùng `remix/CleanHandover_flat.sol` tại commit `7bfa486`.
+- [x] `CleanHandoverEscrow` v2.1 (`0xD0a1…c351`, Exact Match, 09/11/2026): dùng `remix/CleanHandover_flat.sol` tại commit `c245e0d`, constructor args như trên.
+- [x] `SafeWalletVerifier` v2 (và escrow v2 cũ): dùng `remix/CleanHandover_flat.sol` tại commit `bdfcb48`.
 - [x] 4 asset checker: không có constructor args. Phải dùng file gộp **ngày 30/10** (`git show 4f13d99:remix/CleanHandover_flat.sol`),
   vì hash metadata cuối bytecode tính trên toàn bộ file nguồn; file gộp hiện tại khác nên không khớp.
