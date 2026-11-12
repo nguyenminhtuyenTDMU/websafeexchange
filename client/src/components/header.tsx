@@ -9,7 +9,7 @@ import { cn } from "@/lib/utils";
 import { CHAIN } from "@/lib/config";
 
 const navItems = [
-  { href: "/trades", label: "Giao dịch đang mở" },
+  { href: "/trades", label: "Giao dịch" },
   { href: "/sell", label: "Niêm yết ví" },
   { href: "/history", label: "Tra cứu lịch sử" },
 ];

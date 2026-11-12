@@ -226,13 +226,14 @@ function Finding({ c, open }: { c: Check; open?: boolean }) {
 }
 
 /** Con dấu kết luận: biểu tượng tròn nhạt và chữ lớn, không phải khối bấm được. */
-function Seal({ clean, label, failing, blocked }: { clean: boolean; label: string; failing: number; blocked?: boolean }) {
+/** final: kết luận sau bàn giao, phóng lớn như dấu xác nhận vì đây là kết quả cuối cùng của giao dịch. */
+function Seal({ clean, label, failing, blocked, final }: { clean: boolean; label: string; failing: number; blocked?: boolean; final?: boolean }) {
   return (
     <div role="status" className={cn("flex items-center gap-2 transition-colors duration-500", clean ? "text-success" : "text-destructive")}>
       {clean
-        ? <span className="flex h-8 w-8 items-center justify-center rounded-full bg-signal/25"><ShieldCheck className="h-5 w-5" aria-hidden /></span>
+        ? <span className={cn("flex items-center justify-center rounded-full bg-signal/25", final ? "h-12 w-12 ring-4 ring-signal/20" : "h-8 w-8")}><ShieldCheck className={final ? "h-7 w-7" : "h-5 w-5"} aria-hidden /></span>
         : <span className="flex h-8 w-8 items-center justify-center rounded-full bg-destructive/10"><ShieldAlert className="h-5 w-5" aria-hidden /></span>}
-      <span className="text-lg font-bold tracking-tight">{clean ? label : blocked ? "Không thể hoàn tất" : `${failing} điểm chưa đạt`}</span>
+      <span className={cn("font-bold tracking-tight", final && clean ? "text-[28px] leading-none" : "text-lg")}>{clean ? label : blocked ? "Không thể hoàn tất" : `${failing} điểm chưa đạt`}</span>
     </div>
   );
 }
@@ -250,8 +251,8 @@ function GroupToggle({ children }: { children: React.ReactNode }) {
  * Kết luận kiểm định: điểm chưa đạt lên đầu và mở sẵn hướng dẫn; điểm đã đạt và việc hợp đồng sẽ làm gộp lại
  * để thao tác chính nằm gần. Chú giải ngay dưới tiêu đề, không phải nhớ từ phần hướng dẫn.
  */
-export function AuditReport({ title, items, cleanLabel, blocked, expandPassed }: {
-  title: string; items: Check[]; cleanLabel: string; blocked?: boolean; expandPassed?: boolean;
+export function AuditReport({ title, items, cleanLabel, blocked, expandPassed, final }: {
+  title: string; items: Check[]; cleanLabel: string; blocked?: boolean; expandPassed?: boolean; final?: boolean;
 }) {
   const failing = items.filter((c) => !c.ok && !c.pending);
   const pending = items.filter((c) => !c.ok && c.pending);
@@ -262,9 +263,9 @@ export function AuditReport({ title, items, cleanLabel, blocked, expandPassed }:
       <header className="flex flex-wrap items-center justify-between gap-4 pb-3">
         <div>
           <h2 id="audit-title" className="text-lg font-semibold">{title}</h2>
-          <p className="mt-0.5 text-sm text-muted-foreground tabular">{passed.length}/{items.length} điều kiện đạt</p>
+          <p className="mt-0.5 text-sm text-muted-foreground tabular">{passed.length}/{items.length - pending.length} điều kiện đạt{pending.length > 0 && ` · ${pending.length} việc hợp đồng sẽ làm`}</p>
         </div>
-        <Seal clean={clean} label={cleanLabel} failing={failing.length} blocked={blocked} />
+        <Seal clean={clean} label={cleanLabel} failing={failing.length} blocked={blocked} final={final} />
       </header>
       <p className="flex flex-wrap items-center gap-x-3 gap-y-1.5 pb-3 text-xs text-muted-foreground" aria-label="Chú giải">
         {passed.length > 0 && <span className="flex items-center gap-1"><PassPill /> ví đúng yêu cầu</span>}

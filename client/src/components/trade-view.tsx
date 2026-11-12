@@ -13,6 +13,7 @@ import type { AssetSpec, TradeData } from "@/lib/escrow";
 import { ESCROW, explorerTx } from "@/lib/config";
 import { dateTime, eth, isExpired, shortAddr, STATUS_LABEL } from "@/lib/format";
 import { cn } from "@/lib/utils";
+import { Link } from "wouter";
 import { useToast } from "@/hooks/use-toast";
 
 export type Role = "seller" | "buyer" | "viewer";
@@ -209,11 +210,20 @@ function NextAction({ t, role, send, busy }: { t: TradeData; role: Role; send: S
       return (
         <section aria-label="Bước tiếp theo" className="space-y-2">
           <h3 className="font-semibold">Ví đã thuộc về bạn</h3>
+          <p className="max-w-prose text-sm text-muted-foreground">
+            {t.newOwners.length === 1 ? "Bạn là owner duy nhất" : `${t.newOwners.length} owner mới giữ toàn quyền`} của ví {shortAddr(t.wallet)}, ngưỡng ký {t.threshold.toString()}/{t.newOwners.length}. Owner cũ và hợp đồng ký quỹ đã bị gỡ khỏi ví.
+          </p>
           <ExternalLinkText href={`https://app.safe.global/home?safe=sep:${t.wallet}`}>Mở ví trong Safe{"{"}Wallet{"}"}</ExternalLinkText>
         </section>
       );
     }
-    if (t.status === "COMPLETED" && role === "seller") return <p className="text-sm font-medium">Bạn đã rút {eth(t.price)}.</p>;
+    if (t.status === "COMPLETED" && role === "seller") return (
+      <section aria-label="Bước tiếp theo" className="space-y-2">
+        <h3 className="font-semibold">Bạn đã nhận {eth(t.price)}</h3>
+        <p className="text-sm text-muted-foreground">Tiền đã rút về ví của bạn; quyền kiểm soát ví {shortAddr(t.wallet)} đã chuyển cho bên mua.</p>
+        <Link href="/sell" className="inline-block text-sm font-medium text-primary hover:underline">Niêm yết ví khác</Link>
+      </section>
+    );
     if (t.status === "CANCELLED" && role === "buyer") return <p className="text-sm font-medium">Khoản nạp (nếu có) đã được rút về ví của bạn.</p>;
     return <p className="text-sm text-muted-foreground">Không có thao tác nào cho bạn ở trạng thái này.</p>;
   }
@@ -297,7 +307,7 @@ export function TradeView({ t, role, timeline, timelineLoaded, send, busy }: {
           <div className="flex flex-wrap items-baseline justify-between gap-x-6 gap-y-2">
             <div className="flex flex-wrap items-baseline gap-x-4 gap-y-1">
               <h1 className="text-2xl font-semibold tracking-tight">Giao dịch #{t.id.toString()}</h1>
-              <span className={cn("rounded-full px-2.5 py-0.5 text-sm font-semibold text-white dark:text-primary-foreground", blocked ? "bg-destructive" : STATUS_FILL[t.status])}>{blocked ? "Bàn giao bị khóa" : STATUS_LABEL[t.status]}</span>
+              <span className={cn("rounded-full px-2.5 py-0.5 text-sm font-semibold text-white dark:text-primary-foreground", blocked ? "bg-destructive" : STATUS_FILL[t.status])}>{blocked ? "Bàn giao bị khóa" : t.status === "OPEN" ? (ready ? "Chờ nạp tiền" : "Đang chuẩn bị ví") : t.status === "FUNDED" ? "Chờ hoàn tất" : STATUS_LABEL[t.status]}</span>
             </div>
             <p className="text-sm text-shell-muted tabular">
               {ROLE_LABEL[role]} · {eth(t.price)} · hạn {dateTime(t.deadline)}
@@ -311,7 +321,7 @@ export function TradeView({ t, role, timeline, timelineLoaded, send, busy }: {
 
         <div className="grid lg:grid-cols-[minmax(0,1fr)_360px]">
           <div className="min-w-0 space-y-8 px-5 py-6 sm:px-7">
-            {audit && <AuditReport title={audit.title} items={audit.items} cleanLabel={audit.clean} blocked={blocked} expandPassed={t.status === "COMPLETED"} />}
+            {audit && <AuditReport title={audit.title} items={audit.items} cleanLabel={audit.clean} blocked={blocked} expandPassed={t.status === "COMPLETED"} final={t.status === "COMPLETED"} />}
             {t.status === "CANCELLED" ? (
               <section aria-label="Tóm tắt" className="space-y-1">
                 <h2 className="text-lg font-semibold">Giao dịch dừng ở bước {fundedBefore ? "hoàn tất" : "chuẩn bị ví"}</h2>
@@ -319,7 +329,12 @@ export function TradeView({ t, role, timeline, timelineLoaded, send, busy }: {
                   {timeline.find((e) => e.kind === "Hủy giao dịch")?.detail ?? "Đã hủy"}.{" "}
                   {fundedBefore ? `Khoản nạp ${eth(t.price)} đã được ghi có lại cho người mua.` : "Chưa có khoản nạp nào."}
                 </p>
-                {role !== "viewer" && t.myCredit > 0n && <NextAction t={t} role={role} send={send} busy={busy} />}
+                {role !== "viewer" && t.myCredit > 0n ? <NextAction t={t} role={role} send={send} busy={busy} /> : (
+                  <p className="flex flex-wrap gap-x-5 gap-y-2 pt-3 text-sm font-medium">
+                    {role === "seller" && <Link href="/sell" className="text-primary hover:underline">Niêm yết lại ví</Link>}
+                    <Link href="/trades" className="text-primary hover:underline">Xem các giao dịch khác</Link>
+                  </p>
+                )}
               </section>
             ) : <NextAction t={t} role={role} send={send} busy={busy} />}
           </div>
