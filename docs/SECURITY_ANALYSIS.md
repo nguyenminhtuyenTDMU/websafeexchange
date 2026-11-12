@@ -127,20 +127,22 @@ Bất biến kiểm tra sau mỗi kịch bản:
 
 ## 3.2 Kết quả trên mã hiện tại
 
+Chạy lại ngày 12/11/2026 trên bản v2.1 (người mua khai báo tập tài sản kỳ vọng là một tập con ngẫu nhiên của danh sách chào bán),
+mỗi seed 1.000 kịch bản.
+
 | Seed | Bản Safe | Hoàn tất (đều sạch) | Từ chối lúc nạp | Từ chối lúc bàn giao (đã hoàn tiền) | Trung thực (đều hoàn tất) | Finalize bọc: thử / thành công |
 |---|---|---|---|---|---|---|
-| 101 | Safe | 384 | 524 | 92 (92) | 273 | 107 / 0 |
-| 202 | Safe | 395 | 510 | 95 (95) | 245 | 135 / 0 |
-| 303 | Safe | 417 | 474 | 109 (109) | 280 | 141 / 0 |
-| 404 | Safe | 410 | 483 | 107 (107) | 247 | 143 / 0 |
-| 505 | SafeL2 | 413 | 511 | 76 (76) | 263 | 135 / 0 |
-| **Tổng** | | **2.019** | **2.502** | **479 (479)** | **1.308** | **661 / 0** |
+| 101 | Safe 1.4.1 | 411 | 491 | 98 (98) | 273 | 116 / 0 |
+| 202 | Safe 1.4.1 | 423 | 472 | 105 (105) | 245 | 151 / 0 |
+| 303 | Safe 1.4.1 | 447 | 436 | 117 (117) | 280 | 146 / 0 |
+| 404 | Safe 1.4.1 | 430 | 456 | 114 (114) | 247 | 148 / 0 |
+| 505 | SafeL2 1.4.1 | 440 | 474 | 86 (86) | 263 | 140 / 0 |
+| 606 | SafeL2 1.5.0 | 415 | 484 | 101 (101) | 265 | 131 / 0 |
+| 707 | SafeL2 1.5.0 | 421 | 483 | 96 (96) | 252 | 128 / 0 |
+| **Tổng** | | **2.987** | **3.296** | **717 (717)** | **1.825** | **960 / 0** |
 
-5.000 kịch bản, **không vi phạm bất biến nào**.
-
-Chạy bổ sung trên **SafeL2 1.5.0** (`SAFE_VERSION=1.5.0 SAFE_VARIANT=L2`), seed 606 và 707, mỗi seed 1.000 kịch bản:
-774 hoàn tất (đều sạch), 184 bị từ chối lúc bàn giao (đều đã hoàn tiền), 517 kịch bản trung thực đều hoàn tất,
-finalize bọc thử 240 lần, thành công 0 lần. Không vi phạm bất biến nào. Tái lập: `FUZZ_RUNS=1000 FUZZ_SEED=<seed> [SAFE_VARIANT=L2] npx hardhat test test/CleanHandover.fuzz.test.cjs --config hardhat.config.cjs`.
+7.000 kịch bản, **không vi phạm bất biến nào**. Tái lập:
+`FUZZ_RUNS=1000 FUZZ_SEED=<seed> [SAFE_VERSION=1.5.0] [SAFE_VARIANT=L2] npx hardhat test test/CleanHandover.fuzz.test.cjs --config hardhat.config.cjs`.
 
 ## 3.3 Lỗ hổng fuzz test tìm ra ở thiết kế cũ
 
@@ -170,7 +172,7 @@ cột "Finalize bọc" ở bảng trên cho 661 lần thử, 0 lần thành côn
 
 # 4. Đối chiếu với threat model
 
-Các kịch bản T1–T13 trong `docs/THREAT_MODEL.md` được chứng minh bằng 34 test (chạy trên Safe 1.4.1 và 1.5.0, mỗi bản cả Safe và SafeL2) và bằng fuzz test.
+Các kịch bản T1–T13 trong `docs/THREAT_MODEL.md` được chứng minh bằng 38 ca kiểm thử (chạy trên Safe 1.4.1 và 1.5.0, mỗi bản cả Safe và SafeL2) và bằng fuzz test.
 Slither và Mythril không phát hiện lớp lỗi nào nằm ngoài các kịch bản đó (reentrancy ghi trạng thái, biến chưa khởi tạo, ghi đè storage,
 `tx.origin`, `delegatecall` không kiểm soát, `selfdestruct`...).
 Các giới hạn đã biết (allowance, chữ ký đã ủy thác, token rebase…) được liệt kê ở mục 4 của threat model.

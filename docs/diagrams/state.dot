@@ -1,0 +1,18 @@
+digraph state {
+  rankdir=TB; nodesep=1.2; ranksep=0.7;
+  fontname="Arial"; node [fontname="Arial", fontsize=12]; edge [fontname="Arial", fontsize=11];
+  node [shape=box, style="rounded,filled", fillcolor="#ffffff", width=2];
+
+  init [shape=circle, style=filled, fillcolor="#000000", label="", width=0.2];
+  OPEN [label="OPEN\n(đã niêm yết)", fillcolor="#dbe9f7"];
+  FUNDED [label="FUNDED\n(đã nạp tiền, ví đóng băng)", fillcolor="#fdf1d6"];
+  COMPLETED [label="COMPLETED\n(đã bàn giao)", fillcolor="#d9efd9", penwidth=2];
+  CANCELLED [label="CANCELLED\n(đã hủy)", fillcolor="#eeeeee", penwidth=2];
+
+  init -> OPEN [label="  createTrade (người bán)"];
+  OPEN -> FUNDED [label="  deposit (người mua, ví sẵn sàng)"];
+  FUNDED -> COMPLETED [label="  finalizeHandover\n  (bất kỳ ai, ví sạch)"];
+  FUNDED -> CANCELLED [label="  cancelBySeller\n  cancelByBuyer (ví bị đổi/thiếu tài sản)\n  cancelExpired\n  → hoàn tiền cho người mua"];
+  OPEN -> CANCELLED [label="cancelBySeller\ncancelByBuyer\ncancelExpired  "];
+  {rank=same; COMPLETED; CANCELLED}
+}
