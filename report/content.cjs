@@ -36,7 +36,7 @@ const moDau = [
   { p: 'Ví đa chữ ký (multisig) là loại ví mà mọi giao dịch phải được một số lượng tối thiểu trong nhóm chủ sở hữu cùng chấp thuận. Trên Ethereum và các mạng tương thích EVM, Safe (trước đây là Gnosis Safe) là cài đặt ví đa chữ ký được dùng phổ biến nhất, được các quỹ, tổ chức DAO, đội phát triển dự án và cả người dùng cá nhân sử dụng để giữ tài sản và quyền quản trị hợp đồng [4], [5].' },
   { p: 'Một ví Safe không chỉ chứa tài sản. Ví có thể đang là chủ sở hữu (owner) của một hợp đồng thông minh, có lịch sử giao dịch lâu năm, đang nắm giữ NFT hoặc token của một dự án. Vì vậy phát sinh nhu cầu chuyển nhượng **toàn bộ quyền kiểm soát** một ví từ người này sang người khác thay vì chuyển từng tài sản. Hiện nay việc mua bán như vậy chủ yếu dựa vào niềm tin giữa hai bên hoặc vào một người trung gian giữ tiền.' },
   { p: 'Điểm khó của bài toán là quyền kiểm soát một ví Safe không chỉ nằm ở danh sách chủ sở hữu. Người bán có thể để lại "cửa hậu" mà người mua khó phát hiện: giữ thêm một chủ sở hữu phụ, bật một mô-đun (module) có quyền thực thi giao dịch không cần chữ ký, cài một guard để chặn giao dịch của người mua, hoặc đặt một fallback handler giả mạo chữ ký của ví. Một số cấu hình như guard và fallback handler không có hàm đọc công khai mà nằm trong các khe lưu trữ (storage slot) riêng. Ngoài ra người bán còn có thể rút tài sản ra khỏi ví ngay trước khi bàn giao.' },
-  { p: 'Rủi ro từ việc thay đổi cấu hình ví đa chữ ký là có thật. Tháng 2/2025, ví lạnh dạng Safe của sàn Bybit bị chiếm quyền sau khi các bên ký phê duyệt một giao dịch trên giao diện đã bị chèn mã độc. Giao dịch này thay hợp đồng logic của ví bằng hợp đồng của kẻ tấn công, gây thiệt hại khoảng 1,5 tỷ USD [20]. Sự cố cho thấy chỉ một thay đổi nhỏ trong cấu hình ví đã đủ để mất toàn bộ quyền kiểm soát.' },
+  { p: 'Rủi ro từ việc thay đổi cấu hình ví đa chữ ký là có thật. Tháng 2/2025, ví lạnh dạng Safe của sàn Bybit bị chiếm quyền sau khi các bên ký phê duyệt một giao dịch trên giao diện đã bị chèn mã độc. Giao dịch này thay hợp đồng logic của ví bằng hợp đồng của kẻ tấn công, gây thiệt hại khoảng 1,5 tỷ USD [20], [24]. Sự cố cho thấy chỉ một thay đổi nhỏ trong cấu hình ví đã đủ để mất toàn bộ quyền kiểm soát.' },
   { p: 'Từ thực tế đó, đề tài đặt ra câu hỏi: có thể xây dựng một cơ chế mà **tiền của người mua chỉ được giải ngân khi và chỉ khi ví đã được bàn giao sạch**, được kiểm chứng trực tiếp trên blockchain, không cần tin vào người bán, người trung gian hay giao diện web hay không. Đây là lý do tôi chọn đề tài "Xây dựng hệ thống chuyển giao quyền kiểm soát ví đa chữ ký CleanHandover".' },
 
   { h2: '2. Tổng quan các công trình liên quan' },
@@ -802,7 +802,7 @@ const appendix = [
     ] },
 ];
 
-// Tài liệu tham khảo (tiếng Anh, xếp theo tên tác giả / cơ quan). [CẦN KIỂM TRA] = bạn tự đối chiếu lại trước khi nộp.
+// Tài liệu tham khảo (tiếng Anh, xếp theo tên tác giả / cơ quan).
 const refs = [
   'Nakamoto, S. (2008), Bitcoin: A Peer-to-Peer Electronic Cash System, https://bitcoin.org/bitcoin.pdf.',
   'Buterin, V. (2014), Ethereum White Paper: A Next-Generation Smart Contract and Decentralized Application Platform, https://ethereum.org/en/whitepaper/.',
@@ -811,22 +811,23 @@ const refs = [
   'Safe Ecosystem Foundation, Safe Documentation, https://docs.safe.global.',
   'Vogelsteller, F., Buterin, V. (2015), "EIP-20: Token Standard", Ethereum Improvement Proposals, https://eips.ethereum.org/EIPS/eip-20.',
   'Entriken, W., Shirley, D., Evans, J., Sachs, N. (2018), "EIP-721: Non-Fungible Token Standard", Ethereum Improvement Proposals, https://eips.ethereum.org/EIPS/eip-721.',
-  'Vogelsteller, F. et al. (2018), "ERC-1271: Standard Signature Validation Method for Contracts", Ethereum Improvement Proposals, https://eips.ethereum.org/EIPS/eip-1271.',
-  'Akhunov, A., Shaw, M. (2018), "EIP-1153: Transient storage opcodes", Ethereum Improvement Proposals, https://eips.ethereum.org/EIPS/eip-1153.',
-  'Feist, J., Grieco, G., Groce, A. (2019), "Slither: A Static Analysis Framework for Smart Contracts", Proceedings of the 2nd International Workshop on Emerging Trends in Software Engineering for Blockchain (WETSEB), tr.8-15.',
+  'Giordano, F., Condon, M., Castonguay, P., Bandeali, A., Izquierdo, J., Masius, B. (2018), "ERC-1271: Standard Signature Validation Method for Contracts", Ethereum Improvement Proposals, https://eips.ethereum.org/EIPS/eip-1271.',
+  'Akhunov, A., Salem, M. (2018), "EIP-1153: Transient storage opcodes", Ethereum Improvement Proposals, https://eips.ethereum.org/EIPS/eip-1153.',
+  'Feist, J., Grieco, G., Groce, A. (2019), "Slither: A Static Analysis Framework for Smart Contracts", Proceedings of the 2nd International Workshop on Emerging Trends in Software Engineering for Blockchain (WETSEB), tr.8-15, https://doi.org/10.1109/WETSEB.2019.00008.',
   'Mueller, B. (2018), "Smashing Ethereum Smart Contracts for Fun and Real Profit", HITB Security Conference, Amsterdam. Mã nguồn Mythril: https://github.com/Consensys/mythril.',
-  'Atzei, N., Bartoletti, M., Cimoli, T. (2017), "A Survey of Attacks on Ethereum Smart Contracts (SoK)", Principles of Security and Trust (POST 2017), LNCS 10204, tr.164-186.',
-  'Luu, L., Chu, D.-H., Olickel, H., Saxena, P., Hobor, A. (2016), "Making Smart Contracts Smarter", Proceedings of the 2016 ACM SIGSAC Conference on Computer and Communications Security (CCS), tr.254-269.',
-  'Claessen, K., Hughes, J. (2000), "QuickCheck: A Lightweight Tool for Random Testing of Haskell Programs", Proceedings of the 5th ACM SIGPLAN International Conference on Functional Programming (ICFP), tr.268-279.',
+  'Atzei, N., Bartoletti, M., Cimoli, T. (2017), "A Survey of Attacks on Ethereum Smart Contracts (SoK)", Principles of Security and Trust (POST 2017), LNCS 10204, tr.164-186, https://doi.org/10.1007/978-3-662-54455-6_8.',
+  'Luu, L., Chu, D.-H., Olickel, H., Saxena, P., Hobor, A. (2016), "Making Smart Contracts Smarter", Proceedings of the 2016 ACM SIGSAC Conference on Computer and Communications Security (CCS), tr.254-269, https://doi.org/10.1145/2976749.2978309.',
+  'Claessen, K., Hughes, J. (2000), "QuickCheck: A Lightweight Tool for Random Testing of Haskell Programs", Proceedings of the 5th ACM SIGPLAN International Conference on Functional Programming (ICFP), tr.268-279, https://doi.org/10.1145/351240.351266.',
   'Dubien, N., fast-check: Property based testing framework for JavaScript/TypeScript, https://fast-check.dev.',
   'Nomic Foundation, Hardhat Documentation, https://hardhat.org/docs.',
   'OpenZeppelin, OpenZeppelin Contracts Documentation, https://docs.openzeppelin.com/contracts.',
   'Windle, J. et al. (2023), "ERC-6551: Non-fungible Token Bound Accounts", Ethereum Improvement Proposals, https://eips.ethereum.org/EIPS/eip-6551.',
   'Solidity Team, Solidity Documentation, https://docs.soliditylang.org.',
-  '[CẦN KIỂM TRA: chọn một nguồn chính thức về sự cố Bybit ngày 21/02/2025, ví dụ thông báo của Bybit hoặc báo cáo điều tra của Sygnia/Verichains, ghi đủ đường dẫn và ngày truy cập.]',
+  'Sygnia (2025), "Bybit – What We Know So Far", 16/03/2025, https://www.sygnia.co/blog/sygnia-investigation-bybit-hack/.',
   'wevm, wagmi: Reactivity for Ethereum apps (tài liệu), https://wagmi.sh.',
   'wevm, viem: TypeScript Interface for Ethereum (tài liệu), https://viem.sh.',
   'Vogelsteller, F. et al. (2018), "EIP-1193: Ethereum Provider JavaScript API", Ethereum Improvement Proposals, https://eips.ethereum.org/EIPS/eip-1193.',
+  'Federal Bureau of Investigation (2025), "North Korea Responsible for $1.5 Billion Bybit Hack", Public Service Announcement I-022625-PSA, 26/02/2025, https://www.ic3.gov/PSA/2025/PSA250226.',
 ];
 
 module.exports = { front, moDau, ch1, ch2, placeholders, appendix, refs };
