@@ -13,6 +13,7 @@ import type { AssetSpec, TradeData } from "@/lib/escrow";
 import { ESCROW, explorerTx } from "@/lib/config";
 import { dateTime, eth, isExpired, shortAddr, STATUS_LABEL } from "@/lib/format";
 import { cn } from "@/lib/utils";
+import { useToast } from "@/hooks/use-toast";
 
 export type Role = "seller" | "buyer" | "viewer";
 export type TimelineEvent = { kind: string; block: bigint; tx: string; detail?: string };
@@ -42,8 +43,10 @@ function Confirm({ trigger, title, children, action, onConfirm, needsAck, destru
   onConfirm: () => void; needsAck?: string; destructive?: boolean;
 }) {
   const [ack, setAck] = useState(false);
+  const { dismiss } = useToast();
   return (
-    <AlertDialog onOpenChange={(o) => !o && setAck(false)}>
+    // mở hộp xác nhận thì dọn thông báo của bước trước để không đè lên quyết định mới
+    <AlertDialog onOpenChange={(o) => (o ? dismiss() : setAck(false))}>
       <AlertDialogTrigger asChild>{trigger}</AlertDialogTrigger>
       <AlertDialogContent className="max-w-lg">
         <AlertDialogHeader>
@@ -66,6 +69,11 @@ function Confirm({ trigger, title, children, action, onConfirm, needsAck, destru
       </AlertDialogContent>
     </AlertDialog>
   );
+}
+
+/** Hệ quả cần biết của bước hiện tại: chữ nhỏ hiện sẵn dưới thao tác chính, không giấu sau ⓘ. */
+function Note({ children }: { children: React.ReactNode }) {
+  return <p className="max-w-prose text-sm text-muted-foreground">{children}</p>;
 }
 
 function NextAction({ t, role, send, busy }: { t: TradeData; role: Role; send: Send; busy: string | null }) {
@@ -113,14 +121,17 @@ function NextAction({ t, role, send, busy }: { t: TradeData; role: Role; send: S
             ["Hạn chót", <span>{dateTime(t.deadline)}<span className="block text-xs text-muted-foreground">Quá hạn mà chưa hoàn tất: ai cũng hủy được, tiền về bạn.</span></span>],
           ]} />
         </Confirm>
-        {expired && <p className="text-sm text-destructive">Giao dịch đã quá hạn.</p>}
+        {expired ? <p className="text-sm text-destructive">Giao dịch đã quá hạn.</p>
+          : <Note>Sau khi nạp, ví bị khóa đến lúc hoàn tất. Quá {dateTime(t.deadline)} mà chưa hoàn tất thì bạn hủy được và nhận lại tiền.</Note>}
       </div>
     );
   } else if (role === "seller" && t.status === "OPEN") {
     primary = (
       <div className="space-y-2">
-        <h3 className="flex items-center gap-1.5 font-semibold">{ready ? "Ví đã sẵn sàng, chờ người mua nạp tiền" : "Đưa ví về trạng thái sẵn sàng"}
-          {ready && <InfoTip text="Từ lúc người mua nạp tiền, đừng thực hiện giao dịch nào với ví: một giao dịch bất kỳ sẽ cho người mua quyền hủy." label="Lưu ý cho người bán" />}</h3>
+        <h3 className="font-semibold">{ready ? "Ví đã sẵn sàng, chờ người mua nạp tiền" : "Đưa ví về trạng thái sẵn sàng"}</h3>
+        <Note>{ready
+          ? "Từ lúc người mua nạp tiền, đừng thực hiện giao dịch nào với ví: một giao dịch bất kỳ cho người mua quyền hủy."
+          : "Xử lý các điểm chưa đạt trong báo cáo ở trên. Người mua chỉ nạp được tiền khi ví đã sẵn sàng."}</Note>
         <p className="pt-1 text-sm font-medium">Đường dẫn cho người mua</p>
         <CopyChip value={typeof window !== "undefined" ? window.location.href : ""} />
       </div>
@@ -142,6 +153,11 @@ function NextAction({ t, role, send, busy }: { t: TradeData; role: Role; send: S
           </ol>
           <p className="rounded-md bg-muted px-3 py-2"><span className="font-semibold">Kết quả:</span> {t.newOwners.length === 1 ? "người mua" : `${t.newOwners.length} owner mới`} là chủ duy nhất của ví {shortAddr(t.wallet)}. Nếu một điều kiện sai, mọi thay đổi bị hoàn tác, bạn chỉ mất phí gas.</p>
         </Confirm>
+        <Note>{expired
+          ? `Đã quá hạn: vẫn hoàn tất được, nhưng ai cũng có thể hủy để trả ${eth(t.price)} về người mua.`
+          : role === "seller"
+            ? `Quá ${dateTime(t.deadline)} mà chưa hoàn tất thì giao dịch có thể bị hủy, tiền về người mua.`
+            : `Quá ${dateTime(t.deadline)} mà chưa hoàn tất thì ${role === "buyer" ? "bạn" : "ai cũng"} hủy được, tiền về ${role === "buyer" ? "bạn" : "người mua"}.`}</Note>
       </div>
     );
   }

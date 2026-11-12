@@ -30,8 +30,8 @@ export default function App() {
       <QueryClientProvider client={queryClient}>
         <ThemeProvider defaultTheme="light" storageKey="cleanhandover-theme">
           <TooltipProvider>
-            <Toaster />
             <Router hook={useHashLocation}>
+              <Toaster />
               <GuideProvider>
               <Layout>
                 <Switch>

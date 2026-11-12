@@ -13,6 +13,7 @@ type ToasterToast = ToastProps & {
   title?: React.ReactNode
   description?: React.ReactNode
   action?: ToastActionElement
+  createdAt?: number
 }
 
 const actionTypes = {
@@ -154,6 +155,7 @@ function toast({ ...props }: Toast) {
     toast: {
       ...props,
       id,
+      createdAt: Date.now(),
       open: true,
       onOpenChange: (open) => {
         if (!open) dismiss()

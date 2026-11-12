@@ -49,14 +49,14 @@ export function useEscrowWrite() {
       const call = { address: ESCROW, abi: escrowAbi, functionName, args, value, account: address } as never;
       await client.simulateContract(call);
       const hash = await writeContractAsync(call);
-      toast({ title: "Đã gửi giao dịch", description: "Đang chờ mạng xác nhận…" });
+      toast({ title: "Đã gửi giao dịch", description: "Đang chờ mạng xác nhận…", duration: Infinity });
       const receipt = await client.waitForTransactionReceipt({ hash });
       if (receipt.status !== "success") throw new Error("Giao dịch bị hoàn tác.");
       toast({ title: DONE[functionName](value), description: txLink(hash) });
       await queryClient.invalidateQueries();
       return receipt;
     } catch (e) {
-      toast({ title: "Không thực hiện được", description: errorMessage(e), variant: "destructive" });
+      toast({ title: "Không thực hiện được", description: errorMessage(e), variant: "destructive", duration: Infinity });
       return null;
     } finally {
       setBusy(null);
