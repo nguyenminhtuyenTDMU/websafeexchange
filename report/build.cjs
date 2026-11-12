@@ -36,6 +36,7 @@ const SIZE = 28; // 14pt
 const CM = (x) => Math.round(x * 567); // cm → twip
 const SPACING = { before: 80, after: 80, line: 400, lineRule: LineRuleType.AT_LEAST }; // 4pt / 4pt / at least 20pt
 const DIAG = path.join(__dirname, '..', 'docs', 'diagrams');
+const IMG = path.join(__dirname, 'img'); // ảnh chụp màn hình (chép từ script/e2e/out)
 const TEXT_W = 21 - 3.5 - 2; // cm
 
 // ── Tài liệu tham khảo: xếp theo a, b, c rồi đánh số lại trích dẫn trong bài ──
@@ -65,7 +66,7 @@ function pngSize(file) {
   return { w: b.readUInt32BE(16), h: b.readUInt32BE(20) };
 }
 function figure(item) {
-  const file = path.join(DIAG, item.img);
+  const file = fs.existsSync(path.join(IMG, item.img)) ? path.join(IMG, item.img) : path.join(DIAG, item.img);
   const { w, h } = pngSize(file);
   const widthCm = Math.min(item.w || TEXT_W, TEXT_W);
   const px = Math.round(widthCm / 2.54 * 96);
