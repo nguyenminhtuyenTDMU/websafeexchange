@@ -40,7 +40,11 @@ const IMG = path.join(__dirname, 'img'); // ảnh chụp màn hình (chép từ 
 const TEXT_W = 21 - 3.5 - 2; // cm
 
 // ── Tài liệu tham khảo: xếp theo a, b, c rồi đánh số lại trích dẫn trong bài ──
-const sortKey = (t) => (t.startsWith('[') ? 'Bybit' : t).toLowerCase();
+// Theo Quy định Điều 43 mục 12: theo họ tác giả đầu tiên (hoặc tên cơ quan); cùng tác giả thì theo năm
+const sortKey = (t) => {
+  const year = (t.match(/\((\d{4})\)/) || [, '0000'])[1];
+  return `${t.split(/[,(]/)[0].trim()} ${year} ${t}`.toLowerCase();
+};
 const order = C.refs.map((t, i) => ({ t, old: i + 1 })).sort((a, b) => sortKey(a.t).localeCompare(sortKey(b.t)));
 const renum = {}; order.forEach((r, i) => { renum[r.old] = i + 1; });
 // nhóm trích dẫn liền nhau: đánh số mới, xếp tăng dần, viết dạng [4],[14],[15]
