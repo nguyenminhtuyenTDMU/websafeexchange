@@ -24,7 +24,7 @@ hợp đồng, còn mọi giao dịch do ví của người dùng ký.
 | `script/e2e/` | Kiểm thử đầu-cuối qua giao diện trên node Hardhat cục bộ |
 | `remix/` | Mã nguồn gộp một tệp dùng để triển khai bằng Remix và xác minh trên Etherscan |
 | `docs/` | Mô hình nguy cơ, phân tích an toàn, địa chỉ triển khai, hướng dẫn triển khai, giao dịch thực nghiệm |
-| `report/` | Mã sinh báo cáo đồ án (`.docx`) |
+| `report/` | Báo cáo đồ án (`.docx`) |
 
 ## Cài đặt
 
